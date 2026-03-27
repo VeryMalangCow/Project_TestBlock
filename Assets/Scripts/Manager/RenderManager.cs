@@ -218,6 +218,19 @@ public class RenderManager : Singleton<RenderManager>
 
     #endregion
 
+    #region Chunk Redraw
+
+    public void RequestChunkRedraw(int cx, int cy)
+    {
+        Vector2Int coord = new Vector2Int(cx, cy);
+        if (activeChunks.TryGetValue(coord, out MeshFilter filter))
+        {
+            DrawChunk(filter, cx, cy);
+        }
+    }
+
+    #endregion
+
     #region Block
 
     private bool HasBlock(int cx, int cy, int x, int y)
