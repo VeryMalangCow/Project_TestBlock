@@ -14,20 +14,20 @@ public class TileSpriteSet
     private static readonly int[] maskToIndex = new int[]
     {
         12, // 0: None
-        10, // 1: U -> Maps to D sprite
-        8,  // 2: D -> Maps to U sprite
+        8,  // 1: U -> Was 10
+        10, // 2: D -> Was 8
         15, // 3: UD
         11, // 4: L
-        6,  // 5: UL -> Maps to DL sprite
-        7,  // 6: DL -> Maps to UL sprite
+        7,  // 5: UL -> Was 6
+        6,  // 6: DL -> Was 7
         3,  // 7: UDL
         9,  // 8: R
-        5,  // 9: UR -> Maps to DR sprite
-        4,  // 10: DR -> Maps to UR sprite
+        4,  // 9: UR -> Was 5
+        5,  // 10: DR -> Was 4
         1,  // 11: UDR
         14, // 12: LR
-        2,  // 13: ULR -> Maps to DLR sprite
-        0,  // 14: DLR -> Maps to ULR sprite
+        0,  // 13: ULR -> Was 2
+        2,  // 14: DLR -> Was 0
         13  // 15: UDLR
     };
 
@@ -36,17 +36,22 @@ public class TileSpriteSet
         tileImages = sprites;
     }
 
-    public Sprite GetSprite(bool u, bool d, bool l, bool r)
+    public static int GetBitmaskIndex(bool u, bool d, bool l, bool r)
     {
-        if (tileImages == null || tileImages.Length < 16) return null;
-
         int mask = 0;
         if (u) mask |= 1;
         if (d) mask |= 2;
         if (l) mask |= 4;
         if (r) mask |= 8;
 
-        int index = maskToIndex[mask];
+        return maskToIndex[mask];
+    }
+
+    public Sprite GetSprite(bool u, bool d, bool l, bool r)
+    {
+        if (tileImages == null || tileImages.Length < 16) return null;
+
+        int index = GetBitmaskIndex(u, d, l, r);
         return (index >= 0 && index < tileImages.Length) ? tileImages[index] : null;
     }
 }
@@ -55,6 +60,7 @@ public class TileSpriteSet
 public class RandomTileSpriteSet
 {
     [SerializeField] private List<TileSpriteSet> tileSpriteSets;
+    public int Count => (tileSpriteSets != null) ? tileSpriteSets.Count : 0;
 
     public RandomTileSpriteSet()
     {
@@ -84,6 +90,13 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
 {
     #region Variable
 
+    [Header("### Tile")]
+    [Header("## Render")]
+    [Header("# Texture2DArray")]
+    [SerializeField] private Texture2DArray tilesetArray;
+    [SerializeField] private int maxKinds = 10; // Match this with Baker's maxKinds
+
+    [Header("# Sprite")]
     [SerializeField] private List<RandomTileSpriteSet> allTileSpriteSets;
 
     #endregion
@@ -93,6 +106,35 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     public void Init()
     {
         allTileSpriteSets = InitTileSprites("Sprites/Tiles");
+        
+        // Load Texture2DArray from Resources if needed
+        if (tilesetArray == null)
+            tilesetArray = Resources.Load<Texture2DArray>("TilesetArray");
+    }
+
+    #endregion
+    
+    #region Tile Array Index
+
+    /// <summary>
+    /// Calculates the layer index for Texture2DArray
+    /// </summary>
+    public float GetTileArrayIndex(int tileId, int kindId, int bitmaskIdx)
+    {
+        // Formula matching the Baker script
+        return (tileId * maxKinds * 16) + (kindId * 16) + bitmaskIdx;
+    }
+
+    /// <summary>
+    /// Returns the number of variations (kinds) for a given tile ID.
+    /// Used by RenderManager to pick a random kind.
+    /// </summary>
+    public int GetTileKindCount(int tileId)
+    {
+        if (tileId < 0 || tileId >= allTileSpriteSets.Count || allTileSpriteSets[tileId] == null)
+            return 1;
+        
+        return allTileSpriteSets[tileId].Count;
     }
 
     #endregion

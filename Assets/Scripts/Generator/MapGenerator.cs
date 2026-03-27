@@ -4,6 +4,7 @@ public class MapGenerator : MonoBehaviour
 {
     #region Variable
 
+    [Header("# TF")]
     [SerializeField] private Transform mapParent;
 
     #endregion
@@ -33,7 +34,10 @@ public class MapGenerator : MonoBehaviour
         {
             for (int j = 0; j < 16; j++)
             {
-                chunk.blocks[i, j] = new BlockData(0);
+                int tileId = 0;
+                int maxKinds = ResourceManager.Instance != null ? ResourceManager.Instance.GetTileKindCount(tileId) : 1;
+                int kindId = Random.Range(0, maxKinds);
+                chunk.blocks[i, j] = new BlockData(tileId, kindId);
             }
         }
     }

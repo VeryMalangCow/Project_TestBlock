@@ -17,6 +17,7 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 2. **Metadata Safety:** Always handle `.meta` files when performing file operations via CLI.
 3. **Architecture:** Maintain modularity for easy prototyping and iteration.
 4. **Code Organization:** Always preserve and utilize `#region` tags for code grouping. Do not remove existing regions during refactoring.
+5. **Inspector Attributes:** Do not remove or modify existing `[Header()]` or `[Space()]` attributes. When adding, modifying, or removing variables, strictly follow the established attribute style.
 
 ## Rules
 ### Sprite Rule
@@ -28,6 +29,7 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
   - **Cell Size:** 8 x 8
   - **Offset:** 0, 1
   - **Padding:** 1, 1
+- **Read/Write:** Enabled (Required for Texture2DArray baking)
 - **Location:** `Assets\Resources\Sprites\Tiles`
 - **Naming Convention:** `Tile_ID(4 digit: Tile Id)_ID(2 digit: kind of tile Id)` (e.g., `Tile_0000_00`)
 - **Rendering Constraint:** Multi-variation rendering within a single chunk mesh requires all tile sprites to be packed into a single **Sprite Atlas**.
@@ -43,14 +45,26 @@ To handle thousands of tile variations efficiently without the overhead of massi
 - **MainScene:** The primary scene for the world generator prototype.
 
 ## Role List
-- **GameManager**: Persistent manager for global game state and logic.
-- **ResourceManager**: Persistent manager for resource loading and access. Handles tile sprite sets and variations.
-- **MapManager**: Scene-specific manager for map-related logic. Contains MapData, ChunkData, and BlockData.
-- **RenderManager**: Scene-specific manager for mesh generation. Implements Sliding Window and Object Pooling for optimized chunk rendering.
-- **CameraController**: Camera script for smooth following of the target (e.g., Player).
-- **Singleton / PermanentSingleton**: Base classes for providing Singleton patterns (Scene-specific / Persistent).
-- **MapGenerator**: Handles the procedural generation of map and background data.
-- **PlayerController**: Handles player inputs and movement logic using the Unity Input System.
+
+### 1. Global Systems (Persistent)
+*Shared across all scenes. Inherits from `PermanentSingleton<T>`.*
+- **GameManager**: Central authority for global game state, session management, and high-level logic.
+- **ResourceManager**: Handles asset lifecycle, `Texture2DArray` baking references, and tile variation mapping.
+
+### 2. Scene Systems (Volatile)
+*Exists only within the current scene. Inherits from `Singleton<T>`.*
+- **MapManager**: Data container for the active world. Manages `MapData`, `ChunkData`, and `BlockData` structures.
+- **RenderManager**: Orchestrates chunk visibility. Implements **Sliding Window** and **Object Pooling** for mesh-based rendering.
+
+### 3. World Generation
+- **MapGenerator**: Contains procedural algorithms (Perlin noise, etc.) to populate `MapManager`'s data.
+
+### 4. Gameplay & Input
+- **PlayerController**: Bridges Unity Input System with player movement and world interaction logic.
+- **CameraController**: Manages camera behavior, including smooth target following and zoom.
+
+### 5. Framework Bases
+- **Singleton / PermanentSingleton**: Abstract base classes providing thread-safe or persistent singleton patterns.
 
 ## Progress Tracking
 - [x] Initial `GEMINI.md` creation and project metadata documentation (2026-03-24)

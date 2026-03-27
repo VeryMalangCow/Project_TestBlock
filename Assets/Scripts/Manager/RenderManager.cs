@@ -5,12 +5,16 @@ public class RenderManager : Singleton<RenderManager>
 {
     #region Varialble
 
-    [Header("Settings")]
+    [Header("### Map")]
+    [Header("## Tile")]
+    [Header("# Render")]
     [SerializeField] private Material tileMaterial;
-    [SerializeField] private int viewDistance = 2; // Radius around center chunk (e.g., 2 = 5x5 grid)
-    [SerializeField] private Transform targetTransform; // Typically Main Camera or Player
 
-    [Header("Pool")]
+    [Header("## Chunk")]
+    [Header("# Sliding+Pool")]
+    [SerializeField] private Transform targetTransform; // Typically Main Camera or Player
+    [SerializeField] private int viewDistance = 2; // Radius around center chunk (e.g., 2 = 5x5 grid)
+
     private Stack<MeshFilter> chunkPool = new Stack<MeshFilter>();
     private Dictionary<Vector2Int, MeshFilter> activeChunks = new Dictionary<Vector2Int, MeshFilter>();
     
@@ -139,7 +143,7 @@ public class RenderManager : Singleton<RenderManager>
 
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
-        List<Vector2> uvs = new List<Vector2>();
+        List<Vector3> uvs = new List<Vector3>();
 
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
@@ -157,8 +161,8 @@ public class RenderManager : Singleton<RenderManager>
                 bool l = HasBlock(cx, cy, x - 1, y);
                 bool r = HasBlock(cx, cy, x + 1, y);
 
-                Sprite sprite = ResourceManager.Instance.GetTileSprite(block.id, u, d, l, r);
-                if (sprite == null) continue;
+                int bitmaskIdx = TileSpriteSet.GetBitmaskIndex(u, d, l, r);
+                float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, block.kindId, bitmaskIdx);
 
                 int vIndex = vertices.Count;
                 float worldX = cx * width + x;
@@ -178,22 +182,11 @@ public class RenderManager : Singleton<RenderManager>
                 triangles.Add(vIndex + 3);
                 triangles.Add(vIndex + 1);
 
-                // UVs from Sprite
-                Vector2[] spriteUVs = sprite.uv;
-                if (spriteUVs.Length >= 4)
-                {
-                    uvs.Add(spriteUVs[0]); // BL
-                    uvs.Add(spriteUVs[1]); // BR
-                    uvs.Add(spriteUVs[2]); // TL
-                    uvs.Add(spriteUVs[3]); // TR
-                }
-                else
-                {
-                    uvs.Add(new Vector2(0, 0));
-                    uvs.Add(new Vector2(1, 0));
-                    uvs.Add(new Vector2(0, 1));
-                    uvs.Add(new Vector2(1, 1));
-                }
+                // UVs with Array Index in Z
+                uvs.Add(new Vector3(0, 0, arrayIdx));
+                uvs.Add(new Vector3(1, 0, arrayIdx));
+                uvs.Add(new Vector3(0, 1, arrayIdx));
+                uvs.Add(new Vector3(1, 1, arrayIdx));
             }
         }
 

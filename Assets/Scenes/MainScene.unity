@@ -750,7 +750,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8cb7bacda8946c74687826152a52d0d6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RenderManager
-  tileMaterial: {fileID: 2100000, guid: 0914866e514778345a4801afe5ce8b80, type: 2}
+  tileMaterial: {fileID: 2100000, guid: 2634014bbd2ed2a4bae64b83ac8cc3d8, type: 2}
   viewDistance: 6
   targetTransform: {fileID: 3308927}
 --- !u!4 &1668643430
@@ -933,6 +933,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4dcdf8cffc8cdcb4da2fb154634a6076, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResourceManager
+  tilesetArray: {fileID: 18700000, guid: 3dfde7638e04fa549a6ce0ad48fad77e, type: 2}
+  maxKinds: 10
   allTileSpriteSets:
   - tileSpriteSets:
     - tileImages:

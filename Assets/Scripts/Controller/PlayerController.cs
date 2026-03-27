@@ -5,6 +5,7 @@ public class PlayerController : MonoBehaviour
 {
     #region Variable
 
+    [Header("# Move")]
     [SerializeField] private float moveSpeed = 10f;
     
     private Vector2 moveInput;

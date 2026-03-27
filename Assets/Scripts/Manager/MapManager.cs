@@ -7,10 +7,12 @@ using UnityEngine;
 public class BlockData
 {
     public int id;
+    public int kindId;
 
-    public BlockData(int id)
+    public BlockData(int id, int kindId = 0)
     {
         this.id = id;
+        this.kindId = kindId;
     }
 }
 
@@ -51,8 +53,14 @@ public class MapData
 
 public class MapManager : Singleton<MapManager>
 {
-    [SerializeField] public MapData mapData;
+    #region Variable
 
+    // Inspector
+    [Header("# Generator")]
     [SerializeField] public MapGenerator mapGenerator;
 
+    [Header("# Data")]
+    [HideInInspector] public MapData mapData;
+
+    #endregion
 }
