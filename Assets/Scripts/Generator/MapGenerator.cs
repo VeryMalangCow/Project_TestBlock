@@ -37,7 +37,7 @@ public class MapGenerator : MonoBehaviour
                 int tileId = 0;
                 int maxKinds = ResourceManager.Instance != null ? ResourceManager.Instance.GetTileKindCount(tileId) : 1;
                 int kindId = Random.Range(0, maxKinds);
-                chunk.blocks[i, j] = new BlockData(tileId, kindId);
+                chunk.blocks[i, j] = new BlockData(tileId, kindId, true);
             }
         }
     }

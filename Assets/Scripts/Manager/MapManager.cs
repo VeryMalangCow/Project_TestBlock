@@ -4,15 +4,17 @@ using UnityEngine;
 #region Map
 
 [Serializable]
-public class BlockData
+public struct BlockData
 {
-    public int id;
-    public int kindId;
+    public bool isActive;
+    public ushort id;
+    public byte kindId;
 
-    public BlockData(int id, int kindId = 0)
+    public BlockData(int id, int kindId = 0, bool isActive = true)
     {
-        this.id = id;
-        this.kindId = kindId;
+        this.id = (ushort)id;
+        this.kindId = (byte)kindId;
+        this.isActive = isActive;
     }
 }
 
@@ -90,13 +92,13 @@ public class MapManager : Singleton<MapManager>
         // Apply change
         if (id < 0)
         {
-            chunk.blocks[lx, ly] = null;
+            chunk.blocks[lx, ly] = default; // Air (isActive = false)
         }
         else
         {
             int maxKinds = ResourceManager.Instance != null ? ResourceManager.Instance.GetTileKindCount(id) : 1;
             int kindId = UnityEngine.Random.Range(0, maxKinds);
-            chunk.blocks[lx, ly] = new BlockData(id, kindId);
+            chunk.blocks[lx, ly] = new BlockData(id, kindId, true);
         }
 
         // Redraw current and neighbors

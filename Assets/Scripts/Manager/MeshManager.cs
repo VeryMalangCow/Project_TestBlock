@@ -137,11 +137,29 @@ public class MeshManager : Singleton<MeshManager>
 
     private void DrawChunk(MeshFilter targetFilter, int cx, int cy)
     {
-        ChunkData chunk = MapManager.Instance.mapData.chunks[cx, cy];
+        ChunkData[,] allChunks = MapManager.Instance.mapData.chunks;
+        ChunkData chunk = allChunks[cx, cy];
         if (chunk == null) return;
 
-        Mesh mesh = new Mesh();
-        mesh.name = $"Chunk_{cx}_{cy}";
+        // Pre-fetch neighbors for faster access in loop
+        ChunkData chunkU = (cy + 1 < MapData.MapSize.y) ? allChunks[cx, cy + 1] : null;
+        ChunkData chunkD = (cy - 1 >= 0) ? allChunks[cx, cy - 1] : null;
+        ChunkData chunkL = (cx - 1 >= 0) ? allChunks[cx - 1, cy] : null;
+        ChunkData chunkR = (cx + 1 < MapData.MapSize.x) ? allChunks[cx + 1, cy] : null;
+
+        // Optimization: Reuse existing mesh to reduce GC pressure
+        Mesh mesh = targetFilter.sharedMesh;
+        if (mesh == null)
+        {
+            mesh = new Mesh();
+            mesh.name = $"Chunk_{cx}_{cy}";
+            targetFilter.sharedMesh = mesh;
+        }
+        else
+        {
+            mesh.Clear();
+            mesh.name = $"Chunk_{cx}_{cy}";
+        }
 
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
@@ -155,13 +173,13 @@ public class MeshManager : Singleton<MeshManager>
             for (int y = 0; y < height; y++)
             {
                 BlockData block = chunk.blocks[x, y];
-                if (block == null) continue;
+                if (!block.isActive) continue;
 
-                // Check neighbors for auto-tiling
-                bool u = HasBlock(cx, cy, x, y + 1);
-                bool d = HasBlock(cx, cy, x, y - 1);
-                bool l = HasBlock(cx, cy, x - 1, y);
-                bool r = HasBlock(cx, cy, x + 1, y);
+                // Fast neighbor check using pre-fetched chunks
+                bool u = (y + 1 < height) ? chunk.blocks[x, y + 1].isActive : (chunkU != null && chunkU.blocks[x, 0].isActive);
+                bool d = (y - 1 >= 0) ? chunk.blocks[x, y - 1].isActive : (chunkD != null && chunkD.blocks[x, height - 1].isActive);
+                bool l = (x - 1 >= 0) ? chunk.blocks[x - 1, y].isActive : (chunkL != null && chunkL.blocks[width - 1, y].isActive);
+                bool r = (x + 1 < width) ? chunk.blocks[x + 1, y].isActive : (chunkR != null && chunkR.blocks[0, y].isActive);
 
                 int bitmaskIdx = TileSpriteSet.GetBitmaskIndex(u, d, l, r);
                 float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, block.kindId, bitmaskIdx);
@@ -213,48 +231,53 @@ public class MeshManager : Singleton<MeshManager>
     {
         if (!activeChunks.TryGetValue(new Vector2Int(cx, cy), out MeshFilter filter)) return;
         
-        ChunkData chunk = MapManager.Instance.mapData.chunks[cx, cy];
+        ChunkData[,] allChunks = MapManager.Instance.mapData.chunks;
+        ChunkData chunk = allChunks[cx, cy];
         if (chunk == null) return;
+
+        // Pre-fetch neighbors
+        ChunkData chunkU = (cy + 1 < MapData.MapSize.y) ? allChunks[cx, cy + 1] : null;
+        ChunkData chunkD = (cy - 1 >= 0) ? allChunks[cx, cy - 1] : null;
+        ChunkData chunkL = (cx - 1 >= 0) ? allChunks[cx - 1, cy] : null;
+        ChunkData chunkR = (cx + 1 < MapData.MapSize.x) ? allChunks[cx + 1, cy] : null;
 
         GameObject chunkObj = filter.gameObject;
         
-        // 1. Clean up existing colliders
-        List<GameObject> toDestroy = new List<GameObject>();
+        // 1. Pooling: Get all existing edge objects and deactivate them
+        List<GameObject> edgePool = new List<GameObject>();
         foreach (Transform child in chunkObj.transform)
         {
             if (child.name.StartsWith("Edge_"))
-                toDestroy.Add(child.gameObject);
+            {
+                child.gameObject.SetActive(false);
+                edgePool.Add(child.gameObject);
+            }
         }
-        foreach (var obj in toDestroy) Destroy(obj);
 
+        int poolIndex = 0;
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
 
         // 2. Greedy Edge Extraction
-        // We scan 4 directions and merge adjacent segments in the same line.
-        
         // Horizontal Segments (Top and Bottom)
         for (int y = 0; y <= height; y++)
         {
-            // Top Edges (Block at y, Air at y+1)
-            ExtractHorizontalSegments(chunkObj, cx, cy, y, true);
-            // Bottom Edges (Block at y, Air at y-1)
-            ExtractHorizontalSegments(chunkObj, cx, cy, y, false);
+            ExtractHorizontalSegments(chunkObj, cx, cy, y, true, chunk, chunkU, chunkD, edgePool, ref poolIndex);
+            ExtractHorizontalSegments(chunkObj, cx, cy, y, false, chunk, chunkU, chunkD, edgePool, ref poolIndex);
         }
 
         // Vertical Segments (Left and Right)
         for (int x = 0; x <= width; x++)
         {
-            // Left Edges (Block at x, Air at x-1)
-            ExtractVerticalSegments(chunkObj, cx, cy, x, true);
-            // Right Edges (Block at x, Air at x+1)
-            ExtractVerticalSegments(chunkObj, cx, cy, x, false);
+            ExtractVerticalSegments(chunkObj, cx, cy, x, true, chunk, chunkL, chunkR, edgePool, ref poolIndex);
+            ExtractVerticalSegments(chunkObj, cx, cy, x, false, chunk, chunkL, chunkR, edgePool, ref poolIndex);
         }
     }
 
-    private void ExtractHorizontalSegments(GameObject parent, int cx, int cy, int y, bool isTop)
+    private void ExtractHorizontalSegments(GameObject parent, int cx, int cy, int y, bool isTop, ChunkData c, ChunkData uC, ChunkData dC, List<GameObject> pool, ref int poolIdx)
     {
         int width = ChunkData.ChunkSize.x;
+        int height = ChunkData.ChunkSize.y;
         int startX = -1;
 
         for (int x = 0; x < width; x++)
@@ -262,36 +285,37 @@ public class MeshManager : Singleton<MeshManager>
             bool hasFace = false;
             if (isTop)
             {
-                // Block exists at (x,y) AND No block exists at (x,y+1)
-                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x, y + 1)) hasFace = true;
+                bool blockExists = (y < height) && (c.blocks[x, y].isActive);
+                bool neighborExists = (y + 1 < height) ? (c.blocks[x, y + 1].isActive) : (uC != null && uC.blocks[x, 0].isActive);
+                if (blockExists && !neighborExists) hasFace = true;
             }
             else
             {
-                // Block exists at (x,y) AND No block exists at (x,y-1)
-                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x, y - 1)) hasFace = true;
+                bool blockExists = (y < height) && (c.blocks[x, y].isActive);
+                bool neighborExists = (y - 1 >= 0) ? (c.blocks[x, y - 1].isActive) : (dC != null && dC.blocks[x, height - 1].isActive);
+                if (blockExists && !neighborExists) hasFace = true;
             }
 
             if (hasFace)
             {
-                if (startX == -1) startX = x; // Start new segment
+                if (startX == -1) startX = x;
             }
             else
             {
                 if (startX != -1)
                 {
-                    // End segment and create collider
-                    CreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), x, y + (isTop ? 1 : 0));
+                    GetOrCreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), x, y + (isTop ? 1 : 0), pool, ref poolIdx);
                     startX = -1;
                 }
             }
         }
-        // Handle segment reaching end of chunk
         if (startX != -1)
-            CreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), width, y + (isTop ? 1 : 0));
+            GetOrCreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), width, y + (isTop ? 1 : 0), pool, ref poolIdx);
     }
 
-    private void ExtractVerticalSegments(GameObject parent, int cx, int cy, int x, bool isLeft)
+    private void ExtractVerticalSegments(GameObject parent, int cx, int cy, int x, bool isLeft, ChunkData c, ChunkData lC, ChunkData rC, List<GameObject> pool, ref int poolIdx)
     {
+        int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
         int startY = -1;
 
@@ -300,13 +324,15 @@ public class MeshManager : Singleton<MeshManager>
             bool hasFace = false;
             if (isLeft)
             {
-                // Block exists at (x,y) AND No block exists at (x-1,y)
-                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x - 1, y)) hasFace = true;
+                bool blockExists = (x < width) && (c.blocks[x, y].isActive);
+                bool neighborExists = (x - 1 >= 0) ? (c.blocks[x - 1, y].isActive) : (lC != null && lC.blocks[width - 1, y].isActive);
+                if (blockExists && !neighborExists) hasFace = true;
             }
             else
             {
-                // Block exists at (x,y) AND No block exists at (x+1,y)
-                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x + 1, y)) hasFace = true;
+                bool blockExists = (x < width) && (c.blocks[x, y].isActive);
+                bool neighborExists = (x + 1 < width) ? (c.blocks[x + 1, y].isActive) : (rC != null && rC.blocks[0, y].isActive);
+                if (blockExists && !neighborExists) hasFace = true;
             }
 
             if (hasFace)
@@ -317,25 +343,37 @@ public class MeshManager : Singleton<MeshManager>
             {
                 if (startY != -1)
                 {
-                    CreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), y);
+                    GetOrCreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), y, pool, ref poolIdx);
                     startY = -1;
                 }
             }
         }
         if (startY != -1)
-            CreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), height);
+            GetOrCreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), height, pool, ref poolIdx);
     }
 
-    private void CreateEdge(GameObject parent, int cx, int cy, float x1, float y1, float x2, float y2)
+    private void GetOrCreateEdge(GameObject parent, int cx, int cy, float x1, float y1, float x2, float y2, List<GameObject> pool, ref int poolIdx)
     {
-        GameObject edgeObj = new GameObject($"Edge_{x1}_{y1}");
-        edgeObj.transform.SetParent(parent.transform);
-        edgeObj.transform.localPosition = Vector3.zero;
+        GameObject edgeObj;
 
-        EdgeCollider2D edge = edgeObj.AddComponent<EdgeCollider2D>();
+        // Reuse from pool if available
+        if (poolIdx < pool.Count)
+        {
+            edgeObj = pool[poolIdx];
+            edgeObj.SetActive(true);
+        }
+        else
+        {
+            // Create new if pool is empty
+            edgeObj = new GameObject($"Edge_{poolIdx}");
+            edgeObj.transform.SetParent(parent.transform);
+            edgeObj.transform.localPosition = Vector3.zero;
+            edgeObj.AddComponent<EdgeCollider2D>();
+        }
+        poolIdx++;
+
+        EdgeCollider2D edge = edgeObj.GetComponent<EdgeCollider2D>();
         
-        // Convert local chunk coords to world-relative coords for the edge
-        // Points are defined relative to the chunk object's position
         float worldOffsetX = cx * ChunkData.ChunkSize.x;
         float worldOffsetY = cy * ChunkData.ChunkSize.y;
 
@@ -343,9 +381,6 @@ public class MeshManager : Singleton<MeshManager>
         points[0] = new Vector2(worldOffsetX + x1, worldOffsetY + y1);
         points[1] = new Vector2(worldOffsetX + x2, worldOffsetY + y2);
         
-        // The points must be local to the chunk object
-        // Since the chunk object is at (0,0,0) in world for now (based on CreateChunkObject), 
-        // we use the calculated world positions.
         edge.points = points;
     }
 
@@ -405,7 +440,7 @@ public class MeshManager : Singleton<MeshManager>
         ChunkData chunk = MapManager.Instance.mapData.chunks[targetCX, targetCY];
         if (chunk == null) return false;
 
-        return chunk.blocks[targetX, targetY] != null;
+        return chunk.blocks[targetX, targetY].isActive;
     }
 
     #endregion

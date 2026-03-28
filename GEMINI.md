@@ -58,8 +58,13 @@ To handle thousands of tile variations efficiently without the overhead of massi
 
 ### 2. Physics & Collision
 - **Greedy Edge Collider**: Instead of using individual BoxColliders, `MeshManager` extracts exposed block faces and merges contiguous segments into a single `EdgeCollider2D`.
+- **Collider Object Pooling**: Reuses existing `EdgeCollider2D` objects instead of destroying/creating them, eliminating CPU spikes and GC pressure during world updates.
 - **Efficiency**: Reduces the number of physical segments from hundreds to just a few per chunk, significantly lowering physics engine overhead.
-- **Dynamic Update**: Colliders are automatically updated whenever a chunk is loaded or modified.
+
+### 3. Memory & Performance Optimization
+- **Struct-based BlockData**: Converted `BlockData` from a `class` to a `struct` (3 bytes: `bool isActive`, `ushort id`, `byte kindId`), reducing memory usage by over 90% and improving CPU cache locality.
+- **Mesh Object Reuse**: Reuses `Mesh` objects via `mesh.Clear()` instead of `new Mesh()`, preventing frequent Garbage Collection (GC) during chunk loading and editing.
+- **Neighbor Chunk Pre-fetching**: Optimized `MeshManager` loops by pre-loading neighbor chunk references, removing redundant dictionary lookups and coordinate math during mesh/collider generation.
 
 ### 3. World Generation
 - **MapGenerator**: Contains procedural algorithms (Perlin noise, etc.) to populate `MapManager`'s data.
