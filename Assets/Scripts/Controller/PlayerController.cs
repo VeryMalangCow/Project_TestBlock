@@ -6,6 +6,7 @@ public class PlayerController : MonoBehaviour
     #region Variable
 
     [Header("# Move")]
+    [SerializeField] private Rigidbody2D rb;
     [SerializeField] private float moveSpeed = 10f;
     
     [Header("# Interaction")]
@@ -56,7 +57,7 @@ public class PlayerController : MonoBehaviour
     private void Update()
     {
         Vector3 move = new Vector3(moveInput.x, moveInput.y, 0) * moveSpeed * Time.deltaTime;
-        transform.position += move;
+        rb.linearVelocity = move;
 
         // Right Click check (for quick prototyping if OnSecondaryFire is not set up)
         if (Mouse.current.rightButton.wasPressedThisFrame)

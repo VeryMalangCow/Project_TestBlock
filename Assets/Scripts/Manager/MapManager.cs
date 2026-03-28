@@ -100,15 +100,15 @@ public class MapManager : Singleton<MapManager>
         }
 
         // Redraw current and neighbors
-        if (RenderManager.Instance != null)
+        if (MeshManager.Instance != null)
         {
-            RenderManager.Instance.RequestChunkRedraw(cx, cy);
+            MeshManager.Instance.RequestChunkRedraw(cx, cy);
 
             // Neighbors for auto-tiling update
-            if (lx == 0) RenderManager.Instance.RequestChunkRedraw(cx - 1, cy);
-            if (lx == width - 1) RenderManager.Instance.RequestChunkRedraw(cx + 1, cy);
-            if (ly == 0) RenderManager.Instance.RequestChunkRedraw(cx, cy - 1);
-            if (ly == height - 1) RenderManager.Instance.RequestChunkRedraw(cx, cy + 1);
+            if (lx == 0) MeshManager.Instance.RequestChunkRedraw(cx - 1, cy);
+            if (lx == width - 1) MeshManager.Instance.RequestChunkRedraw(cx + 1, cy);
+            if (ly == 0) MeshManager.Instance.RequestChunkRedraw(cx, cy - 1);
+            if (ly == height - 1) MeshManager.Instance.RequestChunkRedraw(cx, cy + 1);
         }
     }
 

@@ -127,7 +127,7 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
 
     /// <summary>
     /// Returns the number of variations (kinds) for a given tile ID.
-    /// Used by RenderManager to pick a random kind.
+    /// Used by MeshManager to pick a random kind.
     /// </summary>
     public int GetTileKindCount(int tileId)
     {

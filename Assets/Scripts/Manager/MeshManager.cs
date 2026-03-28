@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class RenderManager : Singleton<RenderManager>
+public class MeshManager : Singleton<MeshManager>
 {
     #region Varialble
 
@@ -115,6 +115,7 @@ public class RenderManager : Singleton<RenderManager>
                     filter.gameObject.SetActive(true);
                     activeChunks.Add(coord, filter);
                     DrawChunk(filter, coord.x, coord.y);
+                    UpdateChunkCollider(coord.x, coord.y);
                 }
                 else
                 {
@@ -123,6 +124,7 @@ public class RenderManager : Singleton<RenderManager>
                     filter.gameObject.SetActive(true);
                     activeChunks.Add(coord, filter);
                     DrawChunk(filter, coord.x, coord.y);
+                    UpdateChunkCollider(coord.x, coord.y);
                 }
             }
         }
@@ -201,6 +203,154 @@ public class RenderManager : Singleton<RenderManager>
 
     #endregion
 
+    #region Physics (High Performance Edge)
+
+    /// <summary>
+    /// Generates the most performant EdgeCollider2D by merging contiguous exposed faces.
+    /// Call manually when needed.
+    /// </summary>
+    public void UpdateChunkCollider(int cx, int cy)
+    {
+        if (!activeChunks.TryGetValue(new Vector2Int(cx, cy), out MeshFilter filter)) return;
+        
+        ChunkData chunk = MapManager.Instance.mapData.chunks[cx, cy];
+        if (chunk == null) return;
+
+        GameObject chunkObj = filter.gameObject;
+        
+        // 1. Clean up existing colliders
+        List<GameObject> toDestroy = new List<GameObject>();
+        foreach (Transform child in chunkObj.transform)
+        {
+            if (child.name.StartsWith("Edge_"))
+                toDestroy.Add(child.gameObject);
+        }
+        foreach (var obj in toDestroy) Destroy(obj);
+
+        int width = ChunkData.ChunkSize.x;
+        int height = ChunkData.ChunkSize.y;
+
+        // 2. Greedy Edge Extraction
+        // We scan 4 directions and merge adjacent segments in the same line.
+        
+        // Horizontal Segments (Top and Bottom)
+        for (int y = 0; y <= height; y++)
+        {
+            // Top Edges (Block at y, Air at y+1)
+            ExtractHorizontalSegments(chunkObj, cx, cy, y, true);
+            // Bottom Edges (Block at y, Air at y-1)
+            ExtractHorizontalSegments(chunkObj, cx, cy, y, false);
+        }
+
+        // Vertical Segments (Left and Right)
+        for (int x = 0; x <= width; x++)
+        {
+            // Left Edges (Block at x, Air at x-1)
+            ExtractVerticalSegments(chunkObj, cx, cy, x, true);
+            // Right Edges (Block at x, Air at x+1)
+            ExtractVerticalSegments(chunkObj, cx, cy, x, false);
+        }
+    }
+
+    private void ExtractHorizontalSegments(GameObject parent, int cx, int cy, int y, bool isTop)
+    {
+        int width = ChunkData.ChunkSize.x;
+        int startX = -1;
+
+        for (int x = 0; x < width; x++)
+        {
+            bool hasFace = false;
+            if (isTop)
+            {
+                // Block exists at (x,y) AND No block exists at (x,y+1)
+                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x, y + 1)) hasFace = true;
+            }
+            else
+            {
+                // Block exists at (x,y) AND No block exists at (x,y-1)
+                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x, y - 1)) hasFace = true;
+            }
+
+            if (hasFace)
+            {
+                if (startX == -1) startX = x; // Start new segment
+            }
+            else
+            {
+                if (startX != -1)
+                {
+                    // End segment and create collider
+                    CreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), x, y + (isTop ? 1 : 0));
+                    startX = -1;
+                }
+            }
+        }
+        // Handle segment reaching end of chunk
+        if (startX != -1)
+            CreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), width, y + (isTop ? 1 : 0));
+    }
+
+    private void ExtractVerticalSegments(GameObject parent, int cx, int cy, int x, bool isLeft)
+    {
+        int height = ChunkData.ChunkSize.y;
+        int startY = -1;
+
+        for (int y = 0; y < height; y++)
+        {
+            bool hasFace = false;
+            if (isLeft)
+            {
+                // Block exists at (x,y) AND No block exists at (x-1,y)
+                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x - 1, y)) hasFace = true;
+            }
+            else
+            {
+                // Block exists at (x,y) AND No block exists at (x+1,y)
+                if (HasBlock(cx, cy, x, y) && !HasBlock(cx, cy, x + 1, y)) hasFace = true;
+            }
+
+            if (hasFace)
+            {
+                if (startY == -1) startY = y;
+            }
+            else
+            {
+                if (startY != -1)
+                {
+                    CreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), y);
+                    startY = -1;
+                }
+            }
+        }
+        if (startY != -1)
+            CreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), height);
+    }
+
+    private void CreateEdge(GameObject parent, int cx, int cy, float x1, float y1, float x2, float y2)
+    {
+        GameObject edgeObj = new GameObject($"Edge_{x1}_{y1}");
+        edgeObj.transform.SetParent(parent.transform);
+        edgeObj.transform.localPosition = Vector3.zero;
+
+        EdgeCollider2D edge = edgeObj.AddComponent<EdgeCollider2D>();
+        
+        // Convert local chunk coords to world-relative coords for the edge
+        // Points are defined relative to the chunk object's position
+        float worldOffsetX = cx * ChunkData.ChunkSize.x;
+        float worldOffsetY = cy * ChunkData.ChunkSize.y;
+
+        Vector2[] points = new Vector2[2];
+        points[0] = new Vector2(worldOffsetX + x1, worldOffsetY + y1);
+        points[1] = new Vector2(worldOffsetX + x2, worldOffsetY + y2);
+        
+        // The points must be local to the chunk object
+        // Since the chunk object is at (0,0,0) in world for now (based on CreateChunkObject), 
+        // we use the calculated world positions.
+        edge.points = points;
+    }
+
+    #endregion
+
     #region Chunk
 
     private MeshFilter CreateChunkObject(int index)
@@ -226,6 +376,7 @@ public class RenderManager : Singleton<RenderManager>
         if (activeChunks.TryGetValue(coord, out MeshFilter filter))
         {
             DrawChunk(filter, cx, cy);
+            UpdateChunkCollider(cx, cy);
         }
     }
 

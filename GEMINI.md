@@ -54,7 +54,12 @@ To handle thousands of tile variations efficiently without the overhead of massi
 ### 2. Scene Systems (Volatile)
 *Exists only within the current scene. Inherits from `Singleton<T>`.*
 - **MapManager**: Data container for the active world. Manages `MapData`, `ChunkData`, and `BlockData` structures.
-- **RenderManager**: Orchestrates chunk visibility. Implements **Sliding Window** and **Object Pooling** for mesh-based rendering.
+- **MeshManager**: Orchestrates chunk visibility and physical collider generation. Implements **Sliding Window**, **Object Pooling**, and **Greedy Edge Merging** for optimized rendering and physics.
+
+### 2. Physics & Collision
+- **Greedy Edge Collider**: Instead of using individual BoxColliders, `MeshManager` extracts exposed block faces and merges contiguous segments into a single `EdgeCollider2D`.
+- **Efficiency**: Reduces the number of physical segments from hundreds to just a few per chunk, significantly lowering physics engine overhead.
+- **Dynamic Update**: Colliders are automatically updated whenever a chunk is loaded or modified.
 
 ### 3. World Generation
 - **MapGenerator**: Contains procedural algorithms (Perlin noise, etc.) to populate `MapManager`'s data.
