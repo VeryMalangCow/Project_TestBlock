@@ -223,6 +223,37 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     #region Armor Sprite
 
     /// <summary>
+    /// Loads the static body sprite sheet (12 frames).
+    /// </summary>
+    public Sprite[] GetBodySprites()
+    {
+        string path = "Sprites/Bodies/Body";
+        Sprite[] sprites = Resources.LoadAll<Sprite>(path);
+
+        if (sprites == null || sprites.Length == 0)
+        {
+            Debug.LogWarning($"[ResourceManager] Failed to load body sprites at: {path}");
+            return null;
+        }
+
+        // Ensure we return exactly 12 sprites sorted by their index in the name (e.g., Body_0 to Body_11)
+        Sprite[] result = new Sprite[12];
+        foreach (var s in sprites)
+        {
+            string name = s.name;
+            int lastUnderscore = name.LastIndexOf('_');
+            if (lastUnderscore != -1 && int.TryParse(name.Substring(lastUnderscore + 1), out int idx))
+            {
+                if (idx >= 0 && idx < 12)
+                {
+                    result[idx] = s;
+                }
+            }
+        }
+        return result;
+    }
+
+    /// <summary>
     /// Loads an armor sprite sheet (12 frames) by category and ID.
     /// Category matches folder names: Backpacks, Cloaks, Clothes, Heads
     /// </summary>

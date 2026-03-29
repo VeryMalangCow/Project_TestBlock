@@ -61,8 +61,13 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 - **6: Ground** (Chunk meshes, world colliders, floor tiles)
 #### Tags
 - **Player** (Standard)
+
+### Rendering & Sorting Rule
+#### Sorting Layer: Default
+- **0: Map (Chunks)**: Default value (Not explicitly assigned, equals 0).
+- **1: Player**: Base Sorting Order for the Player's `Sorting Group`.
 #### Constraint
-- All new Layers or Tags must be documented here before implementation to maintain consistency.
+- All new objects requiring depth sorting must be documented here before implementation.
 
 ## Future Scalability### Proposed Strategy: Texture2DArray
 To handle thousands of tile variations efficiently without the overhead of massive Sprite Atlases or frequent draw calls, the following architecture is proposed:

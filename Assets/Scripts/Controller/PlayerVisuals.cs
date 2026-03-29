@@ -23,8 +23,6 @@ public class PlayerVisuals : MonoBehaviour
 
     [Header("### Layers")]
     [SerializeField] private List<VisualLayer> layers = new List<VisualLayer>();
-    
-    private GameObject visualsContainer;
 
     #endregion
 
@@ -32,53 +30,26 @@ public class PlayerVisuals : MonoBehaviour
 
     public void Init()
     {
-        // Create or find container
-        visualsContainer = transform.Find("Visuals")?.gameObject;
-        if (visualsContainer == null)
-        {
-            visualsContainer = new GameObject("Visuals");
-            visualsContainer.transform.SetParent(this.transform);
-            visualsContainer.transform.localPosition = Vector3.zero;
-        }
-
-        // Setup default layers if empty
-        if (layers.Count == 0)
-        {
-            AddLayer("Backpack");
-            AddLayer("Body");
-            AddLayer("Cloth");
-            AddLayer("Cloak");
-            AddLayer("Head");
-        }
-        else
-        {
-            // Ensure renderers are linked
-            foreach (var layer in layers)
-            {
-                Transform child = visualsContainer.transform.Find(layer.name);
-                if (child != null) layer.renderer = child.GetComponent<SpriteRenderer>();
-            }
-        }
-    }
-
-    private void AddLayer(string layerName)
-    {
-        GameObject go = new GameObject(layerName);
-        go.transform.SetParent(visualsContainer.transform);
-        go.transform.localPosition = Vector3.zero;
-
-        SpriteRenderer sr = go.AddComponent<SpriteRenderer>();
-
-        layers.Add(new VisualLayer 
-        { 
-            name = layerName, 
-            renderer = sr
-        });
+        // Load static body sprites
+        SetBody();
     }
 
     #endregion
 
     #region Armor Management
+
+    public void SetBody()
+    {
+        Sprite[] sheet = ResourceManager.Instance.GetBodySprites();
+        if (sheet == null) return;
+
+        VisualLayer target = layers.Find(l => l.name.Equals("Body", System.StringComparison.OrdinalIgnoreCase));
+        if (target != null)
+        {
+            target.currentSheet = sheet;
+            target.SetSprite(0);
+        }
+    }
 
     public void SetArmor(string category, int id)
     {
@@ -94,12 +65,11 @@ public class PlayerVisuals : MonoBehaviour
         if (target != null)
         {
             target.currentSheet = sheet;
-            // Set default idle sprite (frame 0)
             target.SetSprite(0);
         }
         else
         {
-            Debug.LogWarning($"[PlayerVisuals] Could not find layer named: {layerName} for category: {category}");
+            Debug.LogWarning($"[PlayerVisuals] Could not find layer named: {layerName} in the Inspector list.");
         }
     }
 

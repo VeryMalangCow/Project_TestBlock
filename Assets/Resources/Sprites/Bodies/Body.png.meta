@@ -153,7 +153,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Character_Silhouette_0
+      name: Body_0
       rect:
         serializedVersion: 2
         x: 0
@@ -168,14 +168,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 58f23403ac534cb43aef2d4c599821dc
-      internalID: 1403927721
+      spriteID: 06347f52f4da6714a9b843da5fe61a4d
+      internalID: -324673840
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_1
+      name: Body_1
       rect:
         serializedVersion: 2
         x: 17
@@ -190,14 +190,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b7a30471cc7414344b3890b37e84e152
-      internalID: 1074974432
+      spriteID: 5ee8efb5f60a2a748b2c84b55ce787fb
+      internalID: 1520563507
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_2
+      name: Body_2
       rect:
         serializedVersion: 2
         x: 34
@@ -212,14 +212,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 30b3933795898fc4094972288772246a
-      internalID: -1021729402
+      spriteID: e242eef8f32b63d4587cc58e1c9d7513
+      internalID: 2120218065
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_3
+      name: Body_3
       rect:
         serializedVersion: 2
         x: 51
@@ -234,14 +234,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6a5958faed0c56a439b5ea77e534b31c
-      internalID: -1287469607
+      spriteID: b40e1fc380254724f943a26173a2b65d
+      internalID: 1884298883
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_4
+      name: Body_4
       rect:
         serializedVersion: 2
         x: 68
@@ -256,14 +256,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f7d12b4a5432ee541b2a5a4ae8d5a10b
-      internalID: 1326066253
+      spriteID: e5cf1d9e897d8c24bbfa8dcf4eca7b64
+      internalID: -991403715
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_5
+      name: Body_5
       rect:
         serializedVersion: 2
         x: 85
@@ -278,14 +278,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9f9d7f2c9c6ce1f42bdec8a83a4a64b0
-      internalID: -1403205803
+      spriteID: e50287f28460e514ea08dee0cf06cc8b
+      internalID: -1526561212
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_6
+      name: Body_6
       rect:
         serializedVersion: 2
         x: 102
@@ -300,14 +300,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6bb1221c0fcd27f4498923b2bdb262c9
-      internalID: 1075584417
+      spriteID: eef161edd4c5c1a4a902128075bc6d55
+      internalID: -1263705066
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_7
+      name: Body_7
       rect:
         serializedVersion: 2
         x: 0
@@ -322,14 +322,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 6fdb95eb0dd251d429fdbb9f86c2ee0a
-      internalID: 478120988
+      spriteID: 2167755bb67ef6046a03eff19f321f9e
+      internalID: 1785605334
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_8
+      name: Body_8
       rect:
         serializedVersion: 2
         x: 17
@@ -344,14 +344,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 37583a986577e1b47b057e12aa485583
-      internalID: -1464140200
+      spriteID: 38d3faed05bff6b4ca6a3f9ba199c8f4
+      internalID: 1988779105
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_9
+      name: Body_9
       rect:
         serializedVersion: 2
         x: 34
@@ -366,14 +366,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9e593a31cc5dd794681485a75d431f90
-      internalID: 912572338
+      spriteID: 80a28ed531edc8d48a93a147a53af5c9
+      internalID: -537973263
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_10
+      name: Body_10
       rect:
         serializedVersion: 2
         x: 51
@@ -388,14 +388,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ac53e78f9cb8edc4bae4ef1db9ce557d
-      internalID: 164746575
+      spriteID: a8ae396485853054085a2bc55883438a
+      internalID: 446638447
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Character_Silhouette_11
+      name: Body_11
       rect:
         serializedVersion: 2
         x: 68
@@ -410,8 +410,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d94003dda04116e4494b849cfb88dc71
-      internalID: -2081845288
+      spriteID: 08c5b8e8eada0d541b01b8fba4952630
+      internalID: -28462735
       vertices: []
       indices: 
       edges: []
@@ -432,18 +432,18 @@ TextureImporter:
       - key: SpriteEditor.SliceSettings
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":16.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":1.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Character_Silhouette_0: 1403927721
-      Character_Silhouette_1: 1074974432
-      Character_Silhouette_10: 164746575
-      Character_Silhouette_11: -2081845288
-      Character_Silhouette_2: -1021729402
-      Character_Silhouette_3: -1287469607
-      Character_Silhouette_4: 1326066253
-      Character_Silhouette_5: -1403205803
-      Character_Silhouette_6: 1075584417
-      Character_Silhouette_7: 478120988
-      Character_Silhouette_8: -1464140200
-      Character_Silhouette_9: 912572338
+      Body_0: -324673840
+      Body_1: 1520563507
+      Body_10: 446638447
+      Body_11: -28462735
+      Body_2: 2120218065
+      Body_3: 1884298883
+      Body_4: -991403715
+      Body_5: -1526561212
+      Body_6: -1263705066
+      Body_7: 1785605334
+      Body_8: 1988779105
+      Body_9: -537973263
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
