@@ -115,4 +115,25 @@ public class MapManager : Singleton<MapManager>
     }
 
     #endregion
+
+    #region Utility
+
+    /// <summary>
+    /// Returns a world position based on the ratio of the total map size.
+    /// </summary>
+    /// <param name="ratioX">X ratio (0-100)</param>
+    /// <param name="ratioY">Y ratio (0-100)</param>
+    /// <returns>Calculated world position</returns>
+    public Vector2 GetPositionByRatio(float ratioX, float ratioY)
+    {
+        int totalWidth = MapData.MapSize.x * ChunkData.ChunkSize.x;
+        int totalHeight = MapData.MapSize.y * ChunkData.ChunkSize.y;
+
+        float x = (ratioX / 100f) * totalWidth;
+        float y = (ratioY / 100f) * totalHeight;
+
+        return new Vector2(x, y);
+    }
+
+    #endregion
 }

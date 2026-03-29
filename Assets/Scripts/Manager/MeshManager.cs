@@ -368,6 +368,7 @@ public class MeshManager : Singleton<MeshManager>
             edgeObj = new GameObject($"Edge_{poolIdx}");
             edgeObj.transform.SetParent(parent.transform);
             edgeObj.transform.localPosition = Vector3.zero;
+            edgeObj.layer = LayerMask.NameToLayer("Ground");
             edgeObj.AddComponent<EdgeCollider2D>();
         }
         poolIdx++;
@@ -392,6 +393,7 @@ public class MeshManager : Singleton<MeshManager>
     {
         GameObject chunkObj = new GameObject($"Chunk_Pool_{index}");
         chunkObj.transform.SetParent(this.transform);
+        chunkObj.layer = LayerMask.NameToLayer("Ground");
         chunkObj.SetActive(false);
 
         MeshFilter mf = chunkObj.AddComponent<MeshFilter>();

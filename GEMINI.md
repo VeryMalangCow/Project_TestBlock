@@ -34,8 +34,23 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 - **Naming Convention:** `Tile_ID(4 digit: Tile Id)_ID(2 digit: kind of tile Id)` (e.g., `Tile_0000_00`)
 - **Rendering Constraint:** Multi-variation rendering within a single chunk mesh requires all tile sprites to be packed into a single **Sprite Atlas**.
 
-## Future Scalability
-### Proposed Strategy: Texture2DArray
+### Map Rule
+#### Rule: Chunk Rule
+- **Physics Layer:** All chunk meshes and generated collider objects must be assigned to the **Ground** layer (Index 6).
+- **Collider Type:** Optimized `EdgeCollider2D` generated via `MeshManager`'s Greedy Edge Merging algorithm.
+- **Tunneling Prevention:** Any high-speed entity (including `PlayerController`) must use `CollisionDetectionMode2D.Continuous` to prevent tunneling through thin `EdgeCollider2D`.
+- **Optimization:** Both mesh objects and `EdgeCollider2D` objects must utilize **Object Pooling** to prevent GC spikes during sliding window updates.
+
+### Tag & Layer Rule
+#### Layers
+- **0: Default** (Standard)
+- **6: Ground** (Chunk meshes, world colliders, floor tiles)
+#### Tags
+- **Player** (Standard)
+#### Constraint
+- All new Layers or Tags must be documented here before implementation to maintain consistency.
+
+## Future Scalability### Proposed Strategy: Texture2DArray
 To handle thousands of tile variations efficiently without the overhead of massive Sprite Atlases or frequent draw calls, the following architecture is proposed:
 1. **Automated Baking Tool:** An Editor script to bake individual 8x8 sprites into a `Texture2DArray` asset.
 2. **Custom Shader:** A URP-compatible shader that reads tile indices from vertex data to index into the `Texture2DArray`.
