@@ -219,4 +219,47 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     }
 
     #endregion
+
+    #region Armor Sprite
+
+    /// <summary>
+    /// Loads an armor sprite sheet (12 frames) by category and ID.
+    /// Category matches folder names: Backpacks, Cloaks, Clothes, Heads
+    /// </summary>
+    public Sprite[] GetArmorSprites(string category, int id)
+    {
+        // Map plural category folder to singular file prefix
+        string filePrefix = category;
+        if (category.Equals("Clothes", StringComparison.OrdinalIgnoreCase)) filePrefix = "Cloth";
+        else if (category.EndsWith("s", StringComparison.OrdinalIgnoreCase)) filePrefix = category.Substring(0, category.Length - 1);
+
+        string idStr = id.ToString("D4");
+        string path = $"Sprites/Armors/{category}/{filePrefix}_{idStr}";
+        
+        Sprite[] sprites = Resources.LoadAll<Sprite>(path);
+
+        if (sprites == null || sprites.Length == 0)
+        {
+            Debug.LogWarning($"[ResourceManager] Failed to load armor sprites at: {path}");
+            return null;
+        }
+        
+        // Ensure we return exactly 12 sprites sorted by their index in the name (e.g., _0 to _11)
+        Sprite[] result = new Sprite[12];
+        foreach (var s in sprites)
+        {
+            string name = s.name;
+            int lastUnderscore = name.LastIndexOf('_');
+            if (lastUnderscore != -1 && int.TryParse(name.Substring(lastUnderscore + 1), out int idx))
+            {
+                if (idx >= 0 && idx < 12)
+                {
+                    result[idx] = s;
+                }
+            }
+        }
+        return result;
+    }
+
+    #endregion
 }

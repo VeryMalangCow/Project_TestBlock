@@ -8,12 +8,7 @@ public class PlayerController : MonoBehaviour
     [Header("### Components")]
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private BoxCollider2D col;
-    [SerializeField] private SpriteRenderer spriteRenderer;
-    [SerializeField] private Animator animator;
-
-    [Header("### Visuals")]
-    [SerializeField] private Sprite idleSprite;
-    [SerializeField] private Sprite jumpSprite;
+    [SerializeField] private PlayerVisuals visuals;
 
     [Header("### Move")]
     [SerializeField] private float moveSpeed = 8f;
@@ -32,6 +27,10 @@ public class PlayerController : MonoBehaviour
     private Vector2 moveInput;
     private bool isGrounded;
     private bool jumpRequest;
+
+    // Animation state
+    private float walkCycleTime;
+    [SerializeField] private float walkAnimSpeedMultiplier = 2f;
 
     #endregion
 
@@ -56,7 +55,18 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
-        transform.position = MapManager.Instance.GetPositionByRatio(50f, 60f);    
+        transform.position = MapManager.Instance.GetPositionByRatio(50f, 60f);
+
+        if (visuals != null)
+        {
+            visuals.Init();
+            // Test: Load default body and some equipment
+            // Categories: Backpacks, Cloaks, Clothes, Heads
+            visuals.SetArmor("Clothes", 0);
+            visuals.SetArmor("Backpacks", 0);
+            visuals.SetArmor("Heads", 0);
+            visuals.SetArmor("Cloaks", 0);
+        }
     }
 
     private void Update()
@@ -78,41 +88,42 @@ public class PlayerController : MonoBehaviour
 
     private void UpdateVisuals()
     {
-        if (spriteRenderer == null) return;
+        if (visuals == null) return;
 
-        // Flip sprite based on movement direction
+        // Flip visuals based on movement direction
         if (Mathf.Abs(moveInput.x) > 0.01f)
         {
-            spriteRenderer.flipX = moveInput.x < 0;
+            visuals.SetFlip(moveInput.x < 0);
         }
 
-        // Handle Animation and Sprites
+        int targetFrame = 0;
+
         if (!isGrounded)
         {
-            // Jump State
-            if (animator != null) animator.enabled = false;
-            if (jumpSprite != null) spriteRenderer.sprite = jumpSprite;
+            // Jump State (Frame 10)
+            targetFrame = 10;
+            walkCycleTime = 0; // Reset walk cycle
         }
         else
         {
-            // Ground State
-            float currentSpeed = Mathf.Abs(rb.linearVelocity.x);
-            if (currentSpeed > 0.1f)
+            float currentHorizontalSpeed = Mathf.Abs(rb.linearVelocity.x);
+            
+            if (currentHorizontalSpeed > 0.1f)
             {
-                // Walking State
-                if (animator != null)
-                {
-                    animator.enabled = true;
-                    animator.SetFloat("MoveSpeed", currentSpeed);
-                }
+                // Walk Animation (Frames 0-9)
+                // Cycle index based on speed and time
+                walkCycleTime += Time.deltaTime * currentHorizontalSpeed * walkAnimSpeedMultiplier;
+                targetFrame = Mathf.FloorToInt(walkCycleTime) % 10;
             }
             else
             {
-                // Idle State
-                if (animator != null) animator.enabled = false;
-                if (idleSprite != null) spriteRenderer.sprite = idleSprite;
+                // Idle State (Frame 0)
+                targetFrame = 0;
+                walkCycleTime = 0;
             }
         }
+
+        visuals.SyncAnimation(targetFrame);
     }
 
     #endregion
