@@ -1,55 +1,43 @@
 fileFormatVersion: 2
-guid: 27208ec375bd86d449073cac94329f59
+guid: 2fcac1a795f75e744bb9ea62927b4b94
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3451104072149799225
-    second: Tile_0000_03_0
+      213: 6122115350620471529
+    second: Cloak_0000_0
   - first:
-      213: -3872614004282160243
-    second: Tile_0000_03_1
+      213: -5167131131383720951
+    second: Cloak_0000_1
   - first:
-      213: 7499487592356740403
-    second: Tile_0000_03_2
+      213: 6259352157239856881
+    second: Cloak_0000_2
   - first:
-      213: 285621761845088963
-    second: Tile_0000_03_3
+      213: -7626559527644462381
+    second: Cloak_0000_3
   - first:
-      213: 4728308092616212754
-    second: Tile_0000_03_4
+      213: -5143588555532608955
+    second: Cloak_0000_4
   - first:
-      213: 5842030632519227717
-    second: Tile_0000_03_5
+      213: -6274649208013587845
+    second: Cloak_0000_5
   - first:
-      213: -8546551109247094810
-    second: Tile_0000_03_6
+      213: -4246077759795704411
+    second: Cloak_0000_6
   - first:
-      213: 2517055412200047221
-    second: Tile_0000_03_7
+      213: 6746399497182655901
+    second: Cloak_0000_7
   - first:
-      213: 3335593440860738979
-    second: Tile_0000_03_8
+      213: -2792332697939756599
+    second: Cloak_0000_8
   - first:
-      213: 1712855131588501021
-    second: Tile_0000_03_9
+      213: 4896047469563843176
+    second: Cloak_0000_9
   - first:
-      213: 487208136928400637
-    second: Tile_0000_03_10
+      213: -4489406461310587647
+    second: Cloak_0000_10
   - first:
-      213: 8147837041570237748
-    second: Tile_0000_03_11
-  - first:
-      213: -87243207205830579
-    second: Tile_0000_03_12
-  - first:
-      213: 8564415382198456466
-    second: Tile_0000_03_13
-  - first:
-      213: -1444949386536229374
-    second: Tile_0000_03_14
-  - first:
-      213: 8869607794691677600
-    second: Tile_0000_03_15
+      213: -1148355227966768477
+    second: Cloak_0000_11
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -69,7 +57,7 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-  isReadable: 1
+  isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -79,7 +67,7 @@ TextureImporter:
   cubemapConvolution: 0
   seamlessCubemap: 0
   textureFormat: 1
-  maxTextureSize: 64
+  maxTextureSize: 128
   textureSettings:
     serializedVersion: 2
     filterMode: 0
@@ -117,7 +105,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -130,7 +118,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Standalone
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -143,7 +131,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -156,7 +144,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: iOS
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -171,353 +159,265 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Tile_0000_03_0
+      name: Cloak_0000_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 27
-        width: 8
-        height: 8
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7ce6b9091273b10d0800000000000000
-      internalID: -3451104072149799225
+      spriteID: 9e003bb997f16f450800000000000000
+      internalID: 6122115350620471529
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_1
+      name: Cloak_0000_1
       rect:
         serializedVersion: 2
-        x: 9
-        y: 27
-        width: 8
-        height: 8
+        x: 17
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d8b0f82c416b14ac0800000000000000
-      internalID: -3872614004282160243
+      spriteID: 904d206dc99aa48b0800000000000000
+      internalID: -5167131131383720951
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_2
+      name: Cloak_0000_2
       rect:
         serializedVersion: 2
-        x: 18
-        y: 27
-        width: 8
-        height: 8
+        x: 34
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 33d7fd33b38831860800000000000000
-      internalID: 7499487592356740403
+      spriteID: 1fe4b50af9fadd650800000000000000
+      internalID: 6259352157239856881
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_3
+      name: Cloak_0000_3
       rect:
         serializedVersion: 2
-        x: 27
-        y: 27
-        width: 8
-        height: 8
+        x: 51
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3c2d5e6aa7bb6f300800000000000000
-      internalID: 285621761845088963
+      spriteID: 3d281605484092690800000000000000
+      internalID: -7626559527644462381
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_4
+      name: Cloak_0000_4
       rect:
         serializedVersion: 2
-        x: 0
-        y: 18
-        width: 8
-        height: 8
+        x: 68
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2118ef898235e9140800000000000000
-      internalID: 4728308092616212754
+      spriteID: 54ad6bce57d4e98b0800000000000000
+      internalID: -5143588555532608955
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_5
+      name: Cloak_0000_5
       rect:
         serializedVersion: 2
-        x: 9
-        y: 18
-        width: 8
-        height: 8
+        x: 85
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 549524a68ef031150800000000000000
-      internalID: 5842030632519227717
+      spriteID: b7af9223ac7fbe8a0800000000000000
+      internalID: -6274649208013587845
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_6
+      name: Cloak_0000_6
       rect:
         serializedVersion: 2
-        x: 18
-        y: 18
-        width: 8
-        height: 8
+        x: 102
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6ef2b963c0d846980800000000000000
-      internalID: -8546551109247094810
+      spriteID: 5adc0be26c6e215c0800000000000000
+      internalID: -4246077759795704411
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_7
-      rect:
-        serializedVersion: 2
-        x: 27
-        y: 18
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 572882cbf806ee220800000000000000
-      internalID: 2517055412200047221
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_8
+      name: Cloak_0000_7
       rect:
         serializedVersion: 2
         x: 0
-        y: 9
-        width: 8
-        height: 8
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3a590adcf886a4e20800000000000000
-      internalID: 3335593440860738979
+      spriteID: d953276499600ad50800000000000000
+      internalID: 6746399497182655901
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_9
+      name: Cloak_0000_8
       rect:
         serializedVersion: 2
-        x: 9
-        y: 9
-        width: 8
-        height: 8
+        x: 17
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d1e9906caa845c710800000000000000
-      internalID: 1712855131588501021
+      spriteID: 9c9b794a434af39d0800000000000000
+      internalID: -2792332697939756599
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_10
+      name: Cloak_0000_9
       rect:
         serializedVersion: 2
-        x: 18
-        y: 9
-        width: 8
-        height: 8
+        x: 34
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: df41c4d1839e2c600800000000000000
-      internalID: 487208136928400637
+      spriteID: 8629dc2bb3142f340800000000000000
+      internalID: 4896047469563843176
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_11
+      name: Cloak_0000_10
       rect:
         serializedVersion: 2
-        x: 27
-        y: 9
-        width: 8
-        height: 8
+        x: 51
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 43d4096ce9ee21170800000000000000
-      internalID: 8147837041570237748
+      spriteID: 10d2d3dfb9c62b1c0800000000000000
+      internalID: -4489406461310587647
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_12
+      name: Cloak_0000_11
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 8
-        height: 8
+        x: 68
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d404e69e3cc0acef0800000000000000
-      internalID: -87243207205830579
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_13
-      rect:
-        serializedVersion: 2
-        x: 9
-        y: 0
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 29094d4f96aead670800000000000000
-      internalID: 8564415382198456466
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_14
-      rect:
-        serializedVersion: 2
-        x: 18
-        y: 0
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 206e619403282fbe0800000000000000
-      internalID: -1444949386536229374
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_15
-      rect:
-        serializedVersion: 2
-        x: 27
-        y: 0
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0ad12abcb4d271b70800000000000000
-      internalID: 8869607794691677600
+      spriteID: 3aaf31121093010f0800000000000000
+      internalID: -1148355227966768477
       vertices: []
       indices: 
       edges: []
@@ -534,24 +434,22 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":16.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":1.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Tile_0000_03_0: -3451104072149799225
-      Tile_0000_03_1: -3872614004282160243
-      Tile_0000_03_10: 487208136928400637
-      Tile_0000_03_11: 8147837041570237748
-      Tile_0000_03_12: -87243207205830579
-      Tile_0000_03_13: 8564415382198456466
-      Tile_0000_03_14: -1444949386536229374
-      Tile_0000_03_15: 8869607794691677600
-      Tile_0000_03_2: 7499487592356740403
-      Tile_0000_03_3: 285621761845088963
-      Tile_0000_03_4: 4728308092616212754
-      Tile_0000_03_5: 5842030632519227717
-      Tile_0000_03_6: -8546551109247094810
-      Tile_0000_03_7: 2517055412200047221
-      Tile_0000_03_8: 3335593440860738979
-      Tile_0000_03_9: 1712855131588501021
+      Cloak_0000_0: 6122115350620471529
+      Cloak_0000_1: -5167131131383720951
+      Cloak_0000_10: -4489406461310587647
+      Cloak_0000_11: -1148355227966768477
+      Cloak_0000_2: 6259352157239856881
+      Cloak_0000_3: -7626559527644462381
+      Cloak_0000_4: -5143588555532608955
+      Cloak_0000_5: -6274649208013587845
+      Cloak_0000_6: -4246077759795704411
+      Cloak_0000_7: 6746399497182655901
+      Cloak_0000_8: -2792332697939756599
+      Cloak_0000_9: 4896047469563843176
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -1,55 +1,43 @@
 fileFormatVersion: 2
-guid: 27208ec375bd86d449073cac94329f59
+guid: 7263ea1e3425dfc47970348fc23d54a9
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3451104072149799225
-    second: Tile_0000_03_0
+      213: 7604865837758644308
+    second: Backpack_0000_0
   - first:
-      213: -3872614004282160243
-    second: Tile_0000_03_1
+      213: 7402698967161887998
+    second: Backpack_0000_1
   - first:
-      213: 7499487592356740403
-    second: Tile_0000_03_2
+      213: -3618953673632261178
+    second: Backpack_0000_2
   - first:
-      213: 285621761845088963
-    second: Tile_0000_03_3
+      213: 1858035708528036508
+    second: Backpack_0000_3
   - first:
-      213: 4728308092616212754
-    second: Tile_0000_03_4
+      213: 4942469450366338884
+    second: Backpack_0000_4
   - first:
-      213: 5842030632519227717
-    second: Tile_0000_03_5
+      213: 3463183743816388230
+    second: Backpack_0000_5
   - first:
-      213: -8546551109247094810
-    second: Tile_0000_03_6
+      213: -1485789173421254126
+    second: Backpack_0000_6
   - first:
-      213: 2517055412200047221
-    second: Tile_0000_03_7
+      213: -3930036923541264331
+    second: Backpack_0000_7
   - first:
-      213: 3335593440860738979
-    second: Tile_0000_03_8
+      213: 2148167881443126912
+    second: Backpack_0000_8
   - first:
-      213: 1712855131588501021
-    second: Tile_0000_03_9
+      213: -6085331388184530595
+    second: Backpack_0000_9
   - first:
-      213: 487208136928400637
-    second: Tile_0000_03_10
+      213: -2666582271299773952
+    second: Backpack_0000_10
   - first:
-      213: 8147837041570237748
-    second: Tile_0000_03_11
-  - first:
-      213: -87243207205830579
-    second: Tile_0000_03_12
-  - first:
-      213: 8564415382198456466
-    second: Tile_0000_03_13
-  - first:
-      213: -1444949386536229374
-    second: Tile_0000_03_14
-  - first:
-      213: 8869607794691677600
-    second: Tile_0000_03_15
+      213: -3627483468063554522
+    second: Backpack_0000_11
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -69,7 +57,7 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-  isReadable: 1
+  isReadable: 0
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -79,7 +67,7 @@ TextureImporter:
   cubemapConvolution: 0
   seamlessCubemap: 0
   textureFormat: 1
-  maxTextureSize: 64
+  maxTextureSize: 128
   textureSettings:
     serializedVersion: 2
     filterMode: 0
@@ -117,7 +105,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -130,7 +118,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Standalone
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -143,7 +131,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -156,7 +144,7 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: iOS
-    maxTextureSize: 64
+    maxTextureSize: 128
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -171,353 +159,265 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Tile_0000_03_0
+      name: Backpack_0000_0
       rect:
         serializedVersion: 2
         x: 0
-        y: 27
-        width: 8
-        height: 8
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 7ce6b9091273b10d0800000000000000
-      internalID: -3451104072149799225
+      spriteID: 4508b18ef29e98960800000000000000
+      internalID: 7604865837758644308
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_1
+      name: Backpack_0000_1
       rect:
         serializedVersion: 2
-        x: 9
-        y: 27
-        width: 8
-        height: 8
+        x: 17
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d8b0f82c416b14ac0800000000000000
-      internalID: -3872614004282160243
+      spriteID: efcd5dc4d7babb660800000000000000
+      internalID: 7402698967161887998
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_2
+      name: Backpack_0000_2
       rect:
         serializedVersion: 2
-        x: 18
-        y: 27
-        width: 8
-        height: 8
+        x: 34
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 33d7fd33b38831860800000000000000
-      internalID: 7499487592356740403
+      spriteID: 6cbdd80dec4e6cdc0800000000000000
+      internalID: -3618953673632261178
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_3
+      name: Backpack_0000_3
       rect:
         serializedVersion: 2
-        x: 27
-        y: 27
-        width: 8
-        height: 8
+        x: 51
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3c2d5e6aa7bb6f300800000000000000
-      internalID: 285621761845088963
+      spriteID: c9a0ec2f1a119c910800000000000000
+      internalID: 1858035708528036508
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_4
+      name: Backpack_0000_4
       rect:
         serializedVersion: 2
-        x: 0
-        y: 18
-        width: 8
-        height: 8
+        x: 68
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 2118ef898235e9140800000000000000
-      internalID: 4728308092616212754
+      spriteID: 4474e4e57cd279440800000000000000
+      internalID: 4942469450366338884
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_5
+      name: Backpack_0000_5
       rect:
         serializedVersion: 2
-        x: 9
-        y: 18
-        width: 8
-        height: 8
+        x: 85
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 549524a68ef031150800000000000000
-      internalID: 5842030632519227717
+      spriteID: 68e451a2443bf0030800000000000000
+      internalID: 3463183743816388230
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_6
+      name: Backpack_0000_6
       rect:
         serializedVersion: 2
-        x: 18
-        y: 18
-        width: 8
-        height: 8
+        x: 102
+        y: 112
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 6ef2b963c0d846980800000000000000
-      internalID: -8546551109247094810
+      spriteID: 21ada1b6e9a616be0800000000000000
+      internalID: -1485789173421254126
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_7
-      rect:
-        serializedVersion: 2
-        x: 27
-        y: 18
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 572882cbf806ee220800000000000000
-      internalID: 2517055412200047221
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_8
+      name: Backpack_0000_7
       rect:
         serializedVersion: 2
         x: 0
-        y: 9
-        width: 8
-        height: 8
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 3a590adcf886a4e20800000000000000
-      internalID: 3335593440860738979
+      spriteID: 53867228d34b579c0800000000000000
+      internalID: -3930036923541264331
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_9
+      name: Backpack_0000_8
       rect:
         serializedVersion: 2
-        x: 9
-        y: 9
-        width: 8
-        height: 8
+        x: 17
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d1e9906caa845c710800000000000000
-      internalID: 1712855131588501021
+      spriteID: 08e22538e43dfcd10800000000000000
+      internalID: 2148167881443126912
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_10
+      name: Backpack_0000_9
       rect:
         serializedVersion: 2
-        x: 18
-        y: 9
-        width: 8
-        height: 8
+        x: 34
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: df41c4d1839e2c600800000000000000
-      internalID: 487208136928400637
+      spriteID: d51f9ba085f8c8ba0800000000000000
+      internalID: -6085331388184530595
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_11
+      name: Backpack_0000_10
       rect:
         serializedVersion: 2
-        x: 27
-        y: 9
-        width: 8
-        height: 8
+        x: 51
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: 43d4096ce9ee21170800000000000000
-      internalID: 8147837041570237748
+      spriteID: 00a92da6d856efad0800000000000000
+      internalID: -2666582271299773952
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tile_0000_03_12
+      name: Backpack_0000_11
       rect:
         serializedVersion: 2
-        x: 0
-        y: 0
-        width: 8
-        height: 8
+        x: 68
+        y: 95
+        width: 16
+        height: 16
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: -1
       bones: []
-      spriteID: d404e69e3cc0acef0800000000000000
-      internalID: -87243207205830579
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_13
-      rect:
-        serializedVersion: 2
-        x: 9
-        y: 0
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 29094d4f96aead670800000000000000
-      internalID: 8564415382198456466
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_14
-      rect:
-        serializedVersion: 2
-        x: 18
-        y: 0
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 206e619403282fbe0800000000000000
-      internalID: -1444949386536229374
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Tile_0000_03_15
-      rect:
-        serializedVersion: 2
-        x: 27
-        y: 0
-        width: 8
-        height: 8
-      alignment: 0
-      pivot: {x: 0, y: 0}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: -1
-      bones: []
-      spriteID: 0ad12abcb4d271b70800000000000000
-      internalID: 8869607794691677600
+      spriteID: 6244879410798adc0800000000000000
+      internalID: -3627483468063554522
       vertices: []
       indices: 
       edges: []
@@ -526,7 +426,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: a1c1686b158b78d498b7a50e5d8c8839
     internalID: 0
     vertices: []
     indices: 
@@ -534,24 +434,22 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries: []
+      entries:
+      - key: SpriteEditor.SliceSettings
+        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":16.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":1.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
-      Tile_0000_03_0: -3451104072149799225
-      Tile_0000_03_1: -3872614004282160243
-      Tile_0000_03_10: 487208136928400637
-      Tile_0000_03_11: 8147837041570237748
-      Tile_0000_03_12: -87243207205830579
-      Tile_0000_03_13: 8564415382198456466
-      Tile_0000_03_14: -1444949386536229374
-      Tile_0000_03_15: 8869607794691677600
-      Tile_0000_03_2: 7499487592356740403
-      Tile_0000_03_3: 285621761845088963
-      Tile_0000_03_4: 4728308092616212754
-      Tile_0000_03_5: 5842030632519227717
-      Tile_0000_03_6: -8546551109247094810
-      Tile_0000_03_7: 2517055412200047221
-      Tile_0000_03_8: 3335593440860738979
-      Tile_0000_03_9: 1712855131588501021
+      Backpack_0000_0: 7604865837758644308
+      Backpack_0000_1: 7402698967161887998
+      Backpack_0000_10: -2666582271299773952
+      Backpack_0000_11: -3627483468063554522
+      Backpack_0000_2: -3618953673632261178
+      Backpack_0000_3: 1858035708528036508
+      Backpack_0000_4: 4942469450366338884
+      Backpack_0000_5: 3463183743816388230
+      Backpack_0000_6: -1485789173421254126
+      Backpack_0000_7: -3930036923541264331
+      Backpack_0000_8: 2148167881443126912
+      Backpack_0000_9: -6085331388184530595
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -21,18 +21,32 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 
 ## Rules
 ### Sprite Rule
-#### Rule: TileSpriteRule
 - **Filter Mode:** Point (No filter)
-- **Max Size:** 64
 - **Compression:** None
+- **Generate Physics Shape:** Disabled (To optimize import time and physics performance)
+- **Mesh Type:** Full Rect (Recommended for tile-based consistency)
+- **Alpha Is Transparency:** Enabled
+- **sRGB (Color Texture):** Enabled
+
+#### Rule: TileSpriteRule
+- **Max Size:** 64
 - **Slicing:** Grid by Cell Size
   - **Cell Size:** 8 x 8
   - **Offset:** 0, 1
   - **Padding:** 1, 1
 - **Read/Write:** Enabled (Required for Texture2DArray baking)
 - **Location:** `Assets\Resources\Sprites\Tiles`
-- **Naming Convention:** `Tile_ID(4 digit: Tile Id)_ID(2 digit: kind of tile Id)` (e.g., `Tile_0000_00`)
+- **Naming Convention:** `Tile_[ID(4 digit)]_[KindID(2 digit)]` (e.g., `Tile_0000_00`)
 - **Rendering Constraint:** Multi-variation rendering within a single chunk mesh requires all tile sprites to be packed into a single **Sprite Atlas**.
+
+#### Rule: ArmorSpriteRule
+- **Max Size:** 128
+- **Slicing:** Grid by Cell Size
+  - **Cell Size:** 16 x 16
+  - **Offset:** 0, 0
+  - **Padding:** 1, 1
+- **Location:** `Assets\Resources\Sprites\Armors` (Including subfolders: `Backpacks`, `Cloaks`, `Clothes`, `Heads`)
+- **Naming Convention:** `[Category]_[ID(4 digit)]` (e.g., `Backpack_0000`, `Cloak_0000`, `Cloth_0000`, `Head_0000`)
 
 ### Map Rule
 #### Rule: Chunk Rule

@@ -8,6 +8,12 @@ public class PlayerController : MonoBehaviour
     [Header("### Components")]
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private BoxCollider2D col;
+    [SerializeField] private SpriteRenderer spriteRenderer;
+    [SerializeField] private Animator animator;
+
+    [Header("### Visuals")]
+    [SerializeField] private Sprite idleSprite;
+    [SerializeField] private Sprite jumpSprite;
 
     [Header("### Move")]
     [SerializeField] private float moveSpeed = 8f;
@@ -57,6 +63,7 @@ public class PlayerController : MonoBehaviour
     {
         CheckGrounded();
         HandleInteraction();
+        UpdateVisuals();
     }
 
     private void FixedUpdate()
@@ -67,13 +74,62 @@ public class PlayerController : MonoBehaviour
 
     #endregion
 
+    #region Visuals
+
+    private void UpdateVisuals()
+    {
+        if (spriteRenderer == null) return;
+
+        // Flip sprite based on movement direction
+        if (Mathf.Abs(moveInput.x) > 0.01f)
+        {
+            spriteRenderer.flipX = moveInput.x < 0;
+        }
+
+        // Handle Animation and Sprites
+        if (!isGrounded)
+        {
+            // Jump State
+            if (animator != null) animator.enabled = false;
+            if (jumpSprite != null) spriteRenderer.sprite = jumpSprite;
+        }
+        else
+        {
+            // Ground State
+            float currentSpeed = Mathf.Abs(rb.linearVelocity.x);
+            if (currentSpeed > 0.1f)
+            {
+                // Walking State
+                if (animator != null)
+                {
+                    animator.enabled = true;
+                    animator.SetFloat("MoveSpeed", currentSpeed);
+                }
+            }
+            else
+            {
+                // Idle State
+                if (animator != null) animator.enabled = false;
+                if (idleSprite != null) spriteRenderer.sprite = idleSprite;
+            }
+        }
+    }
+
+    #endregion
+
     #region Physics Move
 
     private void CheckGrounded()
     {
-        // Simple ground check using a small overlap circle at feet
-        Vector2 feetPos = new Vector2(transform.position.x, col.bounds.min.y);
-        isGrounded = Physics2D.OverlapCircle(feetPos, groundCheckRadius, groundLayer);
+        if (col == null) return;
+
+        // Calculate a box that is slightly narrower than the player to avoid wall friction
+        // but covers the feet area.
+        float boxWidth = col.bounds.size.x * 0.9f; 
+        float boxHeight = groundCheckRadius;
+        Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
+
+        isGrounded = Physics2D.OverlapBox(boxCenter, new Vector2(boxWidth, boxHeight), 0f, groundLayer);
     }
 
     private void HandleHorizontalMovement()
@@ -142,9 +198,13 @@ public class PlayerController : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (col == null) return;
-        Vector2 feetPos = new Vector2(transform.position.x, col.bounds.min.y);
+        
+        float boxWidth = col.bounds.size.x * 0.9f;
+        float boxHeight = groundCheckRadius;
+        Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
+
         Gizmos.color = isGrounded ? Color.green : Color.red;
-        Gizmos.DrawWireSphere(feetPos, groundCheckRadius);
+        Gizmos.DrawWireCube(boxCenter, new Vector3(boxWidth, boxHeight, 0));
     }
 
     #endregion
