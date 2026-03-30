@@ -87,6 +87,7 @@ public class PlayerVisuals : MonoBehaviour
 
     public void SetFlip(bool flipX)
     {
+        IsFlipped = flipX;
         foreach (var layer in layers)
         {
             if (layer.renderer != null)
@@ -95,6 +96,8 @@ public class PlayerVisuals : MonoBehaviour
             }
         }
     }
+
+    public bool IsFlipped { get; private set; }
 
     #endregion
 }

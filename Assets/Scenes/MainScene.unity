@@ -154,14 +154,19 @@ MonoBehaviour:
   rb: {fileID: 3308929}
   col: {fileID: 1980429809}
   visuals: {fileID: 1128727100}
-  moveSpeed: 16
-  acceleration: 100
-  deceleration: 400
-  jumpForce: 20
+  moveSpeed: 8
+  acceleration: 300
+  deceleration: 600
+  jumpForce: 12
+  dashSpeed: 12
+  dashDuration: 0.3
+  dashCooldown: 1
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
   groundCheckRadius: 0.2
+  stepHeight: 1.2
+  stepCheckDistance: 0.1
   selectedBlockId: 0
   interactRange: 6
   walkAnimSpeedMultiplier: 2

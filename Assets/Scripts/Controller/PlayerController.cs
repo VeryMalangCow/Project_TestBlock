@@ -16,9 +16,20 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float deceleration = 40f;
     [SerializeField] private float jumpForce = 12f;
 
+    [Header("### Dash")]
+    [SerializeField] private float dashSpeed = 25f;
+    [SerializeField] private float dashDuration = 0.2f;
+    [SerializeField] private float dashCooldown = 0.5f;
+    private bool isDashing;
+    private float dashTimeLeft;
+    private float dashCooldownTimer;
+    private float dashDirection;
+
     [Header("### Physics")]
     [SerializeField] private LayerMask groundLayer;
     [SerializeField] private float groundCheckRadius = 0.2f;
+    [SerializeField] private float stepHeight = 1.1f; // Slightly more than 1 block
+    [SerializeField] private float stepCheckDistance = 0.1f;
 
     [Header("### Interaction")]
     [SerializeField] private int selectedBlockId = 0;
@@ -43,9 +54,25 @@ public class PlayerController : MonoBehaviour
 
     public void OnJump(InputValue value)
     {
-        if (value.isPressed && isGrounded)
+        if (value.isPressed && isGrounded && !isDashing)
         {
             jumpRequest = true;
+        }
+    }
+
+    public void OnDash(InputValue value)
+    {
+        if (value.isPressed && !isDashing && dashCooldownTimer <= 0)
+        {
+            isDashing = true;
+            dashTimeLeft = dashDuration;
+            dashCooldownTimer = dashCooldown;
+            
+            // Dash direction: movement input direction or current facing direction
+            dashDirection = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (visuals != null && visuals.IsFlipped ? -1f : 1f);
+            
+            // Reset vertical velocity
+            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
         }
     }
 
@@ -73,13 +100,23 @@ public class PlayerController : MonoBehaviour
     {
         CheckGrounded();
         HandleInteraction();
+        UpdateTimers();
         UpdateVisuals();
     }
 
     private void FixedUpdate()
     {
-        HandleHorizontalMovement();
-        HandleJump();
+        if (isDashing)
+        {
+            HandleDash();
+            HandleStepClimb(); // Dash-step is very important for fluidity
+        }
+        else
+        {
+            HandleHorizontalMovement();
+            HandleJump();
+            HandleStepClimb();
+        }
     }
 
     #endregion
@@ -91,14 +128,19 @@ public class PlayerController : MonoBehaviour
         if (visuals == null) return;
 
         // Flip visuals based on movement direction
-        if (Mathf.Abs(moveInput.x) > 0.01f)
+        if (Mathf.Abs(moveInput.x) > 0.01f && !isDashing)
         {
             visuals.SetFlip(moveInput.x < 0);
         }
 
         int targetFrame = 0;
 
-        if (!isGrounded)
+        if (isDashing)
+        {
+            // Dash State (Frame 11)
+            targetFrame = 11;
+        }
+        else if (!isGrounded)
         {
             // Jump State (Frame 10)
             targetFrame = 10;
@@ -130,6 +172,59 @@ public class PlayerController : MonoBehaviour
 
     #region Physics Move
 
+    private void UpdateTimers()
+    {
+        if (isDashing)
+        {
+            dashTimeLeft -= Time.deltaTime;
+            if (dashTimeLeft <= 0)
+            {
+                isDashing = false;
+                // Restore gravity
+                rb.gravityScale = 3f;
+            }
+        }
+
+        if (dashCooldownTimer > 0)
+        {
+            dashCooldownTimer -= Time.deltaTime;
+        }
+    }
+
+    private void HandleDash()
+    {
+        // Override gravity and apply high speed
+        rb.gravityScale = 0;
+        rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0);
+    }
+
+    private void HandleStepClimb()
+    {
+        // Direction to check
+        float dir = isDashing ? dashDirection : (moveInput.x != 0 ? Mathf.Sign(moveInput.x) : 0);
+        if (dir == 0) return;
+
+        Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y + 0.1f);
+        Vector2 direction = new Vector2(dir, 0);
+        float distance = (col.size.x / 2f) + stepCheckDistance;
+
+        // 1. Check if there's a wall at foot level
+        RaycastHit2D hitLower = Physics2D.Raycast(origin, direction, distance, groundLayer);
+        if (hitLower.collider != null)
+        {
+            // 2. Check if the space above (stepHeight) is clear
+            Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
+            RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
+
+            if (hitUpper.collider == null)
+            {
+                // 3. Step up: Move the player slightly up and forward
+                // Using position offset for immediate "snappy" step feel
+                rb.position += new Vector2(0, 0.2f); // Small nudge to clear the edge
+            }
+        }
+    }
+
     private void CheckGrounded()
     {
         if (col == null) return;
@@ -145,6 +240,8 @@ public class PlayerController : MonoBehaviour
 
     private void HandleHorizontalMovement()
     {
+        rb.gravityScale = 3f; // Default gravity scale (adjust as needed for better feel)
+
         float targetSpeed = moveInput.x * moveSpeed;
         float speedDiff = targetSpeed - rb.linearVelocity.x;
         
