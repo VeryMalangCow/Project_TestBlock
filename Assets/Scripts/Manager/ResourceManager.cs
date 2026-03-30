@@ -101,6 +101,16 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
 
     #endregion
 
+    #region MonoBehaviour
+
+    protected override void Awake()
+    {
+        base.Awake();
+        Init();
+    }
+
+    #endregion
+
     #region Init
 
     public void Init()

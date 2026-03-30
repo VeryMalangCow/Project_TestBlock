@@ -67,10 +67,10 @@ public class PlayerController : MonoBehaviour
             isDashing = true;
             dashTimeLeft = dashDuration;
             dashCooldownTimer = dashCooldown;
-            
+
             // Dash direction: movement input direction or current facing direction
             dashDirection = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (visuals != null && visuals.IsFlipped ? -1f : 1f);
-            
+
             // Reset vertical velocity
             rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
         }
@@ -82,7 +82,7 @@ public class PlayerController : MonoBehaviour
 
     private void Start()
     {
-        transform.position = MapManager.Instance.GetPositionByRatio(50f, 60f);
+        transform.position = MapManager.Instance.GetPositionByRatio(50f, 100f);
 
         if (visuals != null)
         {
@@ -95,7 +95,6 @@ public class PlayerController : MonoBehaviour
             visuals.SetArmor("Cloaks", 0);
         }
     }
-
     private void Update()
     {
         CheckGrounded();
@@ -118,6 +117,7 @@ public class PlayerController : MonoBehaviour
             HandleStepClimb();
         }
     }
+
 
     #endregion
 
@@ -149,7 +149,7 @@ public class PlayerController : MonoBehaviour
         else
         {
             float currentHorizontalSpeed = Mathf.Abs(rb.linearVelocity.x);
-            
+
             if (currentHorizontalSpeed > 0.1f)
             {
                 // Walk Animation (Frames 0-9)
@@ -231,7 +231,7 @@ public class PlayerController : MonoBehaviour
 
         // Calculate a box that is slightly narrower than the player to avoid wall friction
         // but covers the feet area.
-        float boxWidth = col.bounds.size.x * 0.9f; 
+        float boxWidth = col.bounds.size.x * 0.9f;
         float boxHeight = groundCheckRadius;
         Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
 
@@ -244,7 +244,7 @@ public class PlayerController : MonoBehaviour
 
         float targetSpeed = moveInput.x * moveSpeed;
         float speedDiff = targetSpeed - rb.linearVelocity.x;
-        
+
         // Apply acceleration or deceleration
         float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
         float movement = speedDiff * accelRate * Time.fixedDeltaTime;
@@ -274,7 +274,7 @@ public class PlayerController : MonoBehaviour
         {
             UpdateBlock(-1);
         }
-        
+
         // Right Click (Place)
         if (Mouse.current.rightButton.isPressed)
         {
@@ -289,7 +289,7 @@ public class PlayerController : MonoBehaviour
         // Get world position from mouse
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -Camera.main.transform.position.z));
-        
+
         // Range check
         if (Vector2.Distance(transform.position, worldPos) > interactRange) return;
 
@@ -306,7 +306,7 @@ public class PlayerController : MonoBehaviour
     private void OnDrawGizmos()
     {
         if (col == null) return;
-        
+
         float boxWidth = col.bounds.size.x * 0.9f;
         float boxHeight = groundCheckRadius;
         Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));

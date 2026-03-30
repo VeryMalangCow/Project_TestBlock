@@ -49,6 +49,9 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 - **Naming Convention:** `[Category]_[ID(4 digit)]` (e.g., `Backpack_0000`, `Cloak_0000`, `Cloth_0000`, `Head_0000`)
 
 ### Map Rule
+- **Chunk Size:** 16 x 16 blocks.
+- **Map Size:** 128 x 128 chunks (Total 2048 x 2048 blocks).
+
 #### Rule: Chunk Rule
 - **Physics Layer:** All chunk meshes and generated collider objects must be assigned to the **Ground** layer (Index 6).
 - **Collider Type:** Optimized `EdgeCollider2D` generated via `MeshManager`'s Greedy Edge Merging algorithm.

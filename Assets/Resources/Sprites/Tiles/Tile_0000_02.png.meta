@@ -4,51 +4,67 @@ TextureImporter:
   internalIDToNameTable:
   - first:
       213: -5684285997040441099
+  
     second: Tile_0000_02_0
   - first:
       213: -2252060856197218323
+  
     second: Tile_0000_02_1
   - first:
       213: -1736036964481921860
+  
     second: Tile_0000_02_2
   - first:
       213: -8634780072843622822
+  
     second: Tile_0000_02_3
   - first:
       213: 511792402836733927
+  
     second: Tile_0000_02_4
   - first:
       213: -8515870583358331160
+  
     second: Tile_0000_02_5
   - first:
       213: -5637833530251319595
+  
     second: Tile_0000_02_6
   - first:
       213: 1993030643078854645
+  
     second: Tile_0000_02_7
   - first:
       213: -8819743028969583639
+  
     second: Tile_0000_02_8
   - first:
       213: 6690734290193807116
+  
     second: Tile_0000_02_9
   - first:
       213: 831142405483260504
+  
     second: Tile_0000_02_10
   - first:
       213: 2686177186286847689
+  
     second: Tile_0000_02_11
   - first:
       213: -5174885293059083822
+  
     second: Tile_0000_02_12
   - first:
       213: 8953425232010688915
+  
     second: Tile_0000_02_13
   - first:
       213: -3720634638547219268
+  
     second: Tile_0000_02_14
   - first:
       213: -1825254405354525419
+  
     second: Tile_0000_02_15
   externalObjects: {}
   serializedVersion: 13

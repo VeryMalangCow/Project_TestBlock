@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using UnityEngine;
 
 #region Map
@@ -36,7 +37,7 @@ public class ChunkData
 [Serializable]
 public class MapData
 {
-    public static readonly Vector2Int MapSize = new Vector2Int(16, 16);
+    public static readonly Vector2Int MapSize = new Vector2Int(128, 128);
 
     public ChunkData[,] chunks;
 
@@ -64,7 +65,63 @@ public class MapManager : Singleton<MapManager>
     [SerializeField] public MapGenerator mapGenerator;
 
     [Header("# Data")]
-    public MapData mapData;
+    public MapData activeMapData; // Currently rendered map
+    public WorldStyle activeStyle;
+    
+    private System.Collections.Generic.Dictionary<WorldStyle, MapData> worldMaps = new System.Collections.Generic.Dictionary<WorldStyle, MapData>();
+
+    #endregion
+
+    #region Map Management
+
+    public void StoreMap(WorldStyle style, MapData data)
+    {
+        worldMaps[style] = data;
+    }
+
+
+    #endregion
+
+    #region Map Generate
+
+    public IEnumerator GenerateMapCo()
+    {
+        yield return StartCoroutine(mapGenerator.GenerateAllWorldsCo());
+
+        yield return StartCoroutine(SwitchWorldCo(WorldStyle.Standard));
+    }
+
+    #endregion
+
+    #region Switch
+
+    public IEnumerator SwitchWorldCo(WorldStyle style)
+    {
+        if (!worldMaps.TryGetValue(style, out MapData data))
+        {
+            Debug.LogWarning($"[MapManager] World {style} not found! Generate it first.");
+            yield break;
+        }
+
+        activeMapData = data;
+        activeStyle = style;
+
+        Debug.Log($"[MapManager] Switching to {style} world asynchronously...");
+
+        // 1. Calculate lighting for the new map FIRST
+        if (LightingManager.Instance != null)
+        {
+            LightingManager.Instance.CalculateAllLighting();
+        }
+
+        // 2. Then refresh visuals using the calculated light values
+        if (MeshManager.Instance != null)
+        {
+            yield return StartCoroutine(MeshManager.Instance.RequestFullRedrawCo());
+        }
+
+        Debug.Log($"[MapManager] Successfully switched to {style} world.");
+    }
 
     #endregion
 
@@ -72,7 +129,7 @@ public class MapManager : Singleton<MapManager>
 
     public void SetBlock(int worldX, int worldY, int id)
     {
-        if (mapData == null) return;
+        if (activeMapData == null) return;
 
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
@@ -88,7 +145,7 @@ public class MapManager : Singleton<MapManager>
 
         if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return;
 
-        ChunkData chunk = mapData.chunks[cx, cy];
+        ChunkData chunk = activeMapData.chunks[cx, cy];
         if (chunk == null) return;
 
         // Apply change

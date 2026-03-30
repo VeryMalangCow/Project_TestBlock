@@ -21,7 +21,7 @@ public class LightingManager : Singleton<LightingManager>
     /// </summary>
     public void CalculateAllLighting()
     {
-        if (MapManager.Instance == null || MapManager.Instance.mapData == null) return;
+        if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
 
         int totalWidth = MapData.MapSize.x * ChunkData.ChunkSize.x;
         int totalHeight = MapData.MapSize.y * ChunkData.ChunkSize.y;
@@ -170,7 +170,7 @@ public class LightingManager : Singleton<LightingManager>
 
         if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return;
 
-        MapManager.Instance.mapData.chunks[cx, cy].lightValues[lx, ly] = value;
+        MapManager.Instance.activeMapData.chunks[cx, cy].lightValues[lx, ly] = value;
     }
 
     private byte GetLightValue(int worldX, int worldY)
@@ -188,7 +188,7 @@ public class LightingManager : Singleton<LightingManager>
 
         if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return 0;
         
-        return MapManager.Instance.mapData.chunks[cx, cy].lightValues[lx, ly];
+        return MapManager.Instance.activeMapData.chunks[cx, cy].lightValues[lx, ly];
     }
 
     private bool HasBlock(int worldX, int worldY)
@@ -206,7 +206,7 @@ public class LightingManager : Singleton<LightingManager>
 
         if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return false;
         
-        return MapManager.Instance.mapData.chunks[cx, cy].blocks[lx, ly].isActive;
+        return MapManager.Instance.activeMapData.chunks[cx, cy].blocks[lx, ly].isActive;
     }
 
     private void RedrawAffectedChunks(int worldX, int worldY)

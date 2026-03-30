@@ -6,7 +6,7 @@ using System.Linq;
 public class TextureArrayBaker : EditorWindow
 {
     private string spritePath = "Assets/Resources/Sprites/Tiles";
-    private string outputPath = "Assets/Resources/TilesetArray.asset";
+    private string outputPath = "Assets/Resources/Text2DArray/TilesetArray.asset";
 
     [MenuItem("Tools/Bake Tileset TextureArray")]
     public static void ShowWindow()
@@ -76,21 +76,14 @@ public class TextureArrayBaker : EditorWindow
             return;
         }
 
-        // 3. Determine max dimensions and count
+        // 3. Determine dimensions and use fixed maxKinds
+        // To keep the formula consistent, we use a fixed maxKinds (e.g., 10)
+        // This must match ResourceManager.maxKinds
+        int maxKinds = 10; 
         int maxTileId = grouped.Keys.Max();
-        // For simplicity, we assume fixed count per TileID for the array index calculation
-        // But to save space, we can just use a list of layers.
-        // However, a fixed formula (TileID, KindID, SpriteIdx) -> Index is easiest for shader.
-        // Let's find the max KindID across all TileIDs to have a consistent offset.
-        int maxKinds = 0;
-        foreach (var tileEntry in grouped.Values)
-        {
-            if (tileEntry.Keys.Max() + 1 > maxKinds)
-                maxKinds = tileEntry.Keys.Max() + 1;
-        }
-
+        
         int totalLayers = (maxTileId + 1) * maxKinds * 16;
-        Debug.Log($"Baking TextureArray: MaxTileID={maxTileId}, MaxKinds={maxKinds}, TotalLayers={totalLayers}");
+        Debug.Log($"Baking TextureArray: MaxTileID={maxTileId}, FixedMaxKinds={maxKinds}, TotalLayers={totalLayers}");
 
         // 4. Create Texture2DArray
         // Use the first sprite to get dimensions (8x8 expected)
