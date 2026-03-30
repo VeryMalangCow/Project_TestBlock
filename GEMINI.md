@@ -112,11 +112,27 @@ To handle thousands of tile variations efficiently without the overhead of massi
 
 ## Progress Tracking
 - [x] Initial `GEMINI.md` creation and project metadata documentation (2026-03-24)
-- [x] Major Goal: World Generator
-  - [x] Initial `MapGenerator` script creation (2026-03-24)
-  - [x] Implemented Mesh-based Chunk Rendering with Sliding Window and Object Pooling optimization (2026-03-27)
-  - [x] Implemented Auto-tiling logic with 16-bitmask mapping (2026-03-27)
-  - [x] Integrated Unity Input System for basic player movement (2026-03-27)
-  - [x] Implemented Smooth Camera Follow system (2026-03-27)
-  - [x] Documented `Texture2DArray` strategy for future scalability (2026-03-27)
+- [x] Foundation: World Interaction & Visuals
+  - [x] Mesh-based Chunk Rendering with Sliding Window & Object Pooling (2026-03-27)
+  - [x] Auto-tiling logic with 16-bitmask mapping (2026-03-27)
+  - [x] Terraria-style Paper Doll Visual System (Multi-layer Animation) (2026-03-30)
+  - [x] Basic Block Placement & Destruction (2026-03-30)
+
+- [ ] **Major Goal 1: Procedural World Generation**
+  - [ ] Seed-based Perlin Noise terrain generation (Height map).
+  - [ ] Biome constants (Dirt, Stone, Cave) and ore distribution logic.
+  - [ ] World Save/Load system (Binary or JSON).
+
+- [ ] **Major Goal 2: Inventory & Item System**
+  - [ ] Item Data Structure (ScriptableObject) & Database.
+  - [ ] Block Looting: Dropped items when blocks are destroyed.
+  - [ ] Basic Inventory UI (Grid system) and Hotbar interaction.
+  - [ ] **Player Data Save/Load system**: Persist player position, health, and inventory state.
+
+- [ ] **Major Goal 3: Advanced Player Physics & Movement**
+  - [x] Smooth Horizontal Movement (Completed)
+  - [x] Box-based Ground Detection & Jump (Completed)
+  - [ ] **Player Dash**: Fast horizontal burst using sprite index 11.
+  - [ ] Coyote Time & Jump Buffering for better platforming feel.
+
 - [ ] Define minor goals (Soon)

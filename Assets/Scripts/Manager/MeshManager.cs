@@ -164,6 +164,7 @@ public class MeshManager : Singleton<MeshManager>
         List<Vector3> vertices = new List<Vector3>();
         List<int> triangles = new List<int>();
         List<Vector3> uvs = new List<Vector3>();
+        List<Color> colors = new List<Color>();
 
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
@@ -185,14 +186,14 @@ public class MeshManager : Singleton<MeshManager>
                 float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, block.kindId, bitmaskIdx);
 
                 int vIndex = vertices.Count;
-                float worldX = cx * width + x;
-                float worldY = cy * height + y;
+                int wx = cx * width + x;
+                int wy = cy * height + y;
 
                 // Vertices (Order: BL, BR, TL, TR)
-                vertices.Add(new Vector3(worldX, worldY, 0));           // 0: Bottom-Left
-                vertices.Add(new Vector3(worldX + 1, worldY, 0));       // 1: Bottom-Right
-                vertices.Add(new Vector3(worldX, worldY + 1, 0));       // 2: Top-Left
-                vertices.Add(new Vector3(worldX + 1, worldY + 1, 0));   // 3: Top-Right
+                vertices.Add(new Vector3(wx, wy, 0));           // 0: Bottom-Left
+                vertices.Add(new Vector3(wx + 1, wy, 0));       // 1: Bottom-Right
+                vertices.Add(new Vector3(wx, wy + 1, 0));       // 2: Top-Left
+                vertices.Add(new Vector3(wx + 1, wy + 1, 0));   // 3: Top-Right
 
                 // Triangles (Clockwise winding)
                 triangles.Add(vIndex + 0);
@@ -207,12 +208,34 @@ public class MeshManager : Singleton<MeshManager>
                 uvs.Add(new Vector3(1, 0, arrayIdx));
                 uvs.Add(new Vector3(0, 1, arrayIdx));
                 uvs.Add(new Vector3(1, 1, arrayIdx));
+
+                // Smooth Vertex Colors (Interpolated)
+                if (LightingManager.Instance != null)
+                {
+                    float bl = LightingManager.Instance.GetInterpolatedLight(wx, wy);
+                    float br = LightingManager.Instance.GetInterpolatedLight(wx + 1, wy);
+                    float tl = LightingManager.Instance.GetInterpolatedLight(wx, wy + 1);
+                    float tr = LightingManager.Instance.GetInterpolatedLight(wx + 1, wy + 1);
+
+                    colors.Add(new Color(bl, bl, bl, 1f));
+                    colors.Add(new Color(br, br, br, 1f));
+                    colors.Add(new Color(tl, tl, tl, 1f));
+                    colors.Add(new Color(tr, tr, tr, 1f));
+                }
+                else
+                {
+                    colors.Add(Color.white);
+                    colors.Add(Color.white);
+                    colors.Add(Color.white);
+                    colors.Add(Color.white);
+                }
             }
         }
 
         mesh.SetVertices(vertices);
         mesh.SetTriangles(triangles, 0);
         mesh.SetUVs(0, uvs);
+        mesh.SetColors(colors);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 

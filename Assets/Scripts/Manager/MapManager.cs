@@ -24,10 +24,12 @@ public class ChunkData
     public static readonly Vector2Int ChunkSize = new Vector2Int(16, 16);
 
     public BlockData[,] blocks;
+    public byte[,] lightValues;
 
     public ChunkData()
     {
         blocks = new BlockData[ChunkSize.x, ChunkSize.y];
+        lightValues = new byte[ChunkSize.x, ChunkSize.y];
     }
 }
 
@@ -99,6 +101,12 @@ public class MapManager : Singleton<MapManager>
             int maxKinds = ResourceManager.Instance != null ? ResourceManager.Instance.GetTileKindCount(id) : 1;
             int kindId = UnityEngine.Random.Range(0, maxKinds);
             chunk.blocks[lx, ly] = new BlockData(id, kindId, true);
+        }
+
+        // Update lighting
+        if (LightingManager.Instance != null)
+        {
+            LightingManager.Instance.UpdateLightingAt(worldX, worldY);
         }
 
         // Redraw current and neighbors

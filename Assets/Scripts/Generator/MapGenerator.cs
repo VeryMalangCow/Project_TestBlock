@@ -26,6 +26,12 @@ public class MapGenerator : MonoBehaviour
                 GenerateChunk(MapManager.Instance.mapData.chunks[i, j]);
             }
         }
+
+        // Initialize Lighting
+        if (LightingManager.Instance != null)
+        {
+            LightingManager.Instance.CalculateAllLighting();
+        }
     }
 
     public void GenerateChunk(ChunkData chunk)
