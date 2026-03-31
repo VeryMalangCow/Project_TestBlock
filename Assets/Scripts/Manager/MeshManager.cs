@@ -178,13 +178,18 @@ public class MeshManager : Singleton<MeshManager>
         ChunkData chunk = allChunks[cx, cy];
         if (chunk == null) return;
 
-        // Pre-fetch neighbors for faster access in loop
-        ChunkData chunkU = (cy + 1 < MapData.MapSize.y) ? allChunks[cx, cy + 1] : null;
-        ChunkData chunkD = (cy - 1 >= 0) ? allChunks[cx, cy - 1] : null;
-        ChunkData chunkL = (cx - 1 >= 0) ? allChunks[cx - 1, cy] : null;
-        ChunkData chunkR = (cx + 1 < MapData.MapSize.x) ? allChunks[cx + 1, cy] : null;
+        // Optimization: Cache all block states (Self + Neighbors) into a local array
+        // ChunkSize 16x16, with 1 block border = 18x18
+        bool[,] neighborStates = new bool[18, 18];
+        for (int x = -1; x <= 16; x++)
+        {
+            for (int y = -1; y <= 16; y++)
+            {
+                neighborStates[x + 1, y + 1] = HasBlock(cx, cy, x, y);
+            }
+        }
 
-        // Optimization: Reuse existing mesh to reduce GC pressure
+        // Optimization: Reuse existing mesh
         Mesh mesh = targetFilter.sharedMesh;
         if (mesh == null)
         {
@@ -213,14 +218,32 @@ public class MeshManager : Singleton<MeshManager>
                 BlockData block = chunk.blocks[x, y];
                 if (!block.isActive) continue;
 
-                // Fast neighbor check using pre-fetched chunks
-                bool u = (y + 1 < height) ? chunk.blocks[x, y + 1].isActive : (chunkU != null && chunkU.blocks[x, 0].isActive);
-                bool d = (y - 1 >= 0) ? chunk.blocks[x, y - 1].isActive : (chunkD != null && chunkD.blocks[x, height - 1].isActive);
-                bool l = (x - 1 >= 0) ? chunk.blocks[x - 1, y].isActive : (chunkL != null && chunkL.blocks[width - 1, y].isActive);
-                bool r = (x + 1 < width) ? chunk.blocks[x + 1, y].isActive : (chunkR != null && chunkR.blocks[0, y].isActive);
+                // Local coordinates in neighborStates: x+1, y+1
+                int lx = x + 1;
+                int ly = y + 1;
 
-                int bitmaskIdx = TileSpriteSet.GetBitmaskIndex(u, d, l, r);
-                float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, block.kindId, bitmaskIdx);
+                // 8-Direction Neighbor Check (Phone Keypad: 2=Up, 8=Down, 4=Left, 6=Right)
+                bool has2 = neighborStates[lx, ly + 1]; // Up
+                bool has4 = neighborStates[lx - 1, ly]; // Left
+                bool has6 = neighborStates[lx + 1, ly]; // Right
+                bool has8 = neighborStates[lx, ly - 1]; // Down
+
+                int bitmask = 0;
+                if (has2) bitmask |= (1 << 0);
+                if (has4) bitmask |= (1 << 1);
+                if (has6) bitmask |= (1 << 2);
+                if (has8) bitmask |= (1 << 3);
+
+                // Diagonal (Missing: 1,3,7,9)
+                // Conditions: Adjacent orthogonals must exist to check diagonal absence
+                if (has2 && has4 && !neighborStates[lx - 1, ly + 1]) bitmask |= (1 << 4); // 1: TL Missing
+                if (has2 && has6 && !neighborStates[lx + 1, ly + 1]) bitmask |= (1 << 5); // 3: TR Missing
+                if (has8 && has4 && !neighborStates[lx - 1, ly - 1]) bitmask |= (1 << 6); // 7: BL Missing
+                if (has8 && has6 && !neighborStates[lx + 1, ly - 1]) bitmask |= (1 << 7); // 9: BR Missing
+
+                // Use kindId (0~2) for variation
+                int variation = block.kindId % 3;
+                float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, bitmask, variation);
 
                 int vIndex = vertices.Count;
                 int wx = cx * width + x;

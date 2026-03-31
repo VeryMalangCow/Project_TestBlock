@@ -2,13 +2,14 @@ using UnityEngine;
 using UnityEditor;
 using System.Collections.Generic;
 using System.Linq;
+using System.IO;
 
 public class TextureArrayBaker : EditorWindow
 {
     private string spritePath = "Assets/Resources/Sprites/Tiles";
     private string outputPath = "Assets/Resources/Text2DArray/TilesetArray.asset";
 
-    [MenuItem("Tools/Bake Tileset TextureArray")]
+    [MenuItem("Tools/Project_BlockTest/Bake Tileset TextureArray")]
     public static void ShowWindow()
     {
         GetWindow<TextureArrayBaker>("Tileset Baker");
@@ -16,7 +17,7 @@ public class TextureArrayBaker : EditorWindow
 
     private void OnGUI()
     {
-        GUILayout.Label("Tileset Texture2DArray Baker", EditorStyles.boldLabel);
+        GUILayout.Label("Tileset Texture2DArray Baker (47 Rules x 3 Variations)", EditorStyles.boldLabel);
         spritePath = EditorGUILayout.TextField("Sprite Path", spritePath);
         outputPath = EditorGUILayout.TextField("Output Path", outputPath);
 
@@ -28,106 +29,98 @@ public class TextureArrayBaker : EditorWindow
 
     private void Bake()
     {
-        // 1. Load all sprites
-        string[] guids = AssetDatabase.FindAssets("t:Sprite", new[] { spritePath });
-        List<Sprite> sprites = new List<Sprite>();
+        // 1. Find all textures matching Tile_ID format
+        string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { spritePath });
+        SortedDictionary<int, string> tileTextures = new SortedDictionary<int, string>();
+
         foreach (var guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            sprites.AddRange(AssetDatabase.LoadAllAssetsAtPath(path).OfType<Sprite>());
-        }
-
-        if (sprites.Count == 0)
-        {
-            Debug.LogError("No sprites found at " + spritePath);
-            return;
-        }
-
-        // 2. Group and Sort
-        // Expected name format: Tile_TileID_KindID_SpriteIdx
-        var grouped = new SortedDictionary<int, SortedDictionary<int, Sprite[]>>();
-
-        foreach (var s in sprites)
-        {
-            string[] parts = s.name.Split('_');
-            if (parts.Length >= 4 && parts[0] == "Tile")
+            string name = Path.GetFileNameWithoutExtension(path);
+            if (name.StartsWith("Tile_") && int.TryParse(name.Substring(5), out int tileId))
             {
-                if (int.TryParse(parts[1], out int tileId) &&
-                    int.TryParse(parts[2], out int kindId) &&
-                    int.TryParse(parts[3], out int spriteIdx))
-                {
-                    if (!grouped.ContainsKey(tileId))
-                        grouped[tileId] = new SortedDictionary<int, Sprite[]>();
-                    
-                    if (!grouped[tileId].ContainsKey(kindId))
-                        grouped[tileId][kindId] = new Sprite[16];
-
-                    if (spriteIdx >= 0 && spriteIdx < 16)
-                    {
-                        grouped[tileId][kindId][spriteIdx] = s;
-                    }
-                }
+                tileTextures[tileId] = path;
             }
         }
 
-        if (grouped.Count == 0)
+        if (tileTextures.Count == 0)
         {
-            Debug.LogError("No valid sprites found matching Tile_ID_Kind_Idx format.");
+            Debug.LogError("No textures matching Tile_ID format found at " + spritePath);
             return;
         }
 
-        // 3. Determine dimensions and use fixed maxKinds
-        // To keep the formula consistent, we use a fixed maxKinds (e.g., 10)
-        // This must match ResourceManager.maxKinds
-        int maxKinds = 10; 
-        int maxTileId = grouped.Keys.Max();
+        // 2. Determine dimensions and total layers
+        // Each tile has 47 rules * 3 variations = 141 sprites
+        int rulesCount = 47;
+        int variations = 3;
+        int spritesPerTile = rulesCount * variations;
+        int maxTileId = tileTextures.Keys.Max();
+        int totalLayers = (maxTileId + 1) * spritesPerTile;
+
+        // Use the first texture to get dimensions
+        string firstPath = tileTextures.Values.First();
+        TextureImporter firstImporter = AssetImporter.GetAtPath(firstPath) as TextureImporter;
+        firstImporter.GetSourceTextureWidthAndHeight(out int width, out int height);
+        // We expect individual sprites to be 8x8 as per rule
+        int spriteSize = 8;
         
-        int totalLayers = (maxTileId + 1) * maxKinds * 16;
-        Debug.Log($"Baking TextureArray: MaxTileID={maxTileId}, FixedMaxKinds={maxKinds}, TotalLayers={totalLayers}");
+        Debug.Log($"Baking TextureArray: MaxTileID={maxTileId}, SpritesPerTile={spritesPerTile}, TotalLayers={totalLayers}");
 
-        // 4. Create Texture2DArray
-        // Use the first sprite to get dimensions (8x8 expected)
-        int width = (int)sprites[0].rect.width;
-        int height = (int)sprites[0].rect.height;
-        TextureFormat format = TextureFormat.RGBA32; 
-
-        Texture2DArray texArray = new Texture2DArray(width, height, totalLayers, format, false);
+        Texture2DArray texArray = new Texture2DArray(spriteSize, spriteSize, totalLayers, TextureFormat.RGBA32, false);
         texArray.filterMode = FilterMode.Point;
         texArray.wrapMode = TextureWrapMode.Clamp;
 
-        // 5. Fill pixels
-        for (int t = 0; t <= maxTileId; t++)
+        // 3. Fill pixels
+        foreach (var entry in tileTextures)
         {
-            if (!grouped.ContainsKey(t)) continue;
-
-            foreach (var kindEntry in grouped[t])
+            int tileId = entry.Key;
+            string path = entry.Value;
+            
+            // Load all sprites from this texture, sorted numerically by their suffix (e.g., _000, _001)
+            Sprite[] sprites = AssetDatabase.LoadAllAssetsAtPath(path)
+                .OfType<Sprite>()
+                .OrderBy(s => {
+                    string[] parts = s.name.Split('_');
+                    if (parts.Length >= 3 && int.TryParse(parts[2], out int idx)) return idx;
+                    return 999;
+                })
+                .ToArray();
+            
+            if (sprites.Length < spritesPerTile)
             {
-                int k = kindEntry.Key;
-                for (int i = 0; i < 16; i++)
-                {
-                    Sprite s = kindEntry.Value[i];
-                    if (s == null) continue;
+                Debug.LogWarning($"Tile_{tileId:D4} at {path} has only {sprites.Length} sprites, expected {spritesPerTile}. Filling remaining with empty.");
+            }
 
-                    int layerIdx = (t * maxKinds * 16) + (k * 16) + i;
-                    
-                    // Extract pixels from sprite's texture
+            for (int i = 0; i < spritesPerTile; i++)
+            {
+                int layerIdx = (tileId * spritesPerTile) + i;
+                
+                if (i < sprites.Length)
+                {
+                    Sprite s = sprites[i];
                     Texture2D sourceTex = s.texture;
                     Rect r = s.rect;
                     Color[] pixels = sourceTex.GetPixels((int)r.x, (int)r.y, (int)r.width, (int)r.height);
-                    
                     texArray.SetPixels(pixels, layerIdx);
+                }
+                else
+                {
+                    // Empty pixels for missing sprites
+                    texArray.SetPixels(new Color[spriteSize * spriteSize], layerIdx);
                 }
             }
         }
 
         texArray.Apply();
 
-        // 6. Save Asset
+        // 4. Save Asset
+        string dir = Path.GetDirectoryName(outputPath);
+        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+        
         AssetDatabase.CreateAsset(texArray, outputPath);
         AssetDatabase.SaveAssets();
         
-        // Save metadata to a text file or just log it for ResourceManager
         Debug.Log($"Successfully baked {totalLayers} layers to {outputPath}");
-        Debug.Log($"Formula: Index = (TileID * {maxKinds} * 16) + (KindID * 16) + BitmaskIndex");
+        Debug.Log($"Formula: Index = (TileID * 141) + (RuleID * 3) + VariationIdx");
     }
 }

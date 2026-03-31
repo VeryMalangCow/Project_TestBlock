@@ -29,15 +29,15 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 - **sRGB (Color Texture):** Enabled
 
 #### Rule: TileSpriteRule
-- **Max Size:** 64
+- **Max Size:** 128
 - **Slicing:** Grid by Cell Size
   - **Cell Size:** 8 x 8
-  - **Offset:** 0, 1
+  - **Offset:** 0, 0
   - **Padding:** 1, 1
 - **Read/Write:** Enabled (Required for Texture2DArray baking)
 - **Location:** `Assets\Resources\Sprites\Tiles`
-- **Naming Convention:** `Tile_[ID(4 digit)]_[KindID(2 digit)]` (e.g., `Tile_0000_00`)
-- **Rendering Constraint:** Multi-variation rendering within a single chunk mesh requires all tile sprites to be packed into a single **Sprite Atlas**.
+- **Naming Convention:** `Tile_[ID(4 digit)]_[Idx(3 digit)]` (e.g., `Tile_0000_000`)
+- **Processing:** `TileSpriteProcessor` tool automatically slices sprites, skipping empty (Alpha=0) regions while maintaining grid-based indices for baking.
 
 #### Rule: ArmorSpriteRule
 - **Max Size:** 128
@@ -69,57 +69,39 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 #### Sorting Layer: Default
 - **0: Map (Chunks)**: Default value (Not explicitly assigned, equals 0).
 - **1: Player**: Base Sorting Order for the Player's `Sorting Group`.
-#### Constraint
-- All new objects requiring depth sorting must be documented here before implementation.
 
-## Future Scalability### Proposed Strategy: Texture2DArray
-To handle thousands of tile variations efficiently without the overhead of massive Sprite Atlases or frequent draw calls, the following architecture is proposed:
-1. **Automated Baking Tool:** An Editor script to bake individual 8x8 sprites into a `Texture2DArray` asset.
-2. **Custom Shader:** A URP-compatible shader that reads tile indices from vertex data to index into the `Texture2DArray`.
-3. **Draw Call Optimization:** Allows rendering all tile types in a single draw call with zero pixel bleeding.
+## Technical Architecture
 
-## Scenes
-- **MainScene:** The primary scene for the world generator prototype.
+### 1. Advanced Autotiling (47 Rules System)
+To achieve Terraria-style block connections, an 8-direction bitmask system is implemented.
+- **Neighbor Check (Phone Keypad Layout):**
+  ```
+  1 2 3  (TL, U, TR)
+  4 5 6  (L,  C, R)
+  7 8 9  (BL, D, BR)
+  ```
+- **Bitmask Logic (256 combinations):**
+  - **Orthogonal (Exist):** Check if neighbors at 2, 4, 6, 8 are active.
+  - **Diagonal (Missing):** Check if neighbors at 1, 3, 7, 9 are *missing*, but only if their two adjacent orthogonal neighbors exist.
+- **Rule Mapping:** 256 combinations are mapped to 47 unique RuleIDs via `Rule_TileIndex.csv`.
 
-## Role List
+### 2. Texture2DArray Rendering
+- **Structure:** Each tile ID occupies **141 layers** (47 Rules * 3 Random Variations).
+- **Indexing Formula:** `Index = (TileID * 141) + (RuleID * 3) + VariationIdx`.
+- **Optimization:** All tiles are rendered in a single draw call. `MeshManager` caches neighbor states in a local 18x18 array per chunk to minimize dictionary lookups during mesh generation.
 
-### 1. Global Systems (Persistent)
-*Shared across all scenes. Inherits from `PermanentSingleton<T>`.*
-- **GameManager**: Central authority for global game state, session management, and high-level logic.
-- **ResourceManager**: Handles asset lifecycle, `Texture2DArray` baking references, and tile variation mapping.
-
-### 2. Scene Systems (Volatile)
-*Exists only within the current scene. Inherits from `Singleton<T>`.*
-- **MapManager**: Data container for the active world. Manages `MapData`, `ChunkData`, and `BlockData` structures.
-- **MeshManager**: Orchestrates chunk visibility and physical collider generation. Implements **Sliding Window**, **Object Pooling**, and **Greedy Edge Merging** for optimized rendering and physics.
-
-### 2. Physics & Collision
-- **Greedy Edge Collider**: Instead of using individual BoxColliders, `MeshManager` extracts exposed block faces and merges contiguous segments into a single `EdgeCollider2D`.
-- **Collider Object Pooling**: Reuses existing `EdgeCollider2D` objects instead of destroying/creating them, eliminating CPU spikes and GC pressure during world updates.
-- **Efficiency**: Reduces the number of physical segments from hundreds to just a few per chunk, significantly lowering physics engine overhead.
-
-### 3. Memory & Performance Optimization
-- **Struct-based BlockData**: Converted `BlockData` from a `class` to a `struct` (3 bytes: `bool isActive`, `ushort id`, `byte kindId`), reducing memory usage by over 90% and improving CPU cache locality.
-- **Mesh Object Reuse**: Reuses `Mesh` objects via `mesh.Clear()` instead of `new Mesh()`, preventing frequent Garbage Collection (GC) during chunk loading and editing.
-- **Neighbor Chunk Pre-fetching**: Optimized `MeshManager` loops by pre-loading neighbor chunk references, removing redundant dictionary lookups and coordinate math during mesh/collider generation.
-
-### 3. World Generation
-- **MapGenerator**: Contains procedural algorithms (Perlin noise, etc.) to populate `MapManager`'s data.
-
-### 4. Gameplay & Input
-- **PlayerController**: Bridges Unity Input System with player movement and world interaction logic.
-- **CameraController**: Manages camera behavior, including smooth target following and zoom.
-
-### 5. Framework Bases
-- **Singleton / PermanentSingleton**: Abstract base classes providing thread-safe or persistent singleton patterns.
+### 3. Tooling
+- **TileSpriteProcessor:** Automates slicing with empty space detection.
+- **TextureArrayBaker:** Bakes sliced sprites into `Texture2DArray` using numeric sorting to ensure correct RuleID mapping.
 
 ## Progress Tracking
 - [x] Initial `GEMINI.md` creation and project metadata documentation (2026-03-24)
 - [x] Foundation: World Interaction & Visuals
   - [x] Mesh-based Chunk Rendering with Sliding Window & Object Pooling (2026-03-27)
-  - [x] Auto-tiling logic with 16-bitmask mapping (2026-03-27)
-  - [x] Terraria-style Paper Doll Visual System (Multi-layer Animation) (2026-03-30)
+  - [x] Terraria-style Paper Doll Visual System (2026-03-30)
   - [x] Basic Block Placement & Destruction (2026-03-30)
+  - [x] **Advanced 8-direction Autotiling (47 Rules)** (2026-03-31)
+  - [x] **Texture2DArray Optimization (141 Layers system)** (2026-03-31)
 
 - [ ] **Major Goal 1: Procedural World Generation**
   - [ ] Seed-based Perlin Noise terrain generation (Height map).
@@ -137,5 +119,3 @@ To handle thousands of tile variations efficiently without the overhead of massi
   - [x] Box-based Ground Detection & Jump (Completed)
   - [ ] **Player Dash**: Fast horizontal burst using sprite index 11.
   - [ ] Coyote Time & Jump Buffering for better platforming feel.
-
-- [ ] Define minor goals (Soon)
