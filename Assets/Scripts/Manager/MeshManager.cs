@@ -572,13 +572,20 @@ public class MeshManager : Singleton<MeshManager>
     public System.Collections.IEnumerator RequestFullRedrawCo()
     {
         int chunksProcessed = 0;
-        int redrawLimitPerFrame = 200; // Increased for faster loading
-        int totalChunks = activeChunks.Count;
+        int redrawLimitPerFrame = 200; 
+        
+        // Copy the entries to a list to avoid "Collection modified" exception
+        // if Sliding Window modifies activeChunks while we are yielding.
+        var entries = new List<KeyValuePair<Vector2Int, MeshFilter>>(activeChunks);
+        int totalChunks = entries.Count;
 
         Debug.Log($"[MeshManager] Starting Full Redraw of {totalChunks} chunks...");
 
-        foreach (var entry in activeChunks)
+        foreach (var entry in entries)
         {
+            // Extra safety: Check if the chunk is still active and valid
+            if (entry.Value == null || !entry.Value.gameObject.activeInHierarchy) continue;
+
             DrawChunk(entry.Value, entry.Key.x, entry.Key.y);
             UpdateChunkCollider(entry.Key.x, entry.Key.y);
 
