@@ -1405,7 +1405,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RenderManager
   tileMaterial: {fileID: 2100000, guid: 2634014bbd2ed2a4bae64b83ac8cc3d8, type: 2}
-  useSlidingWindow: 0
+  useSlidingWindow: 1
   targetTransform: {fileID: 3308927}
   viewDistance: 4
 --- !u!4 &1668643430

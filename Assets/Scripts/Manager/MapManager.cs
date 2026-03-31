@@ -113,6 +113,12 @@ public class MapManager : Singleton<MapManager>
             yield break;
         }
 
+        // IMPORTANT: Clear existing chunks BEFORE changing the active map data
+        if (MeshManager.Instance != null)
+        {
+            MeshManager.Instance.ClearAllChunks();
+        }
+
         activeMapData = data;
         activeStyle = style;
 

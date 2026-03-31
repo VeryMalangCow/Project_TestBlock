@@ -165,6 +165,19 @@ public class MeshManager : Singleton<MeshManager>
         }
     }
 
+    public void ClearAllChunks()
+    {
+        Debug.Log("[MeshManager] Clearing all active chunks...");
+        foreach (var entry in activeChunks)
+        {
+            MeshFilter filter = entry.Value;
+            filter.gameObject.SetActive(false);
+            chunkPool.Push(filter);
+        }
+        activeChunks.Clear();
+        lastCenterChunk = new Vector2Int(-999, -999);
+    }
+
     public void RefreshAllChunks()
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null)
