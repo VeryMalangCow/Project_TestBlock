@@ -26,6 +26,7 @@ public class MeshManager : Singleton<MeshManager>
 
     #region MonoBehaviour
 
+
     private void Start()
     {
         lastSlidingState = useSlidingWindow;
@@ -33,15 +34,41 @@ public class MeshManager : Singleton<MeshManager>
         if (targetTransform == null)
         {
             if (Camera.main != null)
+            {
                 targetTransform = Camera.main.transform;
+                Debug.Log("[MeshManager] Target transform set to Main Camera.");
+            }
+            else
+            {
+                Debug.LogWarning("[MeshManager] Main Camera not found! TargetTransform is null.");
+            }
         }
         
-        // Initialize pool based on viewDistance (or full map if sliding is off)
-        int poolSize = useSlidingWindow ? (viewDistance * 2 + 1) * (viewDistance * 2 + 1) : (MapData.MapSize.x * MapData.MapSize.y);
-        for (int i = 0; i < poolSize; i++)
+        // Initialize a basic pool first
+        // If sliding window is on, size depends on viewDistance (e.g., 2 -> 25 chunks)
+        // If off, default to 100 or map size
+        int initialPoolSize = 100;
+
+        if (useSlidingWindow)
         {
-            chunkPool.Push(CreateChunkObject(i));
+            initialPoolSize = (viewDistance * 2 + 1) * (viewDistance * 2 + 1);
         }
+        else if (MapManager.Instance != null && MapManager.Instance.activeMapData != null)
+        {
+            Vector2Int size = MapManager.Instance.activeMapData.mapSize;
+            if (size.x > 0 && size.y > 0)
+                initialPoolSize = size.x * size.y;
+        }
+
+        // Final safety check: Always create at least 1 chunk pool object
+        if (initialPoolSize <= 0) initialPoolSize = 25; 
+
+        Debug.Log($"[MeshManager] Initializing chunk pool with size: {initialPoolSize}");
+        for (int i = 0; i < initialPoolSize; i++)
+        {
+            chunkPool.Push(CreateChunkObject(i + chunkPool.Count));
+        }
+
 
         if (!useSlidingWindow)
             RefreshAllChunks();
@@ -91,6 +118,9 @@ public class MeshManager : Singleton<MeshManager>
 
     private void RefreshChunks(Vector2Int center)
     {
+        if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
+        
+        MapData data = MapManager.Instance.activeMapData;
         HashSet<Vector2Int> requiredCoords = new HashSet<Vector2Int>();
 
         // 1. Calculate required coordinates
@@ -100,13 +130,15 @@ public class MeshManager : Singleton<MeshManager>
             {
                 Vector2Int coord = new Vector2Int(center.x + x, center.y + y);
                 // Check map boundaries
-                if (coord.x >= 0 && coord.x < MapData.MapSize.x &&
-                    coord.y >= 0 && coord.y < MapData.MapSize.y)
+                if (coord.x >= 0 && coord.x < data.mapSize.x &&
+                    coord.y >= 0 && coord.y < data.mapSize.y)
                 {
                     requiredCoords.Add(coord);
                 }
             }
         }
+
+        Debug.Log($"[MeshManager] Refreshing chunks. Required count: {requiredCoords.Count}");
 
         // 2. Recycle chunks that are out of range
         List<Vector2Int> toRemove = new List<Vector2Int>();
@@ -129,25 +161,33 @@ public class MeshManager : Singleton<MeshManager>
         // 3. Activate and update chunks for new required coordinates
         foreach (var coord in requiredCoords)
         {
-            ActivateChunk(coord);
+            ActivateChunk(coord, true); // true = draw immediately for sliding
         }
     }
 
-    private void RefreshAllChunks()
+    public void RefreshAllChunks()
     {
-        if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
-
-        // Activate every chunk in the map size
-        for (int x = 0; x < MapData.MapSize.x; x++)
+        if (MapManager.Instance == null || MapManager.Instance.activeMapData == null)
         {
-            for (int y = 0; y < MapData.MapSize.y; y++)
+            Debug.LogWarning("[MeshManager] RefreshAllChunks aborted: activeMapData is null.");
+            return;
+        }
+
+        MapData data = MapManager.Instance.activeMapData;
+        Debug.Log($"[MeshManager] Activating {data.mapSize.x * data.mapSize.y} chunks (Activation only)...");
+
+        // Activate every chunk in the map size without drawing immediately
+        for (int x = 0; x < data.mapSize.x; x++)
+        {
+            for (int y = 0; y < data.mapSize.y; y++)
             {
-                ActivateChunk(new Vector2Int(x, y));
+                ActivateChunk(new Vector2Int(x, y), false); // false = Don't draw now
             }
         }
+        Debug.Log("[MeshManager] All chunks activated in hierarchy.");
     }
 
-    private void ActivateChunk(Vector2Int coord)
+    private void ActivateChunk(Vector2Int coord, bool drawImmediately = true)
     {
         if (activeChunks.ContainsKey(coord)) return;
 
@@ -163,8 +203,12 @@ public class MeshManager : Singleton<MeshManager>
 
         filter.gameObject.SetActive(true);
         activeChunks.Add(coord, filter);
-        DrawChunk(filter, coord.x, coord.y);
-        UpdateChunkCollider(coord.x, coord.y);
+
+        if (drawImmediately)
+        {
+            DrawChunk(filter, coord.x, coord.y);
+            UpdateChunkCollider(coord.x, coord.y);
+        }
     }
 
 
@@ -179,11 +223,12 @@ public class MeshManager : Singleton<MeshManager>
         if (chunk == null) return;
 
         // Optimization: Cache all block states (Self + Neighbors) into a local array
-        // ChunkSize 16x16, with 1 block border = 18x18
-        bool[,] neighborStates = new bool[18, 18];
-        for (int x = -1; x <= 16; x++)
+        int width = ChunkData.ChunkSize.x;
+        int height = ChunkData.ChunkSize.y;
+        bool[,] neighborStates = new bool[width + 2, height + 2];
+        for (int x = -1; x <= width; x++)
         {
-            for (int y = -1; y <= 16; y++)
+            for (int y = -1; y <= height; y++)
             {
                 neighborStates[x + 1, y + 1] = HasBlock(cx, cy, x, y);
             }
@@ -207,9 +252,6 @@ public class MeshManager : Singleton<MeshManager>
         List<int> triangles = new List<int>();
         List<Vector3> uvs = new List<Vector3>();
         List<Color> colors = new List<Color>();
-
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
 
         for (int x = 0; x < width; x++)
         {
@@ -319,10 +361,11 @@ public class MeshManager : Singleton<MeshManager>
         if (chunk == null) return;
 
         // Pre-fetch neighbors
-        ChunkData chunkU = (cy + 1 < MapData.MapSize.y) ? allChunks[cx, cy + 1] : null;
+        MapData data = MapManager.Instance.activeMapData;
+        ChunkData chunkU = (cy + 1 < data.mapSize.y) ? allChunks[cx, cy + 1] : null;
         ChunkData chunkD = (cy - 1 >= 0) ? allChunks[cx, cy - 1] : null;
         ChunkData chunkL = (cx - 1 >= 0) ? allChunks[cx - 1, cy] : null;
-        ChunkData chunkR = (cx + 1 < MapData.MapSize.x) ? allChunks[cx + 1, cy] : null;
+        ChunkData chunkR = (cx + 1 < data.mapSize.x) ? allChunks[cx + 1, cy] : null;
 
         GameObject chunkObj = filter.gameObject;
         
@@ -476,11 +519,19 @@ public class MeshManager : Singleton<MeshManager>
     {
         GameObject chunkObj = new GameObject($"Chunk_Pool_{index}");
         chunkObj.transform.SetParent(this.transform);
-        chunkObj.layer = LayerMask.NameToLayer("Ground");
+        
+        int layer = LayerMask.NameToLayer("Ground");
+        if (layer == -1)
+        {
+            Debug.LogWarning("[MeshManager] 'Ground' layer not found! Using default layer (0).");
+            layer = 0;
+        }
+        chunkObj.layer = layer;
         chunkObj.SetActive(false);
 
         MeshFilter mf = chunkObj.AddComponent<MeshFilter>();
         MeshRenderer mr = chunkObj.AddComponent<MeshRenderer>();
+        if (tileMaterial == null) Debug.LogWarning("[MeshManager] TileMaterial is not assigned in the inspector!");
         mr.material = tileMaterial;
 
         return mf;
@@ -508,7 +559,10 @@ public class MeshManager : Singleton<MeshManager>
     public System.Collections.IEnumerator RequestFullRedrawCo()
     {
         int chunksProcessed = 0;
-        int redrawLimitPerFrame = 20; // Adjust for switch smoothness
+        int redrawLimitPerFrame = 200; // Increased for faster loading
+        int totalChunks = activeChunks.Count;
+
+        Debug.Log($"[MeshManager] Starting Full Redraw of {totalChunks} chunks...");
 
         foreach (var entry in activeChunks)
         {
@@ -516,12 +570,20 @@ public class MeshManager : Singleton<MeshManager>
             UpdateChunkCollider(entry.Key.x, entry.Key.y);
 
             chunksProcessed++;
-            if (chunksProcessed >= redrawLimitPerFrame)
+            if (chunksProcessed % redrawLimitPerFrame == 0)
             {
-                chunksProcessed = 0;
+                // Progress log every 10%
+                int step = totalChunks / 10;
+                if (step <= 0) step = 1;
+                if (chunksProcessed % step == 0)
+                {
+                    float progress = (float)chunksProcessed / totalChunks * 100f;
+                    Debug.Log($"[MeshManager] Redraw Progress: {progress:F1}% ({chunksProcessed}/{totalChunks})");
+                }
                 yield return null;
             }
         }
+        Debug.Log("[MeshManager] Full Redraw Complete.");
     }
 
     #endregion
@@ -543,7 +605,8 @@ public class MeshManager : Singleton<MeshManager>
         else if (targetY >= ChunkData.ChunkSize.y) { targetY -= ChunkData.ChunkSize.y; targetCY++; }
 
         // Check map boundaries
-        if (targetCX < 0 || targetCX >= MapData.MapSize.x || targetCY < 0 || targetCY >= MapData.MapSize.y)
+        MapData data = MapManager.Instance.activeMapData;
+        if (targetCX < 0 || targetCX >= data.mapSize.x || targetCY < 0 || targetCY >= data.mapSize.y)
             return false;
 
         ChunkData chunk = MapManager.Instance.activeMapData.chunks[targetCX, targetCY];
@@ -554,5 +617,3 @@ public class MeshManager : Singleton<MeshManager>
 
     #endregion
 }
-
-

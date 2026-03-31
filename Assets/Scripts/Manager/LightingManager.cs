@@ -23,8 +23,9 @@ public class LightingManager : Singleton<LightingManager>
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
 
-        int totalWidth = MapData.MapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = MapData.MapSize.y * ChunkData.ChunkSize.y;
+        MapData data = MapManager.Instance.activeMapData;
+        int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
+        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
 
         lightQueue.Clear();
 
@@ -58,8 +59,9 @@ public class LightingManager : Singleton<LightingManager>
     public void UpdateLightingAt(int worldX, int worldY)
     {
         int range = 25; // Increased range for better spread
-        int totalWidth = MapData.MapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = MapData.MapSize.y * ChunkData.ChunkSize.y;
+        MapData data = MapManager.Instance.activeMapData;
+        int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
+        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
 
         lightQueue.Clear();
 
@@ -111,8 +113,9 @@ public class LightingManager : Singleton<LightingManager>
     private void SpreadLight()
     {
         Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
-        int totalWidth = MapData.MapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = MapData.MapSize.y * ChunkData.ChunkSize.y;
+        MapData data = MapManager.Instance.activeMapData;
+        int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
+        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
 
         while (lightQueue.Count > 0)
         {
@@ -168,7 +171,7 @@ public class LightingManager : Singleton<LightingManager>
         if (lx < 0) { lx += width; cx--; }
         if (ly < 0) { ly += height; cy--; }
 
-        if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return;
+        if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return;
 
         MapManager.Instance.activeMapData.chunks[cx, cy].lightValues[lx, ly] = value;
     }
@@ -186,7 +189,7 @@ public class LightingManager : Singleton<LightingManager>
         if (lx < 0) { lx += width; cx--; }
         if (ly < 0) { ly += height; cy--; }
 
-        if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return 0;
+        if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return 0;
         
         return MapManager.Instance.activeMapData.chunks[cx, cy].lightValues[lx, ly];
     }
@@ -204,7 +207,7 @@ public class LightingManager : Singleton<LightingManager>
         if (lx < 0) { lx += width; cx--; }
         if (ly < 0) { ly += height; cy--; }
 
-        if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return false;
+        if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return false;
         
         return MapManager.Instance.activeMapData.chunks[cx, cy].blocks[lx, ly].isActive;
     }

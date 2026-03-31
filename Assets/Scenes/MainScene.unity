@@ -138,7 +138,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!114 &3308926
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -213,8 +213,8 @@ MonoBehaviour:
       m_Calls: []
   m_ActionEvents: []
   m_NeverAutoSwitchControlSchemes: 0
-  m_DefaultControlScheme: 
-  m_DefaultActionMap: 
+  m_DefaultControlScheme: Keyboard&Mouse
+  m_DefaultActionMap: Player
   m_SplitScreenIndex: -1
   m_Camera: {fileID: 0}
 --- !u!50 &3308929
@@ -738,6 +738,9 @@ MonoBehaviour:
   baseSeed: Project_BlockTest
   useRandomSeed: 0
   dirtBlockId: 0
+  standardMapSize: {x: 300, y: 240}
+  greatCaveMapSize: {x: 400, y: 200}
+  hellMapSize: {x: 240, y: 400}
   chunksPerFrame: 50
 --- !u!1 &926397694
 GameObject:
@@ -1200,6 +1203,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MapManager
   mapGenerator: {fileID: 694770585}
+  activeMapData:
+    mapSize: {x: 0, y: 0}
   activeStyle: 0
 --- !u!1 &1481759067
 GameObject:
@@ -1381,7 +1386,7 @@ GameObject:
   - component: {fileID: 1668643430}
   - component: {fileID: 1668643429}
   m_Layer: 0
-  m_Name: RendererManager
+  m_Name: MeshManager
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

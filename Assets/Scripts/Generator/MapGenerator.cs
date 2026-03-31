@@ -23,12 +23,15 @@ public class MapGenerator : MonoBehaviour
     [Header("### Block Config")]
     [SerializeField] private int dirtBlockId = 0;
 
+    [Header("### Map Sizes (Chunks)")]
+    [SerializeField] private Vector2Int standardMapSize = MapData.StandardMapSize;
+    [SerializeField] private Vector2Int greatCaveMapSize = MapData.GreatCaveMapSize;
+    [SerializeField] private Vector2Int hellMapSize = MapData.HellMapSize;
+
     [Header("### Performance")]
     [SerializeField] private int chunksPerFrame = 500; // Increase for speed, decrease for smoothness
 
     // Runtime Cached Data
-    private int totalWidth;
-    private int totalHeight;
     private int chunksProcessedInFrame;
 
     public float LoadingProgress { get; private set; }
@@ -45,9 +48,6 @@ public class MapGenerator : MonoBehaviour
         IsLoading = true;
         LoadingProgress = 0;
         chunksProcessedInFrame = 0;
-
-        totalWidth = MapData.MapSize.x * ChunkData.ChunkSize.x;
-        totalHeight = MapData.MapSize.y * ChunkData.ChunkSize.y;
 
         if (useRandomSeed)
         {
@@ -81,12 +81,14 @@ public class MapGenerator : MonoBehaviour
 
     private IEnumerator GenerateStandardCo()
     {
-        MapData data = InitializeMap(baseSeed, WorldStyle.Standard);
+        // Use inspector-defined size
+        MapData data = InitializeMap(baseSeed, WorldStyle.Standard, MapData.StandardMapSize);
+        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
         int surfaceY = Mathf.FloorToInt(0.6f * totalHeight);
 
-        for (int cx = 0; cx < MapData.MapSize.x; cx++)
+        for (int cx = 0; cx < data.mapSize.x; cx++)
         {
-            for (int cy = 0; cy < MapData.MapSize.y; cy++)
+            for (int cy = 0; cy < data.mapSize.y; cy++)
             {
                 FillFlatChunk(data.chunks[cx, cy], cy, surfaceY);
                 
@@ -109,12 +111,14 @@ public class MapGenerator : MonoBehaviour
 
     private IEnumerator GenerateGreatCaveCo()
     {
-        MapData data = InitializeMap(baseSeed, WorldStyle.GreatCave);
+        // Use inspector-defined size
+        MapData data = InitializeMap(baseSeed, WorldStyle.GreatCave, MapData.GreatCaveMapSize);
+        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
         int surfaceY = Mathf.FloorToInt(0.4f * totalHeight);
 
-        for (int cx = 0; cx < MapData.MapSize.x; cx++)
+        for (int cx = 0; cx < data.mapSize.x; cx++)
         {
-            for (int cy = 0; cy < MapData.MapSize.y; cy++)
+            for (int cy = 0; cy < data.mapSize.y; cy++)
             {
                 FillFlatChunk(data.chunks[cx, cy], cy, surfaceY);
                 
@@ -136,12 +140,14 @@ public class MapGenerator : MonoBehaviour
 
     private IEnumerator GenerateHellCo()
     {
-        MapData data = InitializeMap(baseSeed, WorldStyle.Hell);
+        // Use inspector-defined size
+        MapData data = InitializeMap(baseSeed, WorldStyle.Hell, MapData.HellMapSize);
+        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
         int surfaceY = Mathf.FloorToInt(0.2f * totalHeight);
 
-        for (int cx = 0; cx < MapData.MapSize.x; cx++)
+        for (int cx = 0; cx < data.mapSize.x; cx++)
         {
-            for (int cy = 0; cy < MapData.MapSize.y; cy++)
+            for (int cy = 0; cy < data.mapSize.y; cy++)
             {
                 FillFlatChunk(data.chunks[cx, cy], cy, surfaceY);
                 
@@ -154,6 +160,7 @@ public class MapGenerator : MonoBehaviour
             }
         }
 
+        Debug.Log($"[MapGenerator] {WorldStyle.Hell} World Generated and Storing in MapManager.");
         MapManager.Instance.StoreMap(WorldStyle.Hell, data);
     }
 
@@ -161,12 +168,12 @@ public class MapGenerator : MonoBehaviour
 
     #region Shared Sub-Steps & Utils
 
-    private MapData InitializeMap(string seed, WorldStyle style)
+    private MapData InitializeMap(string seed, WorldStyle style, Vector2Int size)
     {
         string saltedSeed = seed + "_" + style.ToString();
         int seedHash = saltedSeed.GetHashCode();
         Random.InitState(seedHash);
-        return new MapData();
+        return new MapData(size);
     }
 
     private void FillFlatChunk(ChunkData chunk, int cy, int surfaceY)

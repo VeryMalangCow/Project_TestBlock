@@ -94,6 +94,8 @@ public class PlayerController : MonoBehaviour
             visuals.SetArmor("Heads", 0);
             visuals.SetArmor("Cloaks", 0);
         }
+
+        this.gameObject.SetActive(false);
     }
     private void Update()
     {

@@ -7,6 +7,7 @@ public class Test : MonoBehaviour
     [Header("# Player")]
     [SerializeField] private PlayerController player;
     bool running = false;
+
     private void Update()
     {
         if (Keyboard.current == null) return;
@@ -40,7 +41,7 @@ public class Test : MonoBehaviour
         {
             player.gameObject.SetActive(true);
             // Optionally reposition player to surface
-            player.transform.position = MapManager.Instance.GetPositionByRatio(50f, 100f);
+            player.transform.position = MapManager.Instance.GetPositionByRatio(50f, 80f);
         }
         running = false;
     }
@@ -57,7 +58,7 @@ public class Test : MonoBehaviour
         if (player != null)
         {
             player.gameObject.SetActive(true);
-            player.transform.position = MapManager.Instance.GetPositionByRatio(50f, 100f);
+            player.transform.position = MapManager.Instance.GetPositionByRatio(50f, 80f);
         }
         running = false;
     }

@@ -22,7 +22,7 @@ public struct BlockData
 [Serializable]
 public class ChunkData
 {
-    public static readonly Vector2Int ChunkSize = new Vector2Int(16, 16);
+    public static readonly Vector2Int ChunkSize = new Vector2Int(8, 8);
 
     public BlockData[,] blocks;
     public byte[,] lightValues;
@@ -37,16 +37,21 @@ public class ChunkData
 [Serializable]
 public class MapData
 {
-    public static readonly Vector2Int MapSize = new Vector2Int(128, 128);
+    public static readonly Vector2Int StandardMapSize = new Vector2Int(300, 240);
+    public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(400, 200);
+    public static readonly Vector2Int HellMapSize = new Vector2Int(240, 400);
+
+    public Vector2Int mapSize;
 
     public ChunkData[,] chunks;
 
-    public MapData()
+    public MapData(Vector2Int size)
     {
-        chunks = new ChunkData[MapSize.x, MapSize.y];
-        for (int x = 0; x < MapSize.x; x++)
+        this.mapSize = size;
+        chunks = new ChunkData[mapSize.x, mapSize.y];
+        for (int x = 0; x < mapSize.x; x++)
         {
-            for (int y = 0; y < MapSize.y; y++)
+            for (int y = 0; y < mapSize.y; y++)
             {
                 chunks[x, y] = new ChunkData();
             }
@@ -86,9 +91,12 @@ public class MapManager : Singleton<MapManager>
 
     public IEnumerator GenerateMapCo()
     {
+        Debug.Log("[MapManager] Step 1: Starting MapGenerator.GenerateAllWorldsCo...");
         yield return StartCoroutine(mapGenerator.GenerateAllWorldsCo());
 
+        Debug.Log("[MapManager] Step 2: Map Generation finished. Switching to Standard world...");
         yield return StartCoroutine(SwitchWorldCo(WorldStyle.Standard));
+        Debug.Log("[MapManager] Step 3: Initial World Switch Sequence Complete.");
     }
 
     #endregion
@@ -97,27 +105,39 @@ public class MapManager : Singleton<MapManager>
 
     public IEnumerator SwitchWorldCo(WorldStyle style)
     {
+        Debug.Log($"[MapManager] Attempting to switch to world: {style}");
+
         if (!worldMaps.TryGetValue(style, out MapData data))
         {
-            Debug.LogWarning($"[MapManager] World {style} not found! Generate it first.");
+            Debug.LogError($"[MapManager] FATAL: World {style} not found in worldMaps dictionary! Generation might have failed.");
             yield break;
         }
 
         activeMapData = data;
         activeStyle = style;
 
-        Debug.Log($"[MapManager] Switching to {style} world asynchronously...");
+        Debug.Log($"[MapManager] Data found for {style}. MapSize: {data.mapSize}. Starting lighting calculation...");
 
         // 1. Calculate lighting for the new map FIRST
         if (LightingManager.Instance != null)
         {
             LightingManager.Instance.CalculateAllLighting();
+            Debug.Log("[MapManager] Lighting calculation finished.");
         }
 
         // 2. Then refresh visuals using the calculated light values
         if (MeshManager.Instance != null)
         {
+            Debug.Log("[MapManager] Activating all chunks via MeshManager...");
+            MeshManager.Instance.RefreshAllChunks();
+            
+            Debug.Log("[MapManager] Requesting MeshManager to redraw all chunks...");
             yield return StartCoroutine(MeshManager.Instance.RequestFullRedrawCo());
+            Debug.Log("[MapManager] MeshManager.RequestFullRedrawCo finished.");
+        }
+        else
+        {
+            Debug.LogWarning("[MapManager] MeshManager.Instance is null! Cannot redraw.");
         }
 
         Debug.Log($"[MapManager] Successfully switched to {style} world.");
@@ -143,7 +163,7 @@ public class MapManager : Singleton<MapManager>
         if (lx < 0) { lx += width; cx--; }
         if (ly < 0) { ly += height; cy--; }
 
-        if (cx < 0 || cx >= MapData.MapSize.x || cy < 0 || cy >= MapData.MapSize.y) return;
+        if (cx < 0 || cx >= activeMapData.mapSize.x || cy < 0 || cy >= activeMapData.mapSize.y) return;
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
         if (chunk == null) return;
@@ -191,8 +211,10 @@ public class MapManager : Singleton<MapManager>
     /// <returns>Calculated world position</returns>
     public Vector2 GetPositionByRatio(float ratioX, float ratioY)
     {
-        int totalWidth = MapData.MapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = MapData.MapSize.y * ChunkData.ChunkSize.y;
+        if (activeMapData == null) return Vector2.zero;
+
+        int totalWidth = activeMapData.mapSize.x * ChunkData.ChunkSize.x;
+        int totalHeight = activeMapData.mapSize.y * ChunkData.ChunkSize.y;
 
         float x = (ratioX / 100f) * totalWidth;
         float y = (ratioY / 100f) * totalHeight;
