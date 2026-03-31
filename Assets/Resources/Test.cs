@@ -31,7 +31,8 @@ public class Test : MonoBehaviour
         running = true;
         // Disable only components, not the whole GameObject, 
         // so this coroutine can keep running.
-        if (player != null) player.gameObject.SetActive(false);
+        player.gameObject.SetActive(false);
+        player.enabled = false;
 
         Debug.Log("[Test] Map Generation Started...");
         yield return MapManager.Instance.GenerateMapCo();
@@ -40,6 +41,7 @@ public class Test : MonoBehaviour
         if (player != null)
         {
             player.gameObject.SetActive(true);
+            player.enabled = true;
             // Optionally reposition player to surface
             player.transform.position = MapManager.Instance.GetPositionByRatio(50f, 80f);
         }
@@ -49,7 +51,9 @@ public class Test : MonoBehaviour
     private IEnumerator test_SwitchMap(WorldStyle style)
     {
         running = true;
-        if (player != null) player.gameObject.SetActive(false);
+
+        player.gameObject.SetActive(false);
+        player.enabled = false;
 
         Debug.Log("[Test] Map Switch Started...");
         yield return MapManager.Instance.SwitchWorldCo(style);
@@ -58,6 +62,7 @@ public class Test : MonoBehaviour
         if (player != null)
         {
             player.gameObject.SetActive(true);
+            player.enabled = true;
             player.transform.position = MapManager.Instance.GetPositionByRatio(50f, 80f);
         }
         running = false;

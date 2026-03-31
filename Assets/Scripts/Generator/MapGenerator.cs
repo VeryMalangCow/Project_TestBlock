@@ -61,15 +61,15 @@ public class MapGenerator : MonoBehaviour
         LoadingProgress = 0.33f;
         Debug.Log("[MapGenerator] Standard World Generated.");
 
-        // Step 2: Great Cave World
-        yield return StartCoroutine(GenerateGreatCaveCo());
-        LoadingProgress = 0.66f;
-        Debug.Log("[MapGenerator] Great Cave World Generated.");
-
-        // Step 3: Hell World
-        yield return StartCoroutine(GenerateHellCo());
-        LoadingProgress = 1.0f;
-        Debug.Log("[MapGenerator] Hell World Generated.");
+        //// Step 2: Great Cave World
+        //yield return StartCoroutine(GenerateGreatCaveCo());
+        //LoadingProgress = 0.66f;
+        //Debug.Log("[MapGenerator] Great Cave World Generated.");
+        //
+        //// Step 3: Hell World
+        //yield return StartCoroutine(GenerateHellCo());
+        //LoadingProgress = 1.0f;
+        //Debug.Log("[MapGenerator] Hell World Generated.");
 
         IsLoading = false;
         Debug.Log("[MapGenerator] All worlds ready.");

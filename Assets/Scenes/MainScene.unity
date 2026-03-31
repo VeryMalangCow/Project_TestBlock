@@ -167,7 +167,7 @@ MonoBehaviour:
   groundCheckRadius: 0.2
   stepHeight: 1.2
   stepCheckDistance: 0.1
-  selectedBlockId: 1
+  selectedBlockId: 4
   interactRange: 6
   walkAnimSpeedMultiplier: 2
 --- !u!4 &3308927
@@ -446,7 +446,7 @@ Camera:
   m_Enabled: 1
   serializedVersion: 2
   m_ClearFlags: 2
-  m_BackGroundColor: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 0}
+  m_BackGroundColor: {r: 0.6933962, g: 1, b: 1, a: 0}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
   m_FOVAxisMode: 0
@@ -1407,7 +1407,7 @@ MonoBehaviour:
   tileMaterial: {fileID: 2100000, guid: 2634014bbd2ed2a4bae64b83ac8cc3d8, type: 2}
   useSlidingWindow: 1
   targetTransform: {fileID: 3308927}
-  viewDistance: 4
+  viewDistance: 8
 --- !u!4 &1668643430
 Transform:
   m_ObjectHideFlags: 0

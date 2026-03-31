@@ -95,8 +95,9 @@ public class PlayerController : MonoBehaviour
             visuals.SetArmor("Cloaks", 0);
         }
 
-        this.gameObject.SetActive(false);
+        enabled = false;
     }
+
     private void Update()
     {
         CheckGrounded();
@@ -272,13 +273,13 @@ public class PlayerController : MonoBehaviour
     private void HandleInteraction()
     {
         // Left Click (Destroy)
-        if (Mouse.current.leftButton.isPressed)
+        if (Mouse.current.leftButton.wasPressedThisFrame)
         {
             UpdateBlock(-1);
         }
 
         // Right Click (Place)
-        if (Mouse.current.rightButton.isPressed)
+        if (Mouse.current.rightButton.wasPressedThisFrame)
         {
             UpdateBlock(selectedBlockId);
         }
