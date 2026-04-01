@@ -337,9 +337,16 @@ public class PlayerController : NetworkBehaviour
     {
         rb.gravityScale = 3f;
         float targetSpeed = input.x * moveSpeed;
-        float speedDiff = targetSpeed - rb.linearVelocity.x;
+        float currentSpeed = rb.linearVelocity.x;
+        
+        // Determine if we are accelerating or braking
         float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
-        rb.AddForce(Vector2.right * speedDiff * accelRate * Time.fixedDeltaTime, ForceMode2D.Force);
+        
+        // Snappy Velocity Change: Move current speed towards target speed at accelRate
+        // This eliminates "slippery" feeling and fixes the double-dt multiplication bug.
+        float newX = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.fixedDeltaTime);
+        
+        rb.linearVelocity = new Vector2(newX, rb.linearVelocity.y);
     }
 
     private void ApplyJumpPhysics()
