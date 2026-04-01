@@ -15,7 +15,7 @@ GameObject:
   - component: {fileID: 7557954901024385104}
   - component: {fileID: 3691483584524692821}
   - component: {fileID: 6169973608933257562}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -222,7 +222,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7686304336685400412}
   - component: {fileID: 7313436475919024899}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Sprite_Cloth
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -313,7 +313,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5442492709046242784}
   - component: {fileID: 9166107974653693631}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Sprite_Backpack
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -404,7 +404,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5581803561638476078}
   - component: {fileID: 4155625903134356229}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Visuals
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -469,7 +469,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1590605308250086085}
   - component: {fileID: 2477940883508648881}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Sprite_Head
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -560,7 +560,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1288713565158605174}
   - component: {fileID: 5506491753063629393}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Sprite_Cloak
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -651,7 +651,7 @@ GameObject:
   m_Component:
   - component: {fileID: 512462081346832703}
   - component: {fileID: 1977730540923760186}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Col
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -689,7 +689,7 @@ BoxCollider2D:
     m_Bits: 0
   m_ExcludeLayers:
     serializedVersion: 2
-    m_Bits: 0
+    m_Bits: 8
   m_LayerOverridePriority: 0
   m_ForceSendLayers:
     serializedVersion: 2
@@ -729,7 +729,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8639963874904049451}
   - component: {fileID: 1536040964029927011}
-  m_Layer: 0
+  m_Layer: 3
   m_Name: Sprite_Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
