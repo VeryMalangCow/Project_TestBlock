@@ -2,7 +2,6 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Netcode;
-using Unity.Collections;
 using UnityEngine;
 
 #region Map Data Structures
@@ -49,8 +48,14 @@ public class ChunkData
 public class MapData
 {
     public static readonly Vector2Int StandardMapSize = new Vector2Int(300, 240);
-    public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(300, 240);
-    public static readonly Vector2Int HellMapSize = new Vector2Int(300, 240);
+    public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(400, 200);
+    public static readonly Vector2Int HellMapSize = new Vector2Int(240, 400);
+
+    // 곧 사용할 것. 지우기 X
+    public static readonly Vector2 StanardSpawnPos = new Vector2(1200, 1360);
+    public static readonly Vector2 GreatCaveSpawnPos = new Vector2(1600, 800);
+    public static readonly Vector2 HellMapSpawnPos = new Vector2(960, 1600);
+
     public Vector2Int mapSize;
     public ChunkData[,] chunks;
 
