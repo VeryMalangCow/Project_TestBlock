@@ -1,7 +1,11 @@
+using System.Collections;
+using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.EventSystems;
 
-public class PlayerController : MonoBehaviour
+public class PlayerController : NetworkBehaviour
 {
     #region Variable
 
@@ -12,23 +16,22 @@ public class PlayerController : MonoBehaviour
 
     [Header("### Move")]
     [SerializeField] private float moveSpeed = 8f;
-    [SerializeField] private float acceleration = 50f;
-    [SerializeField] private float deceleration = 40f;
-    [SerializeField] private float jumpForce = 12f;
+    [SerializeField] private float acceleration = 60f;
+    [SerializeField] private float deceleration = 50f;
+    [SerializeField] private float jumpForce = 13f;
 
     [Header("### Dash")]
-    [SerializeField] private float dashSpeed = 25f;
+    [SerializeField] private float dashSpeed = 28f;
     [SerializeField] private float dashDuration = 0.2f;
     [SerializeField] private float dashCooldown = 0.5f;
-    private bool isDashing;
     private float dashTimeLeft;
     private float dashCooldownTimer;
     private float dashDirection;
 
     [Header("### Physics")]
     [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float groundCheckRadius = 0.2f;
-    [SerializeField] private float stepHeight = 1.1f; // Slightly more than 1 block
+    [SerializeField] private float groundCheckRadius = 0.25f;
+    [SerializeField] private float stepHeight = 1.1f; 
     [SerializeField] private float stepCheckDistance = 0.1f;
 
     [Header("### Interaction")]
@@ -37,70 +40,191 @@ public class PlayerController : MonoBehaviour
 
     private Vector2 moveInput;
     private bool isGrounded;
-    private bool jumpRequest;
-
-    // Animation state
     private float walkCycleTime;
-    [SerializeField] private float walkAnimSpeedMultiplier = 2f;
+    [SerializeField] private float walkAnimSpeedMultiplier = 2.5f;
+
+    private string debugStatus = "Initializing...";
 
     #endregion
 
-    #region Input Event
+    #region Network Sync Variables
 
-    public void OnMove(InputValue value)
+    // 1. Movement Sync
+    private NetworkVariable<Vector2> moveInputSync = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> isFlippedSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> currentFrameSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    // 2. State Sync (Important for Jump/Dash consistency)
+    private NetworkVariable<bool> isDashingSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<float> dashDirectionSync = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> jumpCountSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private int lastProcessedJumpCount;
+
+    // 3. Armor Sync
+    private NetworkVariable<int> clothesIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> backpackIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> headIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> cloakIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    #endregion
+
+    #region Awake & Setup
+
+    private void Awake()
     {
-        moveInput = value.Get<Vector2>();
+        SetupPhysics();
+        EnsureEventSystem();
     }
 
-    public void OnJump(InputValue value)
+    private void SetupPhysics()
     {
-        if (value.isPressed && isGrounded && !isDashing)
+        int layer = LayerMask.NameToLayer("Ground");
+        if (layer != -1)
         {
-            jumpRequest = true;
+            groundLayer = (1 << layer);
+            if (rb != null)
+            {
+                rb.includeLayers = groundLayer;
+                rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+                rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+            }
         }
     }
 
-    public void OnDash(InputValue value)
+    private void EnsureEventSystem()
     {
-        if (value.isPressed && !isDashing && dashCooldownTimer <= 0)
+        if (Object.FindAnyObjectByType<EventSystem>() == null)
         {
-            isDashing = true;
-            dashTimeLeft = dashDuration;
-            dashCooldownTimer = dashCooldown;
-
-            // Dash direction: movement input direction or current facing direction
-            dashDirection = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (visuals != null && visuals.IsFlipped ? -1f : 1f);
-
-            // Reset vertical velocity
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
+            GameObject es = new GameObject("EventSystem");
+            es.AddComponent<EventSystem>();
+            es.AddComponent<StandaloneInputModule>();
         }
     }
 
     #endregion
 
-    #region MonoBehaivour
+    #region Network Lifecycle
 
-    private void Start()
+    public override void OnNetworkSpawn()
     {
-        transform.position = MapManager.Instance.GetPositionByRatio(50f, 100f);
+        clothesIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Clothes", newVal); };
+        backpackIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Backpacks", newVal); };
+        headIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Heads", newVal); };
+        cloakIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Cloaks", newVal); };
+
+        StartCoroutine(InitPlayerCo());
+    }
+
+    private IEnumerator InitPlayerCo()
+    {
+        debugStatus = "Waiting for Map...";
+        
+        if (rb != null)
+        {
+            rb.simulated = false;
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.gravityScale = 0;
+            rb.linearVelocity = Vector2.zero;
+        }
+        if (visuals != null) visuals.gameObject.SetActive(false);
+
+        while (MapManager.Instance == null || !MapManager.Instance.IsMapReady())
+        {
+            yield return null;
+        }
+
+        if (IsOwner)
+        {
+            debugStatus = "Requesting Spawn...";
+            RequestSpawnServerRpc();
+            yield return new WaitForSeconds(0.5f);
+
+            clothesIdSync.Value = 0;
+            backpackIdSync.Value = 0;
+            headIdSync.Value = 0;
+            cloakIdSync.Value = 0;
+        }
+
+        if (!IsServer || IsOwner)
+        {
+            debugStatus = "Rendering Local Chunks...";
+            int retry = 0;
+            while (retry < 100) 
+            {
+                int cx = Mathf.FloorToInt(transform.position.x / ChunkData.ChunkSize.x);
+                int cy = Mathf.FloorToInt(transform.position.y / ChunkData.ChunkSize.y);
+                if (MeshManager.Instance != null && MeshManager.Instance.IsChunkActive(cx, cy)) break;
+                if (IsOwner && MeshManager.Instance != null) MeshManager.Instance.ForceRenderChunk(cx, cy);
+                retry++;
+                yield return new WaitForSeconds(0.1f);
+            }
+        }
 
         if (visuals != null)
         {
+            visuals.gameObject.SetActive(true);
             visuals.Init();
-            // Test: Load default body and some equipment
-            // Categories: Backpacks, Cloaks, Clothes, Heads
-            visuals.SetArmor("Clothes", 0);
-            visuals.SetArmor("Backpacks", 0);
-            visuals.SetArmor("Heads", 0);
-            visuals.SetArmor("Cloaks", 0);
+            visuals.SetArmor("Clothes", clothesIdSync.Value);
+            visuals.SetArmor("Backpacks", backpackIdSync.Value);
+            visuals.SetArmor("Heads", headIdSync.Value);
+            visuals.SetArmor("Cloaks", cloakIdSync.Value);
         }
 
-        enabled = false;
+        if (IsOwner && Camera.main != null)
+        {
+            CameraController cam = Camera.main.GetComponent<CameraController>();
+            if (cam != null)
+            {
+                cam.enabled = true;
+                cam.SetTarget(transform);
+            }
+        }
+
+        debugStatus = "READY";
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Dynamic;
+            rb.simulated = true;
+            rb.gravityScale = 3f;
+        }
+        enabled = true;
     }
+
+    [ServerRpc]
+    private void RequestSpawnServerRpc()
+    {
+        Vector2 spawnPos = MapManager.Instance.GetSurfacePosition(50f);
+        transform.position = spawnPos;
+        rb.position = spawnPos;
+        rb.bodyType = RigidbodyType2D.Dynamic;
+        rb.simulated = true;
+        rb.gravityScale = 3f;
+
+        var networkTransform = GetComponent<NetworkTransform>();
+        if (networkTransform != null) networkTransform.Teleport(spawnPos, Quaternion.identity, transform.localScale);
+        ConfirmSpawnClientRpc(spawnPos);
+    }
+
+    [ClientRpc]
+    private void ConfirmSpawnClientRpc(Vector2 pos) { if (IsOwner) transform.position = pos; }
+
+    #endregion
+
+    #region Update Loops
 
     private void Update()
     {
-        CheckGrounded();
+        if (!IsOwner)
+        {
+            if (visuals != null)
+            {
+                visuals.SetFlip(isFlippedSync.Value);
+                visuals.SyncAnimation(currentFrameSync.Value);
+            }
+            return;
+        }
+
+        HandleOwnerInput();
         HandleInteraction();
         UpdateTimers();
         UpdateVisuals();
@@ -108,162 +232,159 @@ public class PlayerController : MonoBehaviour
 
     private void FixedUpdate()
     {
-        if (isDashing)
+        if (debugStatus != "READY") return;
+
+        if (IsOwner || IsServer)
         {
-            HandleDash();
-            HandleStepClimb(); // Dash-step is very important for fluidity
-        }
-        else
-        {
-            HandleHorizontalMovement();
-            HandleJump();
-            HandleStepClimb();
+            CheckGrounded();
+
+            // Handle Jump via Counter
+            if (jumpCountSync.Value > lastProcessedJumpCount)
+            {
+                if (isGrounded) ApplyJumpPhysics();
+                lastProcessedJumpCount = jumpCountSync.Value;
+            }
+
+            Vector2 activeInput = IsOwner ? moveInput : moveInputSync.Value;
+
+            if (isDashingSync.Value)
+            {
+                HandleDash();
+                HandleStepClimb(activeInput);
+            }
+            else
+            {
+                HandleHorizontalMovement(activeInput);
+                HandleStepClimb(activeInput);
+            }
         }
     }
 
-
     #endregion
 
-    #region Visuals
+    #region Visuals & Physics Logic
 
     private void UpdateVisuals()
     {
         if (visuals == null) return;
-
-        // Flip visuals based on movement direction
-        if (Mathf.Abs(moveInput.x) > 0.01f && !isDashing)
+        if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
         {
-            visuals.SetFlip(moveInput.x < 0);
+            isFlippedSync.Value = moveInput.x < 0;
+            visuals.SetFlip(isFlippedSync.Value);
         }
-
         int targetFrame = 0;
-
-        if (isDashing)
-        {
-            // Dash State (Frame 11)
-            targetFrame = 11;
-        }
-        else if (!isGrounded)
-        {
-            // Jump State (Frame 10)
-            targetFrame = 10;
-            walkCycleTime = 0; // Reset walk cycle
-        }
+        if (isDashingSync.Value) targetFrame = 11;
+        else if (!isGrounded) targetFrame = 10;
         else
         {
             float currentHorizontalSpeed = Mathf.Abs(rb.linearVelocity.x);
-
             if (currentHorizontalSpeed > 0.1f)
             {
-                // Walk Animation (Frames 0-9)
-                // Cycle index based on speed and time
                 walkCycleTime += Time.deltaTime * currentHorizontalSpeed * walkAnimSpeedMultiplier;
                 targetFrame = Mathf.FloorToInt(walkCycleTime) % 10;
             }
-            else
-            {
-                // Idle State (Frame 0)
-                targetFrame = 0;
-                walkCycleTime = 0;
-            }
         }
-
+        currentFrameSync.Value = targetFrame;
         visuals.SyncAnimation(targetFrame);
     }
 
-    #endregion
-
-    #region Physics Move
-
     private void UpdateTimers()
     {
-        if (isDashing)
+        if (isDashingSync.Value)
         {
             dashTimeLeft -= Time.deltaTime;
             if (dashTimeLeft <= 0)
             {
-                isDashing = false;
-                // Restore gravity
+                if (IsServer) isDashingSync.Value = false;
                 rb.gravityScale = 3f;
             }
         }
-
-        if (dashCooldownTimer > 0)
-        {
-            dashCooldownTimer -= Time.deltaTime;
-        }
+        if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
     }
 
     private void HandleDash()
     {
-        // Override gravity and apply high speed
         rb.gravityScale = 0;
-        rb.linearVelocity = new Vector2(dashDirection * dashSpeed, 0);
+        rb.linearVelocity = new Vector2(dashDirectionSync.Value * dashSpeed, 0);
     }
 
-    private void HandleStepClimb()
+    private void HandleStepClimb(Vector2 input)
     {
-        // Direction to check
-        float dir = isDashing ? dashDirection : (moveInput.x != 0 ? Mathf.Sign(moveInput.x) : 0);
+        float dir = isDashingSync.Value ? dashDirectionSync.Value : (input.x != 0 ? Mathf.Sign(input.x) : 0);
         if (dir == 0) return;
-
         Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y + 0.1f);
         Vector2 direction = new Vector2(dir, 0);
         float distance = (col.size.x / 2f) + stepCheckDistance;
-
-        // 1. Check if there's a wall at foot level
         RaycastHit2D hitLower = Physics2D.Raycast(origin, direction, distance, groundLayer);
         if (hitLower.collider != null)
         {
-            // 2. Check if the space above (stepHeight) is clear
             Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
             RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
-
-            if (hitUpper.collider == null)
-            {
-                // 3. Step up: Move the player slightly up and forward
-                // Using position offset for immediate "snappy" step feel
-                rb.position += new Vector2(0, 0.2f); // Small nudge to clear the edge
-            }
+            if (hitUpper.collider == null) rb.position += new Vector2(0, 0.25f);
         }
     }
 
     private void CheckGrounded()
     {
         if (col == null) return;
-
-        // Calculate a box that is slightly narrower than the player to avoid wall friction
-        // but covers the feet area.
-        float boxWidth = col.bounds.size.x * 0.9f;
+        float boxWidth = col.bounds.size.x * 0.85f;
         float boxHeight = groundCheckRadius;
         Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
-
         isGrounded = Physics2D.OverlapBox(boxCenter, new Vector2(boxWidth, boxHeight), 0f, groundLayer);
     }
 
-    private void HandleHorizontalMovement()
+    private void HandleHorizontalMovement(Vector2 input)
     {
-        rb.gravityScale = 3f; // Default gravity scale (adjust as needed for better feel)
-
-        float targetSpeed = moveInput.x * moveSpeed;
+        rb.gravityScale = 3f;
+        float targetSpeed = input.x * moveSpeed;
         float speedDiff = targetSpeed - rb.linearVelocity.x;
-
-        // Apply acceleration or deceleration
         float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
-        float movement = speedDiff * accelRate * Time.fixedDeltaTime;
-
-        rb.AddForce(Vector2.right * movement, ForceMode2D.Force);
+        rb.AddForce(Vector2.right * speedDiff * accelRate * Time.fixedDeltaTime, ForceMode2D.Force);
     }
 
-    private void HandleJump()
+    private void ApplyJumpPhysics()
     {
-        if (jumpRequest)
+        rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
+        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
+    }
+
+    #endregion
+
+    #region Input Handling
+
+    private void HandleOwnerInput()
+    {
+        if (!IsOwner) return;
+        Vector2 input = Vector2.zero;
+        if (Keyboard.current != null)
         {
-            // Reset vertical velocity for consistent jump height
-            rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
-            rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-            jumpRequest = false;
+            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) input.x -= 1;
+            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) input.x += 1;
         }
+        moveInput = input;
+        moveInputSync.Value = input; 
+
+        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded && !isDashingSync.Value)
+        {
+            jumpCountSync.Value++;
+        }
+
+        if (Keyboard.current != null && Keyboard.current.leftShiftKey.wasPressedThisFrame && !isDashingSync.Value && dashCooldownTimer <= 0)
+        {
+            TriggerDashServerRpc();
+        }
+    }
+
+    [ServerRpc]
+    private void TriggerDashServerRpc()
+    {
+        if (isDashingSync.Value || dashCooldownTimer > 0) return;
+        isDashingSync.Value = true;
+        dashTimeLeft = dashDuration;
+        dashCooldownTimer = dashCooldown;
+        Vector2 currentInput = moveInputSync.Value;
+        dashDirectionSync.Value = currentInput.x != 0 ? Mathf.Sign(currentInput.x) : (isFlippedSync.Value ? -1f : 1f);
+        rb.linearVelocity = new Vector2(dashDirectionSync.Value * dashSpeed, 0);
     }
 
     #endregion
@@ -272,50 +393,40 @@ public class PlayerController : MonoBehaviour
 
     private void HandleInteraction()
     {
-        // Left Click (Destroy)
-        if (Mouse.current.leftButton.wasPressedThisFrame)
-        {
-            UpdateBlock(-1);
-        }
-
-        // Right Click (Place)
-        if (Mouse.current.rightButton.wasPressedThisFrame)
-        {
-            UpdateBlock(selectedBlockId);
-        }
+        if (Mouse.current == null) return;
+        if (Mouse.current.leftButton.wasPressedThisFrame) UpdateBlock(-1);
+        if (Mouse.current.rightButton.wasPressedThisFrame) UpdateBlock(selectedBlockId);
     }
 
     private void UpdateBlock(int id)
     {
         if (MapManager.Instance == null || Camera.main == null) return;
-
-        // Get world position from mouse
         Vector2 mousePos = Mouse.current.position.ReadValue();
         Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -Camera.main.transform.position.z));
-
-        // Range check
         if (Vector2.Distance(transform.position, worldPos) > interactRange) return;
-
-        int x = Mathf.FloorToInt(worldPos.x);
-        int y = Mathf.FloorToInt(worldPos.y);
-
-        MapManager.Instance.SetBlock(x, y, id);
+        UpdateBlockServerRpc(Mathf.FloorToInt(worldPos.x), Mathf.FloorToInt(worldPos.y), id);
     }
+
+    [ServerRpc]
+    private void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
 
     #endregion
 
-    #region Debug
+    #region Debug GUI
 
-    private void OnDrawGizmos()
+    private void OnGUI()
     {
-        if (col == null) return;
-
-        float boxWidth = col.bounds.size.x * 0.9f;
-        float boxHeight = groundCheckRadius;
-        Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
-
-        Gizmos.color = isGrounded ? Color.green : Color.red;
-        Gizmos.DrawWireCube(boxCenter, new Vector3(boxWidth, boxHeight, 0));
+        if (!IsOwner) return;
+        GUI.color = Color.black;
+        GUILayout.BeginArea(new Rect(15, 15, 300, 250));
+        GUILayout.Label($"<b>[PLAYER STATUS]</b>");
+        GUILayout.Label($"OwnerID: {OwnerClientId}");
+        GUILayout.Label($"Position: {transform.position}");
+        GUILayout.Label($"Status: {debugStatus}");
+        GUILayout.Label($"IsGrounded: {isGrounded}");
+        GUILayout.Label($"JumpCount: {jumpCountSync.Value}");
+        GUILayout.Label($"Dashing: {isDashingSync.Value}");
+        GUILayout.EndArea();
     }
 
     #endregion

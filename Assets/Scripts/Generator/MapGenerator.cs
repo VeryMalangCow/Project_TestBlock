@@ -39,37 +39,36 @@ public class MapGenerator : MonoBehaviour
 
     #endregion
 
+    #region Seed Management
+
+    public string GetBaseSeed()
+    {
+        if (useRandomSeed)
+        {
+            baseSeed = Random.Range(int.MinValue, int.MaxValue).ToString();
+        }
+        return baseSeed;
+    }
+
+    #endregion
+
     #region 0. Main Orchestrator (Async)
 
-    public IEnumerator GenerateAllWorldsCo()
+    public IEnumerator GenerateAllWorldsCo(string seed)
     {
         if (MapManager.Instance == null) yield break;
 
         IsLoading = true;
         LoadingProgress = 0;
         chunksProcessedInFrame = 0;
+        baseSeed = seed;
 
-        if (useRandomSeed)
-        {
-            baseSeed = Random.Range(int.MinValue, int.MaxValue).ToString();
-        }
-
-        Debug.Log($"[MapGenerator] Starting Async Batch Generation. Base Seed: {baseSeed}");
+        Debug.Log($"[MapGenerator] Starting Async Batch Generation. Seed: {baseSeed}");
 
         // Step 1: Standard World
         yield return StartCoroutine(GenerateStandardCo());
         LoadingProgress = 0.33f;
         Debug.Log("[MapGenerator] Standard World Generated.");
-
-        //// Step 2: Great Cave World
-        //yield return StartCoroutine(GenerateGreatCaveCo());
-        //LoadingProgress = 0.66f;
-        //Debug.Log("[MapGenerator] Great Cave World Generated.");
-        //
-        //// Step 3: Hell World
-        //yield return StartCoroutine(GenerateHellCo());
-        //LoadingProgress = 1.0f;
-        //Debug.Log("[MapGenerator] Hell World Generated.");
 
         IsLoading = false;
         Debug.Log("[MapGenerator] All worlds ready.");
@@ -103,65 +102,6 @@ public class MapGenerator : MonoBehaviour
         }
 
         MapManager.Instance.StoreMap(WorldStyle.Standard, data);
-    }
-
-    #endregion
-
-    #region 2. Great Cave Generation (Pass by Pass)
-
-    private IEnumerator GenerateGreatCaveCo()
-    {
-        // Use inspector-defined size
-        MapData data = InitializeMap(baseSeed, WorldStyle.GreatCave, MapData.GreatCaveMapSize);
-        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
-        int surfaceY = Mathf.FloorToInt(0.4f * totalHeight);
-
-        for (int cx = 0; cx < data.mapSize.x; cx++)
-        {
-            for (int cy = 0; cy < data.mapSize.y; cy++)
-            {
-                FillFlatChunk(data.chunks[cx, cy], cy, surfaceY);
-                
-                chunksProcessedInFrame++;
-                if (chunksProcessedInFrame >= chunksPerFrame)
-                {
-                    chunksProcessedInFrame = 0;
-                    yield return null;
-                }
-            }
-        }
-
-        MapManager.Instance.StoreMap(WorldStyle.GreatCave, data);
-    }
-
-    #endregion
-
-    #region 3. Hell Generation (Pass by Pass)
-
-    private IEnumerator GenerateHellCo()
-    {
-        // Use inspector-defined size
-        MapData data = InitializeMap(baseSeed, WorldStyle.Hell, MapData.HellMapSize);
-        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
-        int surfaceY = Mathf.FloorToInt(0.2f * totalHeight);
-
-        for (int cx = 0; cx < data.mapSize.x; cx++)
-        {
-            for (int cy = 0; cy < data.mapSize.y; cy++)
-            {
-                FillFlatChunk(data.chunks[cx, cy], cy, surfaceY);
-                
-                chunksProcessedInFrame++;
-                if (chunksProcessedInFrame >= chunksPerFrame)
-                {
-                    chunksProcessedInFrame = 0;
-                    yield return null;
-                }
-            }
-        }
-
-        Debug.Log($"[MapGenerator] {WorldStyle.Hell} World Generated and Storing in MapManager.");
-        MapManager.Instance.StoreMap(WorldStyle.Hell, data);
     }
 
     #endregion

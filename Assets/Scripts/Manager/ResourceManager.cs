@@ -26,11 +26,12 @@ public class TileSpriteSet
             return;
         }
 
-        string[] lines = csvData.text.Split('\n');
+        string[] lines = csvData.text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
         for (int i = 1; i < lines.Length; i++)
         {
-            if (string.IsNullOrWhiteSpace(lines[i])) continue;
-            string[] parts = lines[i].Split(',');
+            string line = lines[i].Trim();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            string[] parts = line.Split(',');
             if (parts.Length < 1 || !int.TryParse(parts[0], out int ruleId)) continue;
 
             int orthoMask = 0;

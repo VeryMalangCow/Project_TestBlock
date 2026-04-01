@@ -35,7 +35,7 @@ public class Test : MonoBehaviour
         player.enabled = false;
 
         Debug.Log("[Test] Map Generation Started...");
-        yield return MapManager.Instance.GenerateMapCo();
+        yield return MapManager.Instance.GenerateMapCo("Project_TestBlock");
         Debug.Log("[Test] Map Generation Finished.");
 
         if (player != null)

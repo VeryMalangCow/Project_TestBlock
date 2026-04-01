@@ -1,3 +1,4 @@
+using Unity.Netcode;
 using UnityEngine;
 
 public class CameraController : MonoBehaviour
@@ -7,6 +8,7 @@ public class CameraController : MonoBehaviour
     [Header("# Follow")]
     [SerializeField] private Transform target;
     [SerializeField] private Vector3 offset = new Vector3(0, 0, -10f);
+    [SerializeField] private float smoothSpeed = 0.125f;
 
     #endregion
 
@@ -14,11 +16,48 @@ public class CameraController : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (target == null) return;
+        if (target == null)
+        {
+            // Try to find the local player if target is lost
+            FindLocalPlayer();
+            return;
+        }
 
         Vector3 desiredPosition = target.position + offset;
+        // Optional: Add smoothing
+        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
+        transform.position = smoothedPosition;
+    }
 
-        transform.position = desiredPosition;
+    #endregion
+
+    #region Find Target
+
+    public void SetTarget(Transform newTarget)
+    {
+        target = newTarget;
+        if (MeshManager.Instance != null)
+        {
+            MeshManager.Instance.SetTarget(target);
+        }
+    }
+
+    private void FindLocalPlayer()
+    {
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient) return;
+
+        var localPlayer = NetworkManager.Singleton.LocalClient?.PlayerObject;
+        if (localPlayer != null)
+        {
+            target = localPlayer.transform;
+            Debug.Log("[CameraController] Target set to Local Player.");
+            
+            // Also notify MeshManager to follow this player for sliding window
+            if (MeshManager.Instance != null)
+            {
+                MeshManager.Instance.SetTarget(target);
+            }
+        }
     }
 
     #endregion

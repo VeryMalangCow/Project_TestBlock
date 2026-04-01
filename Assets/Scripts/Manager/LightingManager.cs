@@ -19,15 +19,18 @@ public class LightingManager : Singleton<LightingManager>
     /// <summary>
     /// Initial lighting calculation using BFS for natural propagation.
     /// </summary>
-    public void CalculateAllLighting()
+    public System.Collections.IEnumerator CalculateAllLightingCo()
     {
-        if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
+        if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) yield break;
 
         MapData data = MapManager.Instance.activeMapData;
         int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
         int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
 
         lightQueue.Clear();
+
+        int opsPerFrame = 100000;
+        int currentOps = 0;
 
         // 1. Reset all to 0 and find initial sunlight sources
         for (int x = 0; x < totalWidth; x++)
@@ -39,18 +42,20 @@ public class LightingManager : Singleton<LightingManager>
                 {
                     SetLightValue(x, y, maxLightIntensity);
                     lightQueue.Enqueue(new Vector2Int(x, y));
-                    
                     if (HasBlock(x, y)) hitBlock = true;
                 }
                 else
                 {
                     SetLightValue(x, y, 0);
                 }
+
+                currentOps++;
+                if (currentOps >= opsPerFrame) { currentOps = 0; yield return null; }
             }
         }
 
-        // 2. Propagate (No tracking needed for full redraw)
-        SpreadLight(null);
+        // 2. Propagate
+        yield return StartCoroutine(SpreadLightCo(null, opsPerFrame));
     }
 
     /// <summary>
@@ -58,7 +63,7 @@ public class LightingManager : Singleton<LightingManager>
     /// </summary>
     public void UpdateLightingAt(int worldX, int worldY)
     {
-        int range = 15; // Slightly reduced range for stability
+        int range = 15;
         MapData data = MapManager.Instance.activeMapData;
         int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
         int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
@@ -66,17 +71,13 @@ public class LightingManager : Singleton<LightingManager>
         lightQueue.Clear();
         HashSet<Vector2Int> chunksToRedraw = new HashSet<Vector2Int>();
 
-        // 1. Prepare local area and identify sources
         for (int x = worldX - range; x <= worldX + range; x++)
         {
             if (x < 0 || x >= totalWidth) continue;
-
             bool sunlightSourceFound = false;
-
             for (int y = worldY + range; y >= worldY - range; y--)
             {
                 if (y < 0 || y >= totalHeight) continue;
-
                 bool nothingAbove = true;
                 int checkLimit = Mathf.Min(totalHeight - 1, worldY + range + 10);
                 for (int ty = y + 1; ty <= checkLimit; ty++)
@@ -97,22 +98,13 @@ public class LightingManager : Singleton<LightingManager>
                         byte currentVal = GetLightValue(x, y);
                         if (currentVal > 0) lightQueue.Enqueue(new Vector2Int(x, y));
                     }
-                    else
-                    {
-                        SetLightValue(x, y, 0);
-                    }
+                    else SetLightValue(x, y, 0);
                 }
             }
         }
 
-        // 2. Re-propagate from sources and track changed chunks
         SpreadLight(chunksToRedraw);
-        
-        // Redraw only chunks that actually changed
-        foreach (var coord in chunksToRedraw)
-        {
-            MeshManager.Instance.RequestChunkRedraw(coord.x, coord.y);
-        }
+        foreach (var coord in chunksToRedraw) MeshManager.Instance.RequestChunkRedraw(coord.x, coord.y);
     }
 
     private void SpreadLight(HashSet<Vector2Int> affectedChunks)
@@ -121,7 +113,6 @@ public class LightingManager : Singleton<LightingManager>
         MapData data = MapManager.Instance.activeMapData;
         int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
         int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
-
         int cw = ChunkData.ChunkSize.x;
         int ch = ChunkData.ChunkSize.y;
 
@@ -129,14 +120,12 @@ public class LightingManager : Singleton<LightingManager>
         {
             Vector2Int curr = lightQueue.Dequeue();
             byte currLight = GetLightValue(curr.x, curr.y);
-
             if (currLight <= airDecay) continue;
 
             foreach (var dir in dirs)
             {
                 Vector2Int next = curr + dir;
                 if (next.x < 0 || next.x >= totalWidth || next.y < 0 || next.y >= totalHeight) continue;
-
                 byte decay = HasBlock(next.x, next.y) ? blockDecay : airDecay;
                 byte nextTargetLight = (byte)Mathf.Max(0, currLight - decay);
 
@@ -144,7 +133,6 @@ public class LightingManager : Singleton<LightingManager>
                 {
                     SetLightValue(next.x, next.y, nextTargetLight);
                     lightQueue.Enqueue(next);
-
                     if (affectedChunks != null)
                     {
                         affectedChunks.Add(new Vector2Int(next.x / cw, next.y / ch));
@@ -155,6 +143,49 @@ public class LightingManager : Singleton<LightingManager>
                     }
                 }
             }
+        }
+    }
+
+    private System.Collections.IEnumerator SpreadLightCo(HashSet<Vector2Int> affectedChunks, int opsPerFrame)
+    {
+        Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
+        MapData data = MapManager.Instance.activeMapData;
+        int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
+        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
+        int cw = ChunkData.ChunkSize.x;
+        int ch = ChunkData.ChunkSize.y;
+        int currentOps = 0;
+
+        while (lightQueue.Count > 0)
+        {
+            Vector2Int curr = lightQueue.Dequeue();
+            byte currLight = GetLightValue(curr.x, curr.y);
+            if (currLight <= airDecay) continue;
+
+            foreach (var dir in dirs)
+            {
+                Vector2Int next = curr + dir;
+                if (next.x < 0 || next.x >= totalWidth || next.y < 0 || next.y >= totalHeight) continue;
+                byte decay = HasBlock(next.x, next.y) ? blockDecay : airDecay;
+                byte nextTargetLight = (byte)Mathf.Max(0, currLight - decay);
+
+                if (GetLightValue(next.x, next.y) < nextTargetLight)
+                {
+                    SetLightValue(next.x, next.y, nextTargetLight);
+                    lightQueue.Enqueue(next);
+                    if (affectedChunks != null)
+                    {
+                        affectedChunks.Add(new Vector2Int(next.x / cw, next.y / ch));
+                        if (next.x % cw == 0) affectedChunks.Add(new Vector2Int(next.x / cw - 1, next.y / ch));
+                        if (next.x % cw == cw - 1) affectedChunks.Add(new Vector2Int(next.x / cw + 1, next.y / ch));
+                        if (next.y % ch == 0) affectedChunks.Add(new Vector2Int(next.x / cw, next.y / ch - 1));
+                        if (next.y % ch == ch - 1) affectedChunks.Add(new Vector2Int(next.x / cw, next.y / ch + 1));
+                    }
+                }
+            }
+
+            currentOps++;
+            if (currentOps >= opsPerFrame) { currentOps = 0; yield return null; }
         }
     }
 
