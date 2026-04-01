@@ -234,6 +234,8 @@ public class PlayerController : NetworkBehaviour
     {
         if (debugStatus != "READY") return;
 
+        // CRITICAL: With ClientNetworkTransform, ONLY the Owner runs physics.
+        // The server and other clients will just follow the transform sync.
         if (IsOwner || IsServer)
         {
             CheckGrounded();
