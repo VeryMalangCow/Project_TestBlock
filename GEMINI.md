@@ -143,12 +143,33 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [ ] Biome constants (Dirt, Stone, Cave) and ore distribution logic.
   - [ ] World Save/Load system (Binary or JSON).
 
-- [ ] **Major Goal 2: Multiplayer Core (NGO)**
+- [x] **Major Goal 2: Multiplayer Core (NGO)**
   - [x] NGO Package integration and NetworkManager setup. (2026-04-01)
-  - [ ] Player Prefab conversion to NetworkObject.
-  - [ ] **Sync Player Actions**: Move, Jump, Dash (Client-side prediction).
-  - [ ] **Server-Authoritative Tile Interaction**: RPC-based SetBlock.
-  - [ ] Chunk synchronization via Interest Management (Sliding Window).
+  - [x] **Player Sync**: Client-Authoritative Transform for snappy movement. (2026-04-01)
+  - [x] **Reliable Jump/Dash Sync**: Counter-based jump and state-synced dash. (2026-04-01)
+  - [x] **Visual Sync**: Armor synchronization via NetworkVariable events. (2026-04-01)
+  - [x] **Map Streaming**: On-demand chunk synchronization from Host to Client. (2026-04-01)
+  - [x] **Boundary Fix**: Recursive neighbor redraw on data sync. (2026-04-01)
+
+----------
+
+## 12. Multiplayer Development Rules (CRITICAL)
+### 1. Authority & Movement
+- **Movement:** All player movement MUST use `ClientNetworkTransform`. The Owner has authority over their position to ensure zero latency feel.
+- **Physics:** Physics calculations (Gravity, Velocity) should only run on the `IsOwner` side to prevent jitter and redundant calculations.
+
+### 2. State Synchronization
+- **Events (Jump):** Use incrementing `int` counters (e.g., `jumpCountSync`) instead of `bool` for discrete events to ensure they trigger exactly once across the network.
+- **Continuous State (Dash, Armor):** Use `NetworkVariable` for states that persist. Always bind visual updates to `OnValueChanged` to handle "late-joiners" automatically.
+- **RPCs:** Use `ServerRpc` for "Requests" (Interactions, Block Update) and `ClientRpc` for "Broadcasts" or "Direct Deliveries" (Map Data).
+
+### 3. Map & Data Consistency
+- **Server is Truth:** The Server (Host) holds the master `MapData`. Clients must NEVER generate their own terrain; they must request it from the server.
+- **Verification:** Any `ServerRpc` that modifies the world MUST include distance and permission checks on the server side to prevent cheating or invalid operations.
+
+### 4. Performance & GC
+- **No Search in Update:** Never use `FindObjectsByType` or `GetComponent` in `Update/FixedUpdate`. Use a Registry pattern or cached references.
+- **Allocation:** Avoid `new` keyword inside network sync loops (like `UpdateSlidingWindow`) to prevent GC spikes. reuse collections with `.Clear()`.
 
 - [ ] **Major Goal 3: Inventory & Item System**
   - [ ] Item Data Structure (ScriptableObject) & Database.
