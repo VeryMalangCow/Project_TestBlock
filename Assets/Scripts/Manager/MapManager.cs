@@ -184,10 +184,15 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         chunk.isSynced = true;
         requestedChunks.Remove(new Vector2Int(cx, cy));
 
-        // Notify MeshManager to draw this chunk now that we have data
+        // Notify MeshManager to draw this chunk and its 4 neighbors
+        // Neighbors need to redraw because they now have data to connect to this new chunk.
         if (MeshManager.Instance != null)
         {
             MeshManager.Instance.RequestChunkRedraw(cx, cy);
+            MeshManager.Instance.RequestChunkRedraw(cx - 1, cy);
+            MeshManager.Instance.RequestChunkRedraw(cx + 1, cy);
+            MeshManager.Instance.RequestChunkRedraw(cx, cy - 1);
+            MeshManager.Instance.RequestChunkRedraw(cx, cy + 1);
         }
     }
 
