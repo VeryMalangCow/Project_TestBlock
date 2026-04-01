@@ -1,10 +1,11 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Collections;
 using UnityEngine;
 
-#region Map
+#region Map Data Structures
 
 [Serializable]
 public struct BlockData : INetworkSerializable
@@ -32,14 +33,15 @@ public struct BlockData : INetworkSerializable
 public class ChunkData
 {
     public static readonly Vector2Int ChunkSize = new Vector2Int(8, 8);
-
     public BlockData[,] blocks;
     public byte[,] lightValues;
+    public bool isSynced; // Local flag for clients
 
     public ChunkData()
     {
         blocks = new BlockData[ChunkSize.x, ChunkSize.y];
         lightValues = new byte[ChunkSize.x, ChunkSize.y];
+        isSynced = false;
     }
 }
 
@@ -47,11 +49,9 @@ public class ChunkData
 public class MapData
 {
     public static readonly Vector2Int StandardMapSize = new Vector2Int(300, 240);
-    public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(400, 200);
-    public static readonly Vector2Int HellMapSize = new Vector2Int(240, 400);
-
+    public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(300, 240);
+    public static readonly Vector2Int HellMapSize = new Vector2Int(300, 240);
     public Vector2Int mapSize;
-
     public ChunkData[,] chunks;
 
     public MapData(Vector2Int size)
@@ -74,48 +74,120 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 {
     #region Variable
 
-    // Inspector
     [Header("# Generator")]
     [SerializeField] public MapGenerator mapGenerator;
 
     [Header("# Data")]
-    public MapData activeMapData; // Currently rendered map
+    public MapData activeMapData;
     public WorldStyle activeStyle;
-    
-    private System.Collections.Generic.Dictionary<WorldStyle, MapData> worldMaps = new System.Collections.Generic.Dictionary<WorldStyle, MapData>();
+    private Dictionary<WorldStyle, MapData> worldMaps = new Dictionary<WorldStyle, MapData>();
 
-    // Network Sync
-    private NetworkVariable<FixedString32Bytes> worldSeed = new NetworkVariable<FixedString32Bytes>(string.Empty, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private bool isMapReady = false;
+    private HashSet<Vector2Int> requestedChunks = new HashSet<Vector2Int>();
 
     #endregion
 
-    #region Network Event
+    #region Network Lifecycle
 
     public override void OnNetworkSpawn()
     {
-        Debug.Log($"[MapManager] OnNetworkSpawn. IsServer: {IsServer}");
         if (IsServer)
         {
-            // Server generates seed or uses existing one
             string seed = mapGenerator.GetBaseSeed();
-            worldSeed.Value = seed;
-            StartCoroutine(GenerateMapCo(seed));
+            StartCoroutine(ServerInitialGenerationCo(seed));
         }
         else
         {
-            // Client waits for seed and generates
-            if (worldSeed.Value != string.Empty)
+            // Client: Just initialize empty map containers instantly
+            InitializeEmptyMaps();
+            isMapReady = true; 
+            Debug.Log("[MapManager] Client: Empty map structures initialized. Waiting for chunk sync...");
+        }
+    }
+
+    private void InitializeEmptyMaps()
+    {
+        // Add more styles if needed
+        worldMaps[WorldStyle.Standard] = new MapData(MapData.StandardMapSize);
+        activeMapData = worldMaps[WorldStyle.Standard];
+        activeStyle = WorldStyle.Standard;
+    }
+
+    private IEnumerator ServerInitialGenerationCo(string seed)
+    {
+        yield return StartCoroutine(mapGenerator.GenerateAllWorldsCo(seed));
+        yield return StartCoroutine(SwitchWorldCo(WorldStyle.Standard));
+        isMapReady = true;
+    }
+
+    #endregion
+
+    #region Chunk Sync (The Core Logic)
+
+    public bool IsChunkSynced(int cx, int cy)
+    {
+        if (activeMapData == null || cx < 0 || cy < 0 || cx >= activeMapData.mapSize.x || cy >= activeMapData.mapSize.y) return true;
+        return activeMapData.chunks[cx, cy].isSynced || IsServer;
+    }
+
+    public void RequestChunkSync(int cx, int cy)
+    {
+        if (IsServer) return;
+        Vector2Int coord = new Vector2Int(cx, cy);
+        if (requestedChunks.Contains(coord)) return;
+
+        requestedChunks.Add(coord);
+        RequestChunkServerRpc(cx, cy);
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void RequestChunkServerRpc(int cx, int cy, ServerRpcParams rpcParams = default)
+    {
+        if (activeMapData == null) return;
+        if (cx < 0 || cy < 0 || cx >= activeMapData.mapSize.x || cy >= activeMapData.mapSize.y) return;
+
+        ChunkData chunk = activeMapData.chunks[cx, cy];
+        
+        // Flatten 2D to 1D for network transport (NGO doesn't support 2D arrays directly)
+        BlockData[] blockArray = new BlockData[64];
+        byte[] lightArray = new byte[64];
+
+        for (int y = 0; y < 8; y++)
+        {
+            for (int x = 0; x < 8; x++)
             {
-                StartCoroutine(GenerateMapCo(worldSeed.Value.ToString()));
+                int idx = y * 8 + x;
+                blockArray[idx] = chunk.blocks[x, y];
+                lightArray[idx] = chunk.lightValues[x, y];
             }
-            worldSeed.OnValueChanged += (oldVal, newVal) =>
-            {
-                if (!isMapReady && newVal != string.Empty)
-                {
-                    StartCoroutine(GenerateMapCo(newVal.ToString()));
-                }
-            };
+        }
+
+        // Send back to the specific client who requested it
+        DeliverChunkClientRpc(cx, cy, blockArray, lightArray, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { rpcParams.Receive.SenderClientId } } });
+    }
+
+    [ClientRpc]
+    private void DeliverChunkClientRpc(int cx, int cy, BlockData[] blockArray, byte[] lightArray, ClientRpcParams clientRpcParams = default)
+    {
+        if (IsServer) return;
+        if (activeMapData == null) return;
+
+        ChunkData chunk = activeMapData.chunks[cx, cy];
+        for (int i = 0; i < 64; i++)
+        {
+            int x = i % 8;
+            int y = i / 8;
+            chunk.blocks[x, y] = blockArray[i];
+            chunk.lightValues[x, y] = lightArray[i];
+        }
+
+        chunk.isSynced = true;
+        requestedChunks.Remove(new Vector2Int(cx, cy));
+
+        // Notify MeshManager to draw this chunk now that we have data
+        if (MeshManager.Instance != null)
+        {
+            MeshManager.Instance.RequestChunkRedraw(cx, cy);
         }
     }
 
@@ -123,81 +195,20 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
     #region Map Management
 
-    public void StoreMap(WorldStyle style, MapData data)
-    {
-        worldMaps[style] = data;
-    }
-
-
-    #endregion
-
-    #region Map Generate
-
-    public IEnumerator GenerateMapCo(string seed)
-    {
-        if (isMapReady) yield break;
-
-        Debug.Log($"[MapManager] Step 1: Starting MapGenerator.GenerateAllWorldsCo with seed: {seed}");
-        yield return StartCoroutine(mapGenerator.GenerateAllWorldsCo(seed));
-
-        Debug.Log("[MapManager] Step 2: Map Generation finished. Switching to Standard world...");
-        yield return StartCoroutine(SwitchWorldCo(WorldStyle.Standard));
-        
-        isMapReady = true;
-        Debug.Log("[MapManager] Step 3: Initial World Switch Sequence Complete. isMapReady = true.");
-    }
-
-    #endregion
-
-    #region Switch
+    public void StoreMap(WorldStyle style, MapData data) { worldMaps[style] = data; }
 
     public IEnumerator SwitchWorldCo(WorldStyle style)
     {
-        Debug.Log($"[MapManager] Attempting to switch to world: {style}");
+        if (!worldMaps.TryGetValue(style, out MapData data)) yield break;
 
-        if (!worldMaps.TryGetValue(style, out MapData data))
-        {
-            Debug.LogError($"[MapManager] FATAL: World {style} not found in worldMaps dictionary! Generation might have failed.");
-            yield break;
-        }
-
-        // IMPORTANT: Clear existing chunks BEFORE changing the active map data
-        if (MeshManager.Instance != null)
-        {
-            MeshManager.Instance.ClearAllChunks();
-        }
-
+        if (MeshManager.Instance != null) MeshManager.Instance.ClearAllChunks();
         activeMapData = data;
         activeStyle = style;
 
-        Debug.Log($"[MapManager] Data found for {style}. MapSize: {data.mapSize}. Starting lighting calculation...");
-
-        // 1. Calculate lighting for the new map FIRST
-        if (LightingManager.Instance != null)
+        if (IsServer && LightingManager.Instance != null)
         {
             yield return StartCoroutine(LightingManager.Instance.CalculateAllLightingCo());
-            Debug.Log("[MapManager] Lighting calculation finished.");
         }
-
-        // 2. Then refresh visuals based on rendering mode
-        if (MeshManager.Instance != null)
-        {
-            if (MeshManager.Instance.IsSlidingWindowEnabled())
-            {
-                Debug.Log("[MapManager] Sliding Window is enabled. Chunks will be loaded dynamically around players.");
-                // Just clear and let UpdateSlidingWindow handle it
-                MeshManager.Instance.ClearAllChunks();
-            }
-            else
-            {
-                Debug.Log("[MapManager] Sliding Window is disabled. Activating all chunks...");
-                MeshManager.Instance.RefreshAllChunks();
-                yield return StartCoroutine(MeshManager.Instance.RequestFullRedrawCo());
-                Debug.Log("[MapManager] MeshManager.RequestFullRedrawCo finished.");
-            }
-        }
-
-        Debug.Log($"[MapManager] Successfully switched to {style} world.");
     }
 
     #endregion
@@ -207,58 +218,31 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
     public void SetBlock(int worldX, int worldY, int id)
     {
         InternalSetBlock(worldX, worldY, id);
-
-        if (IsServer)
-        {
-            SetBlockClientRpc(worldX, worldY, id);
-        }
+        if (IsServer) SetBlockClientRpc(worldX, worldY, id);
     }
 
     [ClientRpc]
-    private void SetBlockClientRpc(int worldX, int worldY, int id)
-    {
-        if (!IsServer)
-        {
-            InternalSetBlock(worldX, worldY, id);
-        }
-    }
+    private void SetBlockClientRpc(int worldX, int worldY, int id) { if (!IsServer) InternalSetBlock(worldX, worldY, id); }
 
     private void InternalSetBlock(int worldX, int worldY, int id)
     {
         if (activeMapData == null) return;
-
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
-
-        int cx = worldX / width;
-        int cy = worldY / height;
-        int lx = worldX % width;
-        int ly = worldY % height;
-
-        if (lx < 0) { lx += width; cx--; }
-        if (ly < 0) { ly += height; cy--; }
-
+        int cx = worldX / width; int cy = worldY / height;
+        int lx = worldX % width; int ly = worldY % height;
+        if (lx < 0) { lx += width; cx--; } if (ly < 0) { ly += height; cy--; }
         if (cx < 0 || cx >= activeMapData.mapSize.x || cy < 0 || cy >= activeMapData.mapSize.y) return;
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
-        if (chunk == null) return;
-
-        if (id < 0)
-        {
-            chunk.blocks[lx, ly] = default;
-        }
+        if (id < 0) chunk.blocks[lx, ly] = default;
         else
         {
             int maxKinds = ResourceManager.Instance != null ? ResourceManager.Instance.GetTileKindCount(id) : 1;
-            int kindId = UnityEngine.Random.Range(0, maxKinds);
-            chunk.blocks[lx, ly] = new BlockData(id, kindId, true);
+            chunk.blocks[lx, ly] = new BlockData(id, UnityEngine.Random.Range(0, maxKinds), true);
         }
 
-        if (LightingManager.Instance != null)
-        {
-            LightingManager.Instance.UpdateLightingAt(worldX, worldY);
-        }
-
+        if (LightingManager.Instance != null) LightingManager.Instance.UpdateLightingAt(worldX, worldY);
         if (MeshManager.Instance != null)
         {
             MeshManager.Instance.RequestChunkRedraw(cx, cy);
@@ -273,46 +257,23 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
     #region Utility
 
-    public Vector2 GetPositionByRatio(float ratioX, float ratioY)
-    {
-        if (activeMapData == null) return Vector2.zero;
-
-        int totalWidth = activeMapData.mapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = activeMapData.mapSize.y * ChunkData.ChunkSize.y;
-
-        float x = (ratioX / 100f) * totalWidth;
-        float y = (ratioY / 100f) * totalHeight;
-
-        return new Vector2(x, y);
-    }
-
     public Vector2 GetSurfacePosition(float ratioX)
     {
         if (activeMapData == null) return Vector2.zero;
-
         int totalWidth = activeMapData.mapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = activeMapData.mapSize.y * ChunkData.ChunkSize.y;
         int worldX = Mathf.Clamp(Mathf.FloorToInt((ratioX / 100f) * totalWidth), 0, totalWidth - 1);
-
         int cx = worldX / ChunkData.ChunkSize.x;
         int lx = worldX % ChunkData.ChunkSize.x;
 
         for (int cy = activeMapData.mapSize.y - 1; cy >= 0; cy--)
         {
             ChunkData chunk = activeMapData.chunks[cx, cy];
-            if (chunk == null) continue;
-
             for (int ly = ChunkData.ChunkSize.y - 1; ly >= 0; ly--)
             {
-                if (chunk.blocks[lx, ly].isActive)
-                {
-                    float worldY = (cy * ChunkData.ChunkSize.y) + ly + 2f;
-                    return new Vector2(worldX + 0.5f, worldY);
-                }
+                if (chunk.blocks[lx, ly].isActive) return new Vector2(worldX + 0.5f, (cy * 8) + ly + 2f);
             }
         }
-
-        return new Vector2(worldX + 0.5f, totalHeight * 0.6f + 5f);
+        return new Vector2(worldX + 0.5f, (activeMapData.mapSize.y * 8) * 0.6f + 5f);
     }
 
     public bool IsMapReady() => isMapReady;

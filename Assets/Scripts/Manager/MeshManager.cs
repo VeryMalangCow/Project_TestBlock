@@ -210,6 +210,14 @@ public class MeshManager : Singleton<MeshManager>
     {
         if (activeChunks.ContainsKey(coord)) return;
 
+        // Check if data is synced (Client only)
+        if (!MapManager.Instance.IsChunkSynced(coord.x, coord.y))
+        {
+            MapManager.Instance.RequestChunkSync(coord.x, coord.y);
+            // We don't return here; we spawn the object, but it will be empty 
+            // until the data arrives and triggers RequestChunkRedraw.
+        }
+
         MeshFilter filter;
         if (chunkPool.Count > 0)
         {

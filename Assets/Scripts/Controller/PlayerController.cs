@@ -153,7 +153,12 @@ public class PlayerController : NetworkBehaviour
             {
                 int cx = Mathf.FloorToInt(transform.position.x / ChunkData.ChunkSize.x);
                 int cy = Mathf.FloorToInt(transform.position.y / ChunkData.ChunkSize.y);
-                if (MeshManager.Instance != null && MeshManager.Instance.IsChunkActive(cx, cy)) break;
+
+                // Check if chunk is both active in scene AND has data synced from server
+                if (MeshManager.Instance != null && 
+                    MeshManager.Instance.IsChunkActive(cx, cy) && 
+                    MapManager.Instance.IsChunkSynced(cx, cy))
+                    break;
                 if (IsOwner && MeshManager.Instance != null) MeshManager.Instance.ForceRenderChunk(cx, cy);
                 retry++;
                 yield return new WaitForSeconds(0.1f);
