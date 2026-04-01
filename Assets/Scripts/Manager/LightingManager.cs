@@ -49,8 +49,8 @@ public class LightingManager : Singleton<LightingManager>
             }
         }
 
-        // 2. Propagate
-        SpreadLight();
+        // 2. Propagate (No tracking needed for full redraw)
+        SpreadLight(null);
     }
 
     /// <summary>
@@ -58,37 +58,40 @@ public class LightingManager : Singleton<LightingManager>
     /// </summary>
     public void UpdateLightingAt(int worldX, int worldY)
     {
-        int range = 25; // Increased range for better spread
+        int range = 15; // Slightly reduced range for stability
         MapData data = MapManager.Instance.activeMapData;
         int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
         int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
 
         lightQueue.Clear();
+        HashSet<Vector2Int> chunksToRedraw = new HashSet<Vector2Int>();
 
         // 1. Prepare local area and identify sources
         for (int x = worldX - range; x <= worldX + range; x++)
         {
             if (x < 0 || x >= totalWidth) continue;
 
-            for (int y = worldY - range; y <= worldY + range; y++)
+            bool sunlightSourceFound = false;
+
+            for (int y = worldY + range; y >= worldY - range; y--)
             {
                 if (y < 0 || y >= totalHeight) continue;
 
-                // Check if this tile should be sunlight source (Nothing is strictly ABOVE it)
                 bool nothingAbove = true;
-                for (int ty = totalHeight - 1; ty > y; ty--) // Checks ty > y
+                int checkLimit = Mathf.Min(totalHeight - 1, worldY + range + 10);
+                for (int ty = y + 1; ty <= checkLimit; ty++)
                 {
                     if (HasBlock(x, ty)) { nothingAbove = false; break; }
                 }
 
-                if (nothingAbove)
+                if (nothingAbove && !sunlightSourceFound)
                 {
                     SetLightValue(x, y, maxLightIntensity);
                     lightQueue.Enqueue(new Vector2Int(x, y));
+                    if (HasBlock(x, y)) sunlightSourceFound = true;
                 }
                 else
                 {
-                    // If it's the edge of our update range, use existing light to let it flow in
                     if (x == worldX - range || x == worldX + range || y == worldY - range || y == worldY + range)
                     {
                         byte currentVal = GetLightValue(x, y);
@@ -96,26 +99,31 @@ public class LightingManager : Singleton<LightingManager>
                     }
                     else
                     {
-                        // Reset internal non-sky tiles to 0 to allow recalculation
                         SetLightValue(x, y, 0);
                     }
                 }
             }
         }
 
-        // 2. Re-propagate from sources
-        SpreadLight();
+        // 2. Re-propagate from sources and track changed chunks
+        SpreadLight(chunksToRedraw);
         
-        // Redraw affected chunks
-        RedrawAffectedChunks(worldX, worldY);
+        // Redraw only chunks that actually changed
+        foreach (var coord in chunksToRedraw)
+        {
+            MeshManager.Instance.RequestChunkRedraw(coord.x, coord.y);
+        }
     }
 
-    private void SpreadLight()
+    private void SpreadLight(HashSet<Vector2Int> affectedChunks)
     {
         Vector2Int[] dirs = { Vector2Int.up, Vector2Int.down, Vector2Int.left, Vector2Int.right };
         MapData data = MapManager.Instance.activeMapData;
         int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
         int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
+
+        int cw = ChunkData.ChunkSize.x;
+        int ch = ChunkData.ChunkSize.y;
 
         while (lightQueue.Count > 0)
         {
@@ -136,6 +144,15 @@ public class LightingManager : Singleton<LightingManager>
                 {
                     SetLightValue(next.x, next.y, nextTargetLight);
                     lightQueue.Enqueue(next);
+
+                    if (affectedChunks != null)
+                    {
+                        affectedChunks.Add(new Vector2Int(next.x / cw, next.y / ch));
+                        if (next.x % cw == 0) affectedChunks.Add(new Vector2Int(next.x / cw - 1, next.y / ch));
+                        if (next.x % cw == cw - 1) affectedChunks.Add(new Vector2Int(next.x / cw + 1, next.y / ch));
+                        if (next.y % ch == 0) affectedChunks.Add(new Vector2Int(next.x / cw, next.y / ch - 1));
+                        if (next.y % ch == ch - 1) affectedChunks.Add(new Vector2Int(next.x / cw, next.y / ch + 1));
+                    }
                 }
             }
         }
@@ -210,20 +227,6 @@ public class LightingManager : Singleton<LightingManager>
         if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return false;
         
         return MapManager.Instance.activeMapData.chunks[cx, cy].blocks[lx, ly].isActive;
-    }
-
-    private void RedrawAffectedChunks(int worldX, int worldY)
-    {
-        int cx = worldX / ChunkData.ChunkSize.x;
-        int cy = worldY / ChunkData.ChunkSize.y;
-
-        for (int x = -2; x <= 2; x++)
-        {
-            for (int y = -2; y <= 2; y++)
-            {
-                MeshManager.Instance.RequestChunkRedraw(cx + x, cy + y);
-            }
-        }
     }
 
     #endregion

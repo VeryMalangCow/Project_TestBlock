@@ -18,13 +18,30 @@ public class MeshManager : Singleton<MeshManager>
 
     private Stack<MeshFilter> chunkPool = new Stack<MeshFilter>();
     private Dictionary<Vector2Int, MeshFilter> activeChunks = new Dictionary<Vector2Int, MeshFilter>();
-    
+    private Dictionary<Vector2Int, List<GameObject>> activeEdges = new Dictionary<Vector2Int, List<GameObject>>();
+    private Stack<GameObject> edgePool = new Stack<GameObject>();
+
     private Vector2Int lastCenterChunk = new Vector2Int(-999, -999);
     private bool lastSlidingState = true;
+
+    // Reuse lists to avoid GC
+    private List<Vector3> cachedVertices = new List<Vector3>(1024);
+    private List<int> cachedTriangles = new List<int>(2048);
+    private List<Vector3> cachedUVs = new List<Vector3>(1024);
+    private List<Color> cachedColors = new List<Color>(1024);
 
     #endregion
 
     #region MonoBehaviour
+
+    private void Awake()
+    {
+        // Pre-warm lists
+        cachedVertices.Clear();
+        cachedTriangles.Clear();
+        cachedUVs.Clear();
+        cachedColors.Clear();
+    }
 
 
     private void Start()
@@ -227,6 +244,28 @@ public class MeshManager : Singleton<MeshManager>
 
     #endregion
 
+    #region Update
+
+    private HashSet<Vector2Int> redrawQueue = new HashSet<Vector2Int>();
+
+    private void LateUpdate()
+    {
+        if (redrawQueue.Count > 0)
+        {
+            foreach (var coord in redrawQueue)
+            {
+                if (activeChunks.TryGetValue(coord, out MeshFilter filter))
+                {
+                    DrawChunk(filter, coord.x, coord.y);
+                    UpdateChunkCollider(coord.x, coord.y);
+                }
+            }
+            redrawQueue.Clear();
+        }
+    }
+
+    #endregion
+
     #region Draw
 
     private void DrawChunk(MeshFilter targetFilter, int cx, int cy)
@@ -261,10 +300,10 @@ public class MeshManager : Singleton<MeshManager>
             mesh.name = $"Chunk_{cx}_{cy}";
         }
 
-        List<Vector3> vertices = new List<Vector3>();
-        List<int> triangles = new List<int>();
-        List<Vector3> uvs = new List<Vector3>();
-        List<Color> colors = new List<Color>();
+        cachedVertices.Clear();
+        cachedTriangles.Clear();
+        cachedUVs.Clear();
+        cachedColors.Clear();
 
         for (int x = 0; x < width; x++)
         {
@@ -300,29 +339,29 @@ public class MeshManager : Singleton<MeshManager>
                 int variation = block.kindId % 3;
                 float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, bitmask, variation);
 
-                int vIndex = vertices.Count;
+                int vIndex = cachedVertices.Count;
                 int wx = cx * width + x;
                 int wy = cy * height + y;
 
                 // Vertices (Order: BL, BR, TL, TR)
-                vertices.Add(new Vector3(wx, wy, 0));           // 0: Bottom-Left
-                vertices.Add(new Vector3(wx + 1, wy, 0));       // 1: Bottom-Right
-                vertices.Add(new Vector3(wx, wy + 1, 0));       // 2: Top-Left
-                vertices.Add(new Vector3(wx + 1, wy + 1, 0));   // 3: Top-Right
+                cachedVertices.Add(new Vector3(wx, wy, 0));           // 0: Bottom-Left
+                cachedVertices.Add(new Vector3(wx + 1, wy, 0));       // 1: Bottom-Right
+                cachedVertices.Add(new Vector3(wx, wy + 1, 0));       // 2: Top-Left
+                cachedVertices.Add(new Vector3(wx + 1, wy + 1, 0));   // 3: Top-Right
 
                 // Triangles (Clockwise winding)
-                triangles.Add(vIndex + 0);
-                triangles.Add(vIndex + 2);
-                triangles.Add(vIndex + 3);
-                triangles.Add(vIndex + 0);
-                triangles.Add(vIndex + 3);
-                triangles.Add(vIndex + 1);
+                cachedTriangles.Add(vIndex + 0);
+                cachedTriangles.Add(vIndex + 2);
+                cachedTriangles.Add(vIndex + 3);
+                cachedTriangles.Add(vIndex + 0);
+                cachedTriangles.Add(vIndex + 3);
+                cachedTriangles.Add(vIndex + 1);
 
                 // UVs with Array Index in Z
-                uvs.Add(new Vector3(0, 0, arrayIdx));
-                uvs.Add(new Vector3(1, 0, arrayIdx));
-                uvs.Add(new Vector3(0, 1, arrayIdx));
-                uvs.Add(new Vector3(1, 1, arrayIdx));
+                cachedUVs.Add(new Vector3(0, 0, arrayIdx));
+                cachedUVs.Add(new Vector3(1, 0, arrayIdx));
+                cachedUVs.Add(new Vector3(0, 1, arrayIdx));
+                cachedUVs.Add(new Vector3(1, 1, arrayIdx));
 
                 // Smooth Vertex Colors (Interpolated)
                 if (LightingManager.Instance != null)
@@ -332,25 +371,25 @@ public class MeshManager : Singleton<MeshManager>
                     float tl = LightingManager.Instance.GetInterpolatedLight(wx, wy + 1);
                     float tr = LightingManager.Instance.GetInterpolatedLight(wx + 1, wy + 1);
 
-                    colors.Add(new Color(bl, bl, bl, 1f));
-                    colors.Add(new Color(br, br, br, 1f));
-                    colors.Add(new Color(tl, tl, tl, 1f));
-                    colors.Add(new Color(tr, tr, tr, 1f));
+                    cachedColors.Add(new Color(bl, bl, bl, 1f));
+                    cachedColors.Add(new Color(br, br, br, 1f));
+                    cachedColors.Add(new Color(tl, tl, tl, 1f));
+                    cachedColors.Add(new Color(tr, tr, tr, 1f));
                 }
                 else
                 {
-                    colors.Add(Color.white);
-                    colors.Add(Color.white);
-                    colors.Add(Color.white);
-                    colors.Add(Color.white);
+                    cachedColors.Add(Color.white);
+                    cachedColors.Add(Color.white);
+                    cachedColors.Add(Color.white);
+                    cachedColors.Add(Color.white);
                 }
             }
         }
 
-        mesh.SetVertices(vertices);
-        mesh.SetTriangles(triangles, 0);
-        mesh.SetUVs(0, uvs);
-        mesh.SetColors(colors);
+        mesh.SetVertices(cachedVertices);
+        mesh.SetTriangles(cachedTriangles, 0);
+        mesh.SetUVs(0, cachedUVs);
+        mesh.SetColors(cachedColors);
         mesh.RecalculateNormals();
         mesh.RecalculateBounds();
 
@@ -367,7 +406,8 @@ public class MeshManager : Singleton<MeshManager>
     /// </summary>
     public void UpdateChunkCollider(int cx, int cy)
     {
-        if (!activeChunks.TryGetValue(new Vector2Int(cx, cy), out MeshFilter filter)) return;
+        Vector2Int coord = new Vector2Int(cx, cy);
+        if (!activeChunks.TryGetValue(coord, out MeshFilter filter)) return;
         
         ChunkData[,] allChunks = MapManager.Instance.activeMapData.chunks;
         ChunkData chunk = allChunks[cx, cy];
@@ -382,18 +422,20 @@ public class MeshManager : Singleton<MeshManager>
 
         GameObject chunkObj = filter.gameObject;
         
-        // 1. Pooling: Get all existing edge objects and deactivate them
-        List<GameObject> edgePool = new List<GameObject>();
-        foreach (Transform child in chunkObj.transform)
+        // 1. Pooling: Recycle existing edges for this chunk
+        if (!activeEdges.TryGetValue(coord, out List<GameObject> edges))
         {
-            if (child.name.StartsWith("Edge_"))
-            {
-                child.gameObject.SetActive(false);
-                edgePool.Add(child.gameObject);
-            }
+            edges = new List<GameObject>();
+            activeEdges.Add(coord, edges);
         }
 
-        int poolIndex = 0;
+        foreach (var edgeObj in edges)
+        {
+            edgeObj.SetActive(false);
+            edgePool.Push(edgeObj);
+        }
+        edges.Clear();
+
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
 
@@ -401,19 +443,19 @@ public class MeshManager : Singleton<MeshManager>
         // Horizontal Segments (Top and Bottom)
         for (int y = 0; y <= height; y++)
         {
-            ExtractHorizontalSegments(chunkObj, cx, cy, y, true, chunk, chunkU, chunkD, edgePool, ref poolIndex);
-            ExtractHorizontalSegments(chunkObj, cx, cy, y, false, chunk, chunkU, chunkD, edgePool, ref poolIndex);
+            ExtractHorizontalSegments(chunkObj, coord, y, true, chunk, chunkU, chunkD, edges);
+            ExtractHorizontalSegments(chunkObj, coord, y, false, chunk, chunkU, chunkD, edges);
         }
 
         // Vertical Segments (Left and Right)
         for (int x = 0; x <= width; x++)
         {
-            ExtractVerticalSegments(chunkObj, cx, cy, x, true, chunk, chunkL, chunkR, edgePool, ref poolIndex);
-            ExtractVerticalSegments(chunkObj, cx, cy, x, false, chunk, chunkL, chunkR, edgePool, ref poolIndex);
+            ExtractVerticalSegments(chunkObj, coord, x, true, chunk, chunkL, chunkR, edges);
+            ExtractVerticalSegments(chunkObj, coord, x, false, chunk, chunkL, chunkR, edges);
         }
     }
 
-    private void ExtractHorizontalSegments(GameObject parent, int cx, int cy, int y, bool isTop, ChunkData c, ChunkData uC, ChunkData dC, List<GameObject> pool, ref int poolIdx)
+    private void ExtractHorizontalSegments(GameObject parent, Vector2Int coord, int y, bool isTop, ChunkData c, ChunkData uC, ChunkData dC, List<GameObject> chunkEdges)
     {
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
@@ -443,16 +485,16 @@ public class MeshManager : Singleton<MeshManager>
             {
                 if (startX != -1)
                 {
-                    GetOrCreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), x, y + (isTop ? 1 : 0), pool, ref poolIdx);
+                    GetOrCreateEdge(parent, coord, startX, y + (isTop ? 1 : 0), x, y + (isTop ? 1 : 0), chunkEdges);
                     startX = -1;
                 }
             }
         }
         if (startX != -1)
-            GetOrCreateEdge(parent, cx, cy, startX, y + (isTop ? 1 : 0), width, y + (isTop ? 1 : 0), pool, ref poolIdx);
+            GetOrCreateEdge(parent, coord, startX, y + (isTop ? 1 : 0), width, y + (isTop ? 1 : 0), chunkEdges);
     }
 
-    private void ExtractVerticalSegments(GameObject parent, int cx, int cy, int x, bool isLeft, ChunkData c, ChunkData lC, ChunkData rC, List<GameObject> pool, ref int poolIdx)
+    private void ExtractVerticalSegments(GameObject parent, Vector2Int coord, int x, bool isLeft, ChunkData c, ChunkData lC, ChunkData rC, List<GameObject> chunkEdges)
     {
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
@@ -482,40 +524,39 @@ public class MeshManager : Singleton<MeshManager>
             {
                 if (startY != -1)
                 {
-                    GetOrCreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), y, pool, ref poolIdx);
+                    GetOrCreateEdge(parent, coord, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), y, chunkEdges);
                     startY = -1;
                 }
             }
         }
         if (startY != -1)
-            GetOrCreateEdge(parent, cx, cy, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), height, pool, ref poolIdx);
+            GetOrCreateEdge(parent, coord, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), height, chunkEdges);
     }
 
-    private void GetOrCreateEdge(GameObject parent, int cx, int cy, float x1, float y1, float x2, float y2, List<GameObject> pool, ref int poolIdx)
+    private void GetOrCreateEdge(GameObject parent, Vector2Int coord, float x1, float y1, float x2, float y2, List<GameObject> chunkEdges)
     {
         GameObject edgeObj;
 
-        // Reuse from pool if available
-        if (poolIdx < pool.Count)
+        if (edgePool.Count > 0)
         {
-            edgeObj = pool[poolIdx];
+            edgeObj = edgePool.Pop();
             edgeObj.SetActive(true);
+            edgeObj.transform.SetParent(parent.transform);
         }
         else
         {
-            // Create new if pool is empty
-            edgeObj = new GameObject($"Edge_{poolIdx}");
+            edgeObj = new GameObject("Edge_Optimized");
             edgeObj.transform.SetParent(parent.transform);
-            edgeObj.transform.localPosition = Vector3.zero;
             edgeObj.layer = LayerMask.NameToLayer("Ground");
             edgeObj.AddComponent<EdgeCollider2D>();
         }
-        poolIdx++;
+        edgeObj.transform.localPosition = Vector3.zero;
+        chunkEdges.Add(edgeObj);
 
         EdgeCollider2D edge = edgeObj.GetComponent<EdgeCollider2D>();
         
-        float worldOffsetX = cx * ChunkData.ChunkSize.x;
-        float worldOffsetY = cy * ChunkData.ChunkSize.y;
+        float worldOffsetX = coord.x * ChunkData.ChunkSize.x;
+        float worldOffsetY = coord.y * ChunkData.ChunkSize.y;
 
         Vector2[] points = new Vector2[2];
         points[0] = new Vector2(worldOffsetX + x1, worldOffsetY + y1);
@@ -556,12 +597,8 @@ public class MeshManager : Singleton<MeshManager>
 
     public void RequestChunkRedraw(int cx, int cy)
     {
-        Vector2Int coord = new Vector2Int(cx, cy);
-        if (activeChunks.TryGetValue(coord, out MeshFilter filter))
-        {
-            DrawChunk(filter, cx, cy);
-            UpdateChunkCollider(cx, cy);
-        }
+        if (cx < 0 || cy < 0) return;
+        redrawQueue.Add(new Vector2Int(cx, cy));
     }
 
     public void RequestFullRedraw()
