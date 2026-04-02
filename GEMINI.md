@@ -49,8 +49,8 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 - **sRGB (Color Texture):** Enabled
 
 ### Rule: TileSpriteRule
-- **Max Size:** 128
-- **Slicing:** Grid by Cell Size (8x8, Offset 0x0, Padding 1x1)
+- **Max Size:** 256
+- **Slicing:** Grid by Cell Size (16x16, Offset 0x0, Padding 1x1)
 - **Read/Write:** Enabled (Required for Texture2DArray baking)
 - **Naming Convention:** `Tile_[ID(4 digit)]_[Idx(3 digit)]` (e.g., `Tile_0000_000`)
 - **Processing:** `TileSpriteProcessor` tool automatically slices sprites, skipping empty regions while maintaining grid-based indices.
@@ -121,7 +121,7 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 ## 10. Editor Tools
 ### TileSpriteProcessor
 - **Path:** `Tools > Project_BlockTest > Process All Tile Sprites`
-- **Features:** Enforces `TileSpriteRule`, **Smart Slicing** (skips empty regions), and sets Max Size (128).
+- **Features:** Enforces `TileSpriteRule`, **Smart Slicing** (skips empty regions), and sets Max Size (256).
 
 ### TextureArrayBaker
 - **Path:** `Tools > Project_BlockTest > Bake Tileset TextureArray`

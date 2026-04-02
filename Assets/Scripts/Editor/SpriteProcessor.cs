@@ -24,7 +24,7 @@ public class SpriteProcessor : Editor
 
     [MenuItem("Tools/Project/Process Sprite/Tile")]
     public static void ProcessSpritesForTile()
-        => ProcessTileTexture("Tiles", "Tile", new Texture2DElement(128, true, new Vector2Int(8, 8), new Vector2(4, 4)));
+        => ProcessTileTexture("Tiles", "Tile", new Texture2DElement(256, true, new Vector2Int(16, 16), new Vector2(8, 8)));
 
     [MenuItem("Tools/Project/Process Sprite/Platform")]
     public static void ProcessSpritesForPlatform()

@@ -61,8 +61,8 @@ public class BakerForTextureArray : EditorWindow
         string firstPath = tileTextures.Values.First();
         TextureImporter firstImporter = AssetImporter.GetAtPath(firstPath) as TextureImporter;
         firstImporter.GetSourceTextureWidthAndHeight(out int width, out int height);
-        // We expect individual sprites to be 8x8 as per rule
-        int spriteSize = 8;
+        // We expect individual sprites to be 16x16 as per rule
+        int spriteSize = 16;
         
         Debug.Log($"Baking TextureArray: MaxTileID={maxTileId}, SpritesPerTile={spritesPerTile}, TotalLayers={totalLayers}");
 

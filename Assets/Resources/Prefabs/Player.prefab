@@ -93,7 +93,7 @@ MonoBehaviour:
   groundCheckRadius: 0.2
   stepHeight: 1.2
   stepCheckDistance: 0.1
-  selectedBlockId: 4
+  selectedBlockId: 0
   interactRange: 6
   walkAnimSpeedMultiplier: 2
 --- !u!114 &4366262622963462345
