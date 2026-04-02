@@ -9,7 +9,7 @@ public class BakerForTextureArray : EditorWindow
     private string spritePath = "Assets/Resources/Sprites/Tiles";
     private string outputPath = "Assets/Resources/Text2DArray/TilesetArray.asset";
 
-    [MenuItem("Tools/Project/Baker/Tileset TextureArray")]
+    [MenuItem("Tools/Project/Texture2D Baker/Tile Texture2DArray")]
     public static void ShowWindow()
     {
         GetWindow<BakerForTextureArray>("Tileset Baker");

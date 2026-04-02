@@ -22,23 +22,23 @@ public class SpriteProcessor : Editor
         }
     }
 
-    [MenuItem("Tools/Project/Process Sprite/Tile")]
+    [MenuItem("Tools/Project/Sprite Processor/Tile")]
     public static void ProcessSpritesForTile()
         => ProcessTileTexture("Tiles", "Tile", new Texture2DElement(256, true, new Vector2Int(16, 16), new Vector2(8, 8)));
 
-    [MenuItem("Tools/Project/Process Sprite/Platform")]
+    [MenuItem("Tools/Project/Sprite Processor/Platform")]
     public static void ProcessSpritesForPlatform()
         => ProcessTileTexture("Platforms", "Platform", new Texture2DElement(64, false, new Vector2Int(8, 8), new Vector2(4, 4)));
 
-    [MenuItem("Tools/Project/Process Sprite/Torch")]
+    [MenuItem("Tools/Project/Sprite Processor/Torch")]
     public static void ProcessSpritesForTouch()
         => ProcessTileTexture("Torches", "Torch", new Texture2DElement(32, false, new Vector2Int(9, 9), new Vector2(4.5f, 4.5f)));
 
-    [MenuItem("Tools/Project/Process Sprite/Tree")]
+    [MenuItem("Tools/Project/Sprite Processor/Tree")]
     public static void ProcessSpritesForTree()
         => ProcessTileTexture("Trees", "Tree", new Texture2DElement(128, false, new Vector2Int(34, 82), new Vector2(17, 5)));
 
-    [MenuItem("Tools/Project/Process Sprite/Armor")]
+    [MenuItem("Tools/Project/Sprite Processor/Armor")]
     public static void ProcessSpritesForArmor()
     {
         ProcessTileTexture("Armors", "Armor", new Texture2DElement(128, false, new Vector2Int(16, 16), new Vector2(8, 8)));

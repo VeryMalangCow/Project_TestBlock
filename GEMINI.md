@@ -21,6 +21,8 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 ## 3. Multiplayer Architecture (NGO)
 ### Core Principles
 - **Authority:** Server-Authoritative with Client-Side Prediction for smooth movement.
+- **Connection Method (Relay):** Uses **Unity Relay Service** to bypass firewalls and complex network environments (e.g., School/Office networks).
+- **Access Control:** Connection is established via a **6-digit Join Code** instead of direct IP addresses.
 - **Player Synchronization:**
   - **Movement:** Horizontal movement, Jump, and Dash must be synchronized across all clients.
   - **Interaction:** Block destruction and placement are handled via Server RPCs to ensure world consistency.
@@ -119,13 +121,33 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 ----------
 
 ## 10. Editor Tools
-### TileSpriteProcessor
-- **Path:** `Tools > Project_BlockTest > Process All Tile Sprites`
-- **Features:** Enforces `TileSpriteRule`, **Smart Slicing** (skips empty regions), and sets Max Size (256).
+### Sprite Processor
+#### Tile
+- **Path:** `Tools > Project > Sprite Processor > Tile`
+- **Features:** Enforces `TileSpriteRule` (16x16 Grid, Max Size 256), **Smart Slicing** (skips empty regions), and Pivot (8, 8).
 
-### TextureArrayBaker
-- **Path:** `Tools > Project_BlockTest > Bake Tileset TextureArray`
-- **Features:** Bakes sliced sprites into `Texture2DArray` using **Numeric Sorting** to ensure correct RuleID mapping.
+#### Platform
+- **Path:** `Tools > Project > Sprite Processor > Platform`
+- **Features:** Processes platform sprites with 8x8 Grid, Max Size 64, and Pivot (4, 4).
+
+#### Torch
+- **Path:** `Tools > Project > Sprite Processor > Torch`
+- **Features:** Processes torch sprites with 9x9 Grid, Max Size 32, and Pivot (4.5, 4.5).
+
+#### Tree
+- **Path:** `Tools > Project > Sprite Processor > Tree`
+- **Features:** Processes tree sprites with 34x82 Grid, Max Size 128, and Pivot (17, 5).
+
+#### Armor
+- **Path:** `Tools > Project > Sprite Processor > Armor`
+- **Features:** Processes armor sprites with 16x16 Grid, Max Size 128, and Pivot (8, 8).
+
+### Texture2D Baker
+#### Tile Texture2DArray
+- **Path:** `Tools > Project > Texture2D Baker > Tile Texture2DArray`
+- **Features:** Bakes sliced tile sprites into a `Texture2DArray` (16x16 resolution).
+- **Logic:** Each TileID occupies **141 layers** (47 Rules * 3 Variations).
+- **Baking:** Uses **Numeric Sorting** based on sprite name suffixes (e.g., `_000`, `_001`).
 
 ----------
 
@@ -143,13 +165,14 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [ ] Biome constants (Dirt, Stone, Cave) and ore distribution logic.
   - [ ] World Save/Load system (Binary or JSON).
 
-- [x] **Major Goal 2: Multiplayer Core (NGO)**
+- [x] **Major Goal 2: Multiplayer Core (NGO & Relay)**
   - [x] NGO Package integration and NetworkManager setup. (2026-04-01)
+  - [x] **Unity Relay Integration**: Bypassing firewalls and Public IPs. (2026-04-02)
+  - [x] **Join Code System**: 6-digit code-based connection (Terraria style). (2026-04-02)
+  - [x] **Unity 6 Compatibility**: Fixed namespace conflicts (Allocation class collision). (2026-04-02)
   - [x] **Player Sync**: Client-Authoritative Transform for snappy movement. (2026-04-01)
-  - [x] **Reliable Jump/Dash Sync**: Counter-based jump and state-synced dash. (2026-04-01)
   - [x] **Visual Sync**: Armor synchronization via NetworkVariable events. (2026-04-01)
   - [x] **Map Streaming**: On-demand chunk synchronization from Host to Client. (2026-04-01)
-  - [x] **Boundary Fix**: Recursive neighbor redraw on data sync. (2026-04-01)
 
 ----------
 
@@ -183,3 +206,29 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [x] Box-based Ground Detection & Jump (Completed)
   - [ ] **Player Dash**: Fast horizontal burst using sprite index 11.
   - [ ] Coyote Time & Jump Buffering for better platforming feel.
+
+----------
+
+## Next Actions (Todo)
+### 1. Multiplayer Validation (Cross-PC)
+- **Goal:** Perform a real-world connection test between two different PCs using the **6-digit Join Code**.
+- **Checklist:**
+  - [ ] Verify if the Join Code is generated correctly on the Host.
+  - [ ] Confirm if the Client can join using the code without firewall issues.
+  - [ ] Ensure player movement and world data (chunks) are synchronized.
+
+### 2. Performance & Latency QA
+- **Goal:** Monitor network stability under the Unity Relay environment.
+- **Checklist:**
+  - [ ] Check for movement jitter or "rubber-banding" on the client side.
+  - [ ] Optimize `NetworkVariable` update frequency if necessary.
+
+### 3. Environment Restoration
+- **Goal:** Confirm the game works with standard security settings.
+- **Checklist:**
+  - [ ] Re-enable Windows Defender Firewall on all PCs.
+  - [ ] Set Network Profile back to **Public** and verify Relay still bypasses it.
+
+### 4. Gameplay: Player Dash
+- **Goal:** Implement the horizontal burst movement (Dash).
+- **Detail:** Use sprite index 11 for the dash animation and implement a synchronized cooldown.
