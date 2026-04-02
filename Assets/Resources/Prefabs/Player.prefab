@@ -14,7 +14,7 @@ GameObject:
   - component: {fileID: 4366262622963462345}
   - component: {fileID: 7557954901024385104}
   - component: {fileID: 3691483584524692821}
-  - component: {fileID: 6169973608933257562}
+  - component: {fileID: 83550278281042039}
   m_Layer: 3
   m_Name: Player
   m_TagString: Untagged
@@ -51,7 +51,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3836181582
+  GlobalObjectIdHash: 4087358549
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -80,6 +80,7 @@ MonoBehaviour:
   rb: {fileID: 7557954901024385104}
   col: {fileID: 1977730540923760186}
   visuals: {fileID: 4155625903134356229}
+  inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   moveSpeed: 8
   acceleration: 300
   deceleration: 600
@@ -166,7 +167,7 @@ SortingGroup:
   m_SortingOrder: 1
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
---- !u!114 &6169973608933257562
+--- !u!114 &83550278281042039
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -175,11 +176,11 @@ MonoBehaviour:
   m_GameObject: {fileID: 162841608114231149}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: e96cb6065543e43c4a752faaa1468eb1, type: 3}
+  m_Script: {fileID: 11500000, guid: 435ecf582efbaf745b58c53b72009807, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.Components.NetworkTransform
+  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
   ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 0
+  NetworkTransformExpanded: 1
   AutoOwnerAuthorityTickOffset: 1
   PositionInterpolationType: 0
   RotationInterpolationType: 0
@@ -190,7 +191,7 @@ MonoBehaviour:
   RotationMaxInterpolationTime: 0.1
   ScaleLerpSmoothing: 1
   ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 0
+  AuthorityMode: 1
   TickSyncChildren: 0
   UseUnreliableDeltas: 1
   SyncPositionX: 1

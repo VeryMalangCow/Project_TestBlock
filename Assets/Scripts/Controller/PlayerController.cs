@@ -14,6 +14,14 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private BoxCollider2D col;
     [SerializeField] private PlayerVisuals visuals;
 
+    [Header("### Input Actions")]
+    [SerializeField] private InputActionAsset inputActions;
+    private InputAction moveAction;
+    private InputAction jumpAction;
+    private InputAction dashAction;
+    private InputAction attackAction;
+    private InputAction interactAction;
+
     [Header("### Move")]
     [SerializeField] private float moveSpeed = 8f;
     [SerializeField] private float acceleration = 60f;
@@ -72,8 +80,44 @@ public class PlayerController : NetworkBehaviour
 
     private void Awake()
     {
+        InitializeInput();
         SetupPhysics();
         EnsureEventSystem();
+    }
+
+    private void InitializeInput()
+    {
+        if (inputActions == null)
+        {
+            Debug.LogError("[PlayerController] InputActionAsset is missing! Please assign it in the Inspector.");
+            return;
+        }
+
+        var playerMap = inputActions.FindActionMap("Player");
+        if (playerMap != null)
+        {
+            moveAction = playerMap.FindAction("Move");
+            jumpAction = playerMap.FindAction("Jump");
+            dashAction = playerMap.FindAction("Dash");
+            attackAction = playerMap.FindAction("Attack");
+            interactAction = playerMap.FindAction("Interact");
+
+            moveAction.Enable();
+            jumpAction.Enable();
+            dashAction.Enable();
+            attackAction.Enable();
+            interactAction.Enable();
+        }
+    }
+
+    public override void OnDestroy()
+    {
+        base.OnDestroy();
+        moveAction?.Disable();
+        jumpAction?.Disable();
+        dashAction?.Disable();
+        attackAction?.Disable();
+        interactAction?.Disable();
     }
 
     private void SetupPhysics()
@@ -154,7 +198,6 @@ public class PlayerController : NetworkBehaviour
                 int cx = Mathf.FloorToInt(transform.position.x / ChunkData.ChunkSize.x);
                 int cy = Mathf.FloorToInt(transform.position.y / ChunkData.ChunkSize.y);
 
-                // Check if chunk is both active in scene AND has data synced from server
                 if (MeshManager.Instance != null && 
                     MeshManager.Instance.IsChunkActive(cx, cy) && 
                     MapManager.Instance.IsChunkSynced(cx, cy))
@@ -198,20 +241,34 @@ public class PlayerController : NetworkBehaviour
     [ServerRpc]
     private void RequestSpawnServerRpc()
     {
+        // 1. Server calculates valid spawn position
         Vector2 spawnPos = MapManager.Instance.GetSurfacePosition(50f);
-        transform.position = spawnPos;
-        rb.position = spawnPos;
-        rb.bodyType = RigidbodyType2D.Dynamic;
-        rb.simulated = true;
-        rb.gravityScale = 3f;
-
-        var networkTransform = GetComponent<NetworkTransform>();
-        if (networkTransform != null) networkTransform.Teleport(spawnPos, Quaternion.identity, transform.localScale);
+        
+        // 2. Broadcast to Owner Client
         ConfirmSpawnClientRpc(spawnPos);
     }
 
     [ClientRpc]
-    private void ConfirmSpawnClientRpc(Vector2 pos) { if (IsOwner) transform.position = pos; }
+    private void ConfirmSpawnClientRpc(Vector2 pos)
+    {
+        if (IsOwner)
+        {
+            // 3. Owner Client teleports to the server-assigned position
+            transform.position = pos;
+            rb.position = pos;
+            rb.linearVelocity = Vector2.zero;
+            
+            // Sync the ClientNetworkTransform explicitly
+            var networkTransform = GetComponent<NetworkTransform>();
+            if (networkTransform != null)
+            {
+                networkTransform.Teleport(pos, Quaternion.identity, transform.localScale);
+            }
+            
+            debugStatus = "Spawned at Surface";
+            Debug.Log($"[PlayerController] Owner spawned at: {pos}");
+        }
+    }
 
     #endregion
 
@@ -241,7 +298,7 @@ public class PlayerController : NetworkBehaviour
 
         // CRITICAL: With ClientNetworkTransform, ONLY the Owner runs physics.
         // The server and other clients will just follow the transform sync.
-        if (IsOwner || IsServer)
+        if (IsOwner)
         {
             CheckGrounded();
 
@@ -252,17 +309,15 @@ public class PlayerController : NetworkBehaviour
                 lastProcessedJumpCount = jumpCountSync.Value;
             }
 
-            Vector2 activeInput = IsOwner ? moveInput : moveInputSync.Value;
-
             if (isDashingSync.Value)
             {
                 HandleDash();
-                HandleStepClimb(activeInput);
+                HandleStepClimb(Vector2.zero); // Input is ignored during dash
             }
             else
             {
-                HandleHorizontalMovement(activeInput);
-                HandleStepClimb(activeInput);
+                HandleHorizontalMovement(moveInput);
+                HandleStepClimb(moveInput);
             }
         }
     }
@@ -274,14 +329,23 @@ public class PlayerController : NetworkBehaviour
     private void UpdateVisuals()
     {
         if (visuals == null) return;
+
+        // Flip logic
         if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
         {
             isFlippedSync.Value = moveInput.x < 0;
             visuals.SetFlip(isFlippedSync.Value);
         }
+
         int targetFrame = 0;
-        if (isDashingSync.Value) targetFrame = 11;
-        else if (!isGrounded) targetFrame = 10;
+        if (isDashingSync.Value)
+        {
+            targetFrame = 11; // DASH FRAME
+        }
+        else if (!isGrounded)
+        {
+            targetFrame = 10; // JUMP/FALL FRAME
+        }
         else
         {
             float currentHorizontalSpeed = Mathf.Abs(rb.linearVelocity.x);
@@ -291,22 +355,31 @@ public class PlayerController : NetworkBehaviour
                 targetFrame = Mathf.FloorToInt(walkCycleTime) % 10;
             }
         }
-        currentFrameSync.Value = targetFrame;
+
+        if (currentFrameSync.Value != targetFrame)
+        {
+            currentFrameSync.Value = targetFrame;
+        }
         visuals.SyncAnimation(targetFrame);
     }
 
     private void UpdateTimers()
     {
-        if (isDashingSync.Value)
+        if (IsOwner)
         {
-            dashTimeLeft -= Time.deltaTime;
-            if (dashTimeLeft <= 0)
+            // Owner manages their own cooldown for input prediction
+            if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
+
+            // Handle Dash duration on Owner for physics prediction
+            if (isDashingSync.Value)
             {
-                if (IsServer) isDashingSync.Value = false;
-                rb.gravityScale = 3f;
+                dashTimeLeft -= Time.deltaTime;
+                if (dashTimeLeft <= 0)
+                {
+                    EndDashServerRpc();
+                }
             }
         }
-        if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
     }
 
     private void HandleDash()
@@ -319,15 +392,20 @@ public class PlayerController : NetworkBehaviour
     {
         float dir = isDashingSync.Value ? dashDirectionSync.Value : (input.x != 0 ? Mathf.Sign(input.x) : 0);
         if (dir == 0) return;
+
         Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y + 0.1f);
         Vector2 direction = new Vector2(dir, 0);
         float distance = (col.size.x / 2f) + stepCheckDistance;
+
         RaycastHit2D hitLower = Physics2D.Raycast(origin, direction, distance, groundLayer);
         if (hitLower.collider != null)
         {
             Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
             RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
-            if (hitUpper.collider == null) rb.position += new Vector2(0, 0.25f);
+            if (hitUpper.collider == null)
+            {
+                rb.position += new Vector2(0, 0.25f);
+            }
         }
     }
 
@@ -346,11 +424,7 @@ public class PlayerController : NetworkBehaviour
         float targetSpeed = input.x * moveSpeed;
         float currentSpeed = rb.linearVelocity.x;
         
-        // Determine if we are accelerating or braking
         float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
-        
-        // Snappy Velocity Change: Move current speed towards target speed at accelRate
-        // This eliminates "slippery" feeling and fixes the double-dt multiplication bug.
         float newX = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.fixedDeltaTime);
         
         rb.linearVelocity = new Vector2(newX, rb.linearVelocity.y);
@@ -368,37 +442,41 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleOwnerInput()
     {
-        if (!IsOwner) return;
-        Vector2 input = Vector2.zero;
-        if (Keyboard.current != null)
-        {
-            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) input.x -= 1;
-            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) input.x += 1;
-        }
-        moveInput = input;
-        moveInputSync.Value = input; 
+        if (!IsOwner || moveAction == null) return;
 
-        if (Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame && isGrounded && !isDashingSync.Value)
+        // 1. Horizontal Movement
+        moveInput = moveAction.ReadValue<Vector2>();
+        moveInputSync.Value = moveInput; 
+
+        // 2. Jump
+        if (jumpAction.WasPressedThisFrame() && isGrounded && !isDashingSync.Value)
         {
             jumpCountSync.Value++;
         }
 
-        if (Keyboard.current != null && Keyboard.current.leftShiftKey.wasPressedThisFrame && !isDashingSync.Value && dashCooldownTimer <= 0)
+        // 3. Dash
+        if (dashAction.WasPressedThisFrame() && !isDashingSync.Value && dashCooldownTimer <= 0)
         {
-            TriggerDashServerRpc();
+            float dir = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (isFlippedSync.Value ? -1f : 1f);
+            TriggerDashServerRpc(dir);
+            
+            // Local Prediction
+            dashTimeLeft = dashDuration;
+            dashCooldownTimer = dashCooldown;
         }
     }
 
     [ServerRpc]
-    private void TriggerDashServerRpc()
+    private void TriggerDashServerRpc(float direction)
     {
-        if (isDashingSync.Value || dashCooldownTimer > 0) return;
         isDashingSync.Value = true;
-        dashTimeLeft = dashDuration;
-        dashCooldownTimer = dashCooldown;
-        Vector2 currentInput = moveInputSync.Value;
-        dashDirectionSync.Value = currentInput.x != 0 ? Mathf.Sign(currentInput.x) : (isFlippedSync.Value ? -1f : 1f);
-        rb.linearVelocity = new Vector2(dashDirectionSync.Value * dashSpeed, 0);
+        dashDirectionSync.Value = direction;
+    }
+
+    [ServerRpc]
+    private void EndDashServerRpc()
+    {
+        isDashingSync.Value = false;
     }
 
     #endregion
@@ -407,9 +485,19 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleInteraction()
     {
-        if (Mouse.current == null) return;
-        if (Mouse.current.leftButton.wasPressedThisFrame) UpdateBlock(-1);
-        if (Mouse.current.rightButton.wasPressedThisFrame) UpdateBlock(selectedBlockId);
+        if (!IsOwner || attackAction == null || interactAction == null) return;
+
+        // Attack Action (Destroy Block - Left Click by default)
+        if (attackAction.WasPressedThisFrame())
+        {
+            UpdateBlock(-1);
+        }
+        
+        // Interact Action (Place Block - Right Click by default)
+        if (interactAction.WasPressedThisFrame())
+        {
+            UpdateBlock(selectedBlockId);
+        }
     }
 
     private void UpdateBlock(int id)
