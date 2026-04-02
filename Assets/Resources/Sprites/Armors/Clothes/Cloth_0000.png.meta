@@ -159,265 +159,265 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Cloth_0000_0
+      name: Cloth_0000_000
       rect:
         serializedVersion: 2
         x: 0
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: f11b1839494c79e50800000000000000
-      internalID: 6816132703457489183
+      spriteID: 173fce6244209d942bf1a1cd623f53c7
+      internalID: 527101507
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_1
+      name: Cloth_0000_001
       rect:
         serializedVersion: 2
         x: 17
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 14ab5fa8fc0a5f460800000000000000
-      internalID: 7274897586336938561
+      spriteID: 089299719599c9848ad25545954c43d2
+      internalID: -1855757259
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_2
+      name: Cloth_0000_002
       rect:
         serializedVersion: 2
         x: 34
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 7bd764ef333342040800000000000000
-      internalID: 4621875415991352759
+      spriteID: 1db96acbecbbf1a4d9ede12cfb026a16
+      internalID: 672635921
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_3
+      name: Cloth_0000_003
       rect:
         serializedVersion: 2
         x: 51
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 32888abe583e92f40800000000000000
-      internalID: 5704340567365290019
+      spriteID: f94ae4839976d574798ed69ff4ff80cd
+      internalID: -1270480262
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_4
+      name: Cloth_0000_004
       rect:
         serializedVersion: 2
         x: 68
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 726f8bc89fa612fa0800000000000000
-      internalID: -5827258822800378329
+      spriteID: bac3ba7e1ed8d174f878e270bca279d2
+      internalID: 1446205822
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_5
+      name: Cloth_0000_005
       rect:
         serializedVersion: 2
         x: 85
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: e09ffb63925fe8f80800000000000000
-      internalID: -8102269122231928562
+      spriteID: a99b89a06be6c6646921e0b2a701cf1d
+      internalID: -1266163114
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_6
+      name: Cloth_0000_006
       rect:
         serializedVersion: 2
         x: 102
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 7f5c13d8ea9f836b0800000000000000
-      internalID: -5316224832022395401
+      spriteID: 61f2c26def03e104889b5ab58c410e3e
+      internalID: 610642785
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_7
+      name: Cloth_0000_007
       rect:
         serializedVersion: 2
         x: 0
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: fc465c480386f0910800000000000000
-      internalID: 1805776533194106063
+      spriteID: 23b2b05b4299ba545b428f033cb271ee
+      internalID: 1277039679
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_8
+      name: Cloth_0000_008
       rect:
         serializedVersion: 2
         x: 17
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: ba0107cc59aa3cd10800000000000000
-      internalID: 2144745407915233451
+      spriteID: 6abadfb39383a6d49859c0f7a281f0b4
+      internalID: 1939000547
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_9
+      name: Cloth_0000_009
       rect:
         serializedVersion: 2
         x: 34
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: f7d5af998c396bb10800000000000000
-      internalID: 1996945974571457919
+      spriteID: 28ad2e116e87c8a4cb646d1c7350e9b8
+      internalID: -256227021
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_10
+      name: Cloth_0000_010
       rect:
         serializedVersion: 2
         x: 51
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 6fd3ed0ceaabc88d0800000000000000
-      internalID: -2842692005054759434
+      spriteID: 732cbc142aaead34680a7510fbb6e295
+      internalID: -186486368
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloth_0000_11
+      name: Cloth_0000_011
       rect:
         serializedVersion: 2
         x: 68
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 53160f853d8408040800000000000000
-      internalID: 4647794888013799733
+      spriteID: 9aa93a9a4a60a53419c9c11282796737
+      internalID: -1017776526
       vertices: []
       indices: 
       edges: []
@@ -426,7 +426,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 39f69f8a40bdad947a968c57c9e4d929
     internalID: 0
     vertices: []
     indices: 
@@ -439,6 +439,18 @@ TextureImporter:
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":16.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":1.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       Cloth_0000_0: 6816132703457489183
+      Cloth_0000_000: 527101507
+      Cloth_0000_001: -1855757259
+      Cloth_0000_002: 672635921
+      Cloth_0000_003: -1270480262
+      Cloth_0000_004: 1446205822
+      Cloth_0000_005: -1266163114
+      Cloth_0000_006: 610642785
+      Cloth_0000_007: 1277039679
+      Cloth_0000_008: 1939000547
+      Cloth_0000_009: -256227021
+      Cloth_0000_010: -186486368
+      Cloth_0000_011: -1017776526
       Cloth_0000_1: 7274897586336938561
       Cloth_0000_10: -2842692005054759434
       Cloth_0000_11: 4647794888013799733

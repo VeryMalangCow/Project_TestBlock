@@ -4,29 +4,65 @@ using UnityEditor.U2D.Sprites;
 using System.Collections.Generic;
 using System.IO;
 
-public class TileSpriteProcessor : Editor
+public class SpriteProcessor : Editor
 {
-    private const string TileSpritePath = "Assets/Resources/Sprites/Tiles";
-
-    [MenuItem("Tools/Project_BlockTest/Process All Tile Sprites")]
-    public static void ProcessAllTileSprites()
+    struct Texture2DElement
     {
-        string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { TileSpritePath });
+        public int maxSize;
+        public bool isReadable;
+        public Vector2Int cellSize;
+        public Vector2 pivot;
+
+        public Texture2DElement(int _maxSize, bool _isReadable, Vector2Int _cellSize, Vector2 _pivot)
+        {
+            maxSize = _maxSize;
+            isReadable = _isReadable;
+            cellSize = _cellSize;
+            pivot = _pivot;
+        }
+    }
+
+    [MenuItem("Tools/Project/Process Sprite/Tile")]
+    public static void ProcessSpritesForTile()
+        => ProcessTileTexture("Tiles", "Tile", new Texture2DElement(128, true, new Vector2Int(8, 8), new Vector2(4, 4)));
+
+    [MenuItem("Tools/Project/Process Sprite/Platform")]
+    public static void ProcessSpritesForPlatform()
+        => ProcessTileTexture("Platforms", "Platform", new Texture2DElement(64, false, new Vector2Int(8, 8), new Vector2(4, 4)));
+
+    [MenuItem("Tools/Project/Process Sprite/Torch")]
+    public static void ProcessSpritesForTouch()
+        => ProcessTileTexture("Torches", "Torch", new Texture2DElement(32, false, new Vector2Int(9, 9), new Vector2(4.5f, 4.5f)));
+
+    [MenuItem("Tools/Project/Process Sprite/Tree")]
+    public static void ProcessSpritesForTree()
+        => ProcessTileTexture("Trees", "Tree", new Texture2DElement(128, false, new Vector2Int(34, 82), new Vector2(17, 5)));
+
+    [MenuItem("Tools/Project/Process Sprite/Armor")]
+    public static void ProcessSpritesForArmor()
+    {
+        ProcessTileTexture("Armors", "Armor", new Texture2DElement(128, false, new Vector2Int(16, 16), new Vector2(8, 8)));
+    }
+
+    private static void ProcessTileTexture(string fileName, string debugName, Texture2DElement texture2DElement)
+    {
+        string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Resources/Sprites/" + fileName });
         int count = 0;
 
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            ProcessTileTexture(path);
+            ProcessTileTexture(path, texture2DElement);
             count++;
         }
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log($"[TileSpriteProcessor] Successfully processed {count} tile textures.");
+        Debug.Log(GetNotice(debugName, count));
     }
 
-    private static void ProcessTileTexture(string path)
+
+    private static void ProcessTileTexture(string path, Texture2DElement texture2DElement)
     {
         TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
         if (importer == null) return;
@@ -34,10 +70,10 @@ public class TileSpriteProcessor : Editor
         // 1. Initial Setup to make it readable
         importer.textureType = TextureImporterType.Sprite;
         importer.spriteImportMode = SpriteImportMode.Multiple;
-        importer.isReadable = true;
+        importer.isReadable = texture2DElement.isReadable;
         importer.filterMode = FilterMode.Point;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
-        importer.maxTextureSize = 128;
+        importer.maxTextureSize = texture2DElement.maxSize;
         importer.alphaIsTransparency = true;
         importer.sRGBTexture = true;
         
@@ -60,8 +96,8 @@ public class TileSpriteProcessor : Editor
         var dataProvider = factory.GetSpriteEditorDataProviderFromObject(importer);
         dataProvider.InitSpriteEditorDataProvider();
 
-        int cellWidth = 8;
-        int cellHeight = 8;
+        int cellWidth = texture2DElement.cellSize.x;
+        int cellHeight = texture2DElement.cellSize.y;
         int offsetX = 0;
         int offsetY = 0;
         int paddingX = 1;
@@ -84,9 +120,9 @@ public class TileSpriteProcessor : Editor
                 {
                     SpriteRect rect = new SpriteRect();
                     rect.rect = new Rect(x, y, cellWidth, cellHeight);
-                    rect.alignment = SpriteAlignment.Center;
+                    rect.alignment = SpriteAlignment.Custom;
                     rect.name = $"{fileName}_{index:D3}"; // Maintain index based on grid position
-                    rect.pivot = new Vector2(0.5f, 0.5f);
+                    rect.pivot = new Vector2(texture2DElement.pivot.x / cellWidth, texture2DElement.pivot.y / cellHeight);
                     rect.spriteID = GUID.Generate();
                     spriteRects.Add(rect);
                 }
@@ -111,5 +147,10 @@ public class TileSpriteProcessor : Editor
             if (p.a > 0.05f) return false; // Found a pixel!
         }
         return true; // Entirely transparent
+    }
+
+    private static string GetNotice(string type, int count)
+    {
+        return $"<color=red>[Sprite Processor]</color> <color=orange><{type}></color> Successfully processed <color=orange>\"{count}\"</color> textures.";
     }
 }

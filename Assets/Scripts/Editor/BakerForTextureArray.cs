@@ -4,15 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
-public class TextureArrayBaker : EditorWindow
+public class BakerForTextureArray : EditorWindow
 {
     private string spritePath = "Assets/Resources/Sprites/Tiles";
     private string outputPath = "Assets/Resources/Text2DArray/TilesetArray.asset";
 
-    [MenuItem("Tools/Project_BlockTest/Bake Tileset TextureArray")]
+    [MenuItem("Tools/Project/Baker/Tileset TextureArray")]
     public static void ShowWindow()
     {
-        GetWindow<TextureArrayBaker>("Tileset Baker");
+        GetWindow<BakerForTextureArray>("Tileset Baker");
     }
 
     private void OnGUI()

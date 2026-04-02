@@ -159,14 +159,14 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Backpack_0000_0
+      name: Backpack_0000_000
       rect:
         serializedVersion: 2
         x: 0
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -174,21 +174,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: de90895ac338361488583d2ede57b201
-      internalID: 1958691720
+      spriteID: 4d880c3ff90b1e64789811ac4fd61131
+      internalID: 1979996084
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_1
+      name: Backpack_0000_001
       rect:
         serializedVersion: 2
         x: 17
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -196,21 +196,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 843d768f07897eb46b3ee04d83750ca9
-      internalID: 1707537614
+      spriteID: 923f5e1505333604daa24feaf810878c
+      internalID: 1841169835
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_2
+      name: Backpack_0000_002
       rect:
         serializedVersion: 2
         x: 34
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -218,21 +218,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: cb7521afd81e5c14dba06c99ffb842e7
-      internalID: 1432988559
+      spriteID: 34e5f660258609f46844729513e48d21
+      internalID: -1271182800
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_3
+      name: Backpack_0000_003
       rect:
         serializedVersion: 2
         x: 51
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -240,21 +240,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: beb0572f14dc1b649a66e2a478ab78e5
-      internalID: 585378036
+      spriteID: 2d04ab4ab6de3414faa4c5cec288476d
+      internalID: 1498695366
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_4
+      name: Backpack_0000_004
       rect:
         serializedVersion: 2
         x: 68
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -262,21 +262,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f622a2c543cfebd40892e2e42e6387b9
-      internalID: 86399053
+      spriteID: 69959f666c15d9a47b740d048dc24478
+      internalID: 1366061535
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_5
+      name: Backpack_0000_005
       rect:
         serializedVersion: 2
         x: 85
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -284,21 +284,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5fee46d8ce12e4a4e9f0450fa1fb76b6
-      internalID: -1069504095
+      spriteID: f0231299a07414c4e82f22a4ad4dd9f5
+      internalID: -1514188117
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_6
+      name: Backpack_0000_006
       rect:
         serializedVersion: 2
         x: 102
         y: 112
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -306,21 +306,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 80ea2b266e609384481388b0566512f5
-      internalID: -839600273
+      spriteID: 079da57df61077e4d9e2dbd6f694c378
+      internalID: -1526993067
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_7
+      name: Backpack_0000_007
       rect:
         serializedVersion: 2
         x: 0
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -328,21 +328,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1a5483223200d56468bb13c66a64d07e
-      internalID: 31393622
+      spriteID: 31c00597af536684aa6e476aab65f18c
+      internalID: 1071597247
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_8
+      name: Backpack_0000_008
       rect:
         serializedVersion: 2
         x: 17
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -350,21 +350,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a90b77ed5187ba2409aedeeaedb66a0a
-      internalID: -450243887
+      spriteID: 7d94b3114ab94dc43ac0efc8d5644823
+      internalID: -927698981
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_9
+      name: Backpack_0000_009
       rect:
         serializedVersion: 2
         x: 34
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -372,21 +372,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ab64bfccfa1a92c498335b5a35f6160c
-      internalID: -1184726237
+      spriteID: eb3a8e7ce71c36b4fade8c9371ba9a23
+      internalID: -2057701723
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_10
+      name: Backpack_0000_010
       rect:
         serializedVersion: 2
         x: 51
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -394,21 +394,21 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 391620c1687af3d4dbf1d1e069bad577
-      internalID: 1037372438
+      spriteID: be14f9f6e4110eb40bf907690568a3e2
+      internalID: -862265461
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Backpack_0000_11
+      name: Backpack_0000_011
       rect:
         serializedVersion: 2
         x: 68
         y: 95
         width: 16
         height: 16
-      alignment: 0
+      alignment: 9
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
@@ -416,8 +416,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 54bb4dd3ba3df384cb5fc3128a3a3a0e
-      internalID: 1971146798
+      spriteID: 5fc28dd716260e5429b4eed0dfc314f7
+      internalID: 1073517597
       vertices: []
       indices: 
       edges: []
@@ -439,6 +439,18 @@ TextureImporter:
         value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":16.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":1.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
     nameFileIdTable:
       Backpack_0000_0: 1958691720
+      Backpack_0000_000: 1979996084
+      Backpack_0000_001: 1841169835
+      Backpack_0000_002: -1271182800
+      Backpack_0000_003: 1498695366
+      Backpack_0000_004: 1366061535
+      Backpack_0000_005: -1514188117
+      Backpack_0000_006: -1526993067
+      Backpack_0000_007: 1071597247
+      Backpack_0000_008: -927698981
+      Backpack_0000_009: -2057701723
+      Backpack_0000_010: -862265461
+      Backpack_0000_011: 1073517597
       Backpack_0000_1: 1707537614
       Backpack_0000_10: 1037372438
       Backpack_0000_11: 1971146798

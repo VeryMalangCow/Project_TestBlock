@@ -30,7 +30,7 @@ TextureImporter:
     heightScale: 0.25
     normalMapFilter: 0
     flipGreenChannel: 0
-  isReadable: 0
+  isReadable: 1
   streamingMipmaps: 0
   streamingMipmapsPriority: 0
   vTOnly: 0
@@ -132,67 +132,67 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Tree_0000_0
+      name: Tree_0000_000
       rect:
         serializedVersion: 2
         x: 0
-        y: 47
+        y: 46
         width: 34
-        height: 81
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.06097561}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: f8d9d49e06b95d530800000000000000
-      internalID: 3879177494582893967
+      spriteID: ef93e47714c0d654cad533eee470ef6b
+      internalID: 2082266264
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tree_0000_1
+      name: Tree_0000_001
       rect:
         serializedVersion: 2
         x: 35
-        y: 47
+        y: 46
         width: 34
-        height: 81
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.06097561}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 5cb6681a828f51350800000000000000
-      internalID: 5986964133051263941
+      spriteID: 1182cd64b980929479012e373159635e
+      internalID: -972999863
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Tree_0000_2
+      name: Tree_0000_002
       rect:
         serializedVersion: 2
         x: 70
-        y: 47
+        y: 46
         width: 34
-        height: 81
-      alignment: 0
-      pivot: {x: 0.5, y: 0.5}
+        height: 82
+      alignment: 9
+      pivot: {x: 0.5, y: 0.06097561}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: b1c65312235a99270800000000000000
-      internalID: 8257813026484612123
+      spriteID: 832e341eb4fe62b47a8351f156bc59e8
+      internalID: 1824454068
       vertices: []
       indices: 
       edges: []
@@ -201,7 +201,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 04eba6b6e95fc6f4daf43216c69e5ed0
+    spriteID: 975ea2a62dbf2b14cb3767b0283b9fb0
     internalID: 0
     vertices: []
     indices: 
@@ -209,11 +209,12 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":34.0,"y":81.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":0.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
       Tree_0000_0: 3879177494582893967
+      Tree_0000_000: 2082266264
+      Tree_0000_001: -972999863
+      Tree_0000_002: 1824454068
       Tree_0000_1: 5986964133051263941
       Tree_0000_2: 8257813026484612123
   mipmapLimitGroupName: 
