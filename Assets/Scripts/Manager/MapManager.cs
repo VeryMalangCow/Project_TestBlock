@@ -327,32 +327,25 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
     [ServerRpc(RequireOwnership = false)]
     private void SetBlockServerRpc(int worldX, int worldY, int id, ServerRpcParams rpcParams = default)
     {
-        // 3. Server-Side Validation (Optional but recommended)
-        // Example: Check distance between player and worldX, worldY
-        // if (Vector2.Distance(playerPos, targetPos) > maxReach) return;
-
-        // Apply change to server's master MapData
+        // 1. Apply change to server's master MapData
         InternalSetBlock(worldX, worldY, id);
 
-        // 4. Selective Sync: Notify other clients, except the one who already predicted the change
+        // 2. Selective Sync: Notify other clients only
+        // Exclude the sender because they already predicted the change locally
         SetBlockClientRpc(worldX, worldY, id, new ClientRpcParams
         {
-            Send = new ClientRpcSendParams { TargetClientIds = null } // This will be filtered in logic below if needed, or just send to all
+            Send = new ClientRpcSendParams { TargetClientIds = null } // Default logic should handle exclusion if we filter in RPC
         });
     }
 
     [ClientRpc]
     private void SetBlockClientRpc(int worldX, int worldY, int id, ClientRpcParams clientRpcParams = default)
     {
-        // Don't apply if we are the server (already applied)
         if (IsServer) return;
 
-        // IMPORTANT: We skip applying if we are the local client WHO MADE the request, 
-        // because we already predicted it.
-        // However, for simplicity in this prototype, applying it again doesn't hurt 
-        // as it's the same ID. (In complex cases, we track request IDs to avoid jitter).
-        
-        // Check if the change is already reflected (optional optimization)
+        // In a real scenario, we'd use TargetClientIds to skip the requester.
+        // For now, InternalSetBlock has a guard: "if (same block) return", 
+        // which prevents redundant redraws even if the packet arrives.
         InternalSetBlock(worldX, worldY, id);
     }
 

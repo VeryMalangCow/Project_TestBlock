@@ -408,8 +408,20 @@ public class MeshManager : Singleton<MeshManager>
     private void DrawChunk(MeshFilter targetFilter, int cx, int cy)
     {
         if (MapManager.Instance.activeMapData == null) return;
+        MapData data = MapManager.Instance.activeMapData;
         
-        // --- Step 1: Collect Data for Job ---
+        // --- Step 1: Pre-cache 3x3 Chunks for lightning-fast lookup ---
+        ChunkData[,] neighborChunks = new ChunkData[3, 3];
+        for (int y = -1; y <= 1; y++)
+        {
+            for (int x = -1; x <= 1; x++)
+            {
+                int nx = cx + x; int ny = cy + y;
+                if (nx >= 0 && nx < data.mapSize.x && ny >= 0 && ny < data.mapSize.y)
+                    neighborChunks[x + 1, y + 1] = data.chunks[nx, ny];
+            }
+        }
+
         int sizeWithPadding = ChunkData.Size + 2;
         NativeArray<BlockData> blockData = new NativeArray<BlockData>(sizeWithPadding * sizeWithPadding, Allocator.TempJob);
 
@@ -418,7 +430,14 @@ public class MeshManager : Singleton<MeshManager>
             for (int x = -1; x <= ChunkData.Size; x++)
             {
                 int jobIdx = (y + 1) * sizeWithPadding + (x + 1);
-                blockData[jobIdx] = GetBlockData(cx, cy, x, y);
+                
+                // Fast Lookup using pre-cached neighbors
+                int tx = x, ty = y, ncx = 1, ncy = 1;
+                if (tx < 0) { tx += ChunkData.Size; ncx--; } else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; ncx++; }
+                if (ty < 0) { ty += ChunkData.Size; ncy--; } else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; ncy++; }
+
+                ChunkData targetChunk = neighborChunks[ncx, ncy];
+                blockData[jobIdx] = targetChunk != null ? targetChunk.blocks[ChunkData.GetIndex(tx, ty)] : default;
             }
         }
 

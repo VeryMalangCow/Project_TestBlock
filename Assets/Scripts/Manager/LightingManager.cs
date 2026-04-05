@@ -92,17 +92,17 @@ public class LightingManager : Singleton<LightingManager>
     public System.Collections.IEnumerator CalculateAllLightingCo()
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) yield break;
-
         if (!InitializeLightTexture()) yield break;
 
+        MapData data = MapManager.Instance.activeMapData;
         int totalWidth = cachedTotalWidth;
         int totalHeight = cachedTotalHeight;
 
         lightQueue.Clear();
-
         int opsPerFrame = 100000;
         int currentOps = 0;
 
+        // Optimized Full Map Loop: Minimize SetLightValue calls
         for (int x = 0; x < totalWidth; x++)
         {
             bool hitBlock = false;
@@ -116,7 +116,11 @@ public class LightingManager : Singleton<LightingManager>
                 }
                 else
                 {
-                    SetLightValue(x, y, 0);
+                    // Directly update buffer and data for better performance in full loop
+                    int cx = x / ChunkData.Size; int cy = y / ChunkData.Size;
+                    int lx = x % ChunkData.Size; int ly = y % ChunkData.Size;
+                    data.chunks[cx, cy].lightValues[ChunkData.GetIndex(lx, ly)] = 0;
+                    textureBuffer[y * totalWidth + x] = new Color32(0, 0, 0, 255);
                 }
 
                 currentOps++;
