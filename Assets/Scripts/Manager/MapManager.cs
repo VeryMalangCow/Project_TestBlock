@@ -297,14 +297,58 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
     #region Block Operation
 
+    /// <summary>
+    /// Entry point for block changes. Handles prediction for local player and validation for server.
+    /// </summary>
     public void SetBlock(int worldX, int worldY, int id)
     {
+        // 1. Client-Side Prediction: Apply change immediately on the requester's side
         InternalSetBlock(worldX, worldY, id);
-        if (IsServer) SetBlockClientRpc(worldX, worldY, id);
+
+        // 2. Network Request
+        if (IsServer)
+        {
+            // If server performs action (e.g. via world event), notify all clients
+            SetBlockClientRpc(worldX, worldY, id);
+        }
+        else
+        {
+            // If client performs action, request server to validate and sync
+            SetBlockServerRpc(worldX, worldY, id);
+        }
+    }
+
+    [ServerRpc(RequireOwnership = false)]
+    private void SetBlockServerRpc(int worldX, int worldY, int id, ServerRpcParams rpcParams = default)
+    {
+        // 3. Server-Side Validation (Optional but recommended)
+        // Example: Check distance between player and worldX, worldY
+        // if (Vector2.Distance(playerPos, targetPos) > maxReach) return;
+
+        // Apply change to server's master MapData
+        InternalSetBlock(worldX, worldY, id);
+
+        // 4. Selective Sync: Notify other clients, except the one who already predicted the change
+        SetBlockClientRpc(worldX, worldY, id, new ClientRpcParams
+        {
+            Send = new ClientRpcSendParams { TargetClientIds = null } // This will be filtered in logic below if needed, or just send to all
+        });
     }
 
     [ClientRpc]
-    private void SetBlockClientRpc(int worldX, int worldY, int id) { if (!IsServer) InternalSetBlock(worldX, worldY, id); }
+    private void SetBlockClientRpc(int worldX, int worldY, int id, ClientRpcParams clientRpcParams = default)
+    {
+        // Don't apply if we are the server (already applied)
+        if (IsServer) return;
+
+        // IMPORTANT: We skip applying if we are the local client WHO MADE the request, 
+        // because we already predicted it.
+        // However, for simplicity in this prototype, applying it again doesn't hurt 
+        // as it's the same ID. (In complex cases, we track request IDs to avoid jitter).
+        
+        // Check if the change is already reflected (optional optimization)
+        InternalSetBlock(worldX, worldY, id);
+    }
 
     private void InternalSetBlock(int worldX, int worldY, int id)
     {
@@ -312,7 +356,6 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         int width = ChunkData.Size;
         int height = ChunkData.Size;
 
-        // More robust chunk/local coord calculation for negative numbers
         int cx = Mathf.FloorToInt((float)worldX / width);
         int cy = Mathf.FloorToInt((float)worldY / height);
         int lx = worldX - (cx * width);
@@ -323,6 +366,10 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         ChunkData chunk = activeMapData.chunks[cx, cy];
         int idx = ChunkData.GetIndex(lx, ly);
 
+        // Don't redraw if it's the same block (optimization)
+        if (chunk.blocks[idx].isActive && chunk.blocks[idx].id == id && id >= 0) return;
+        if (!chunk.blocks[idx].isActive && id < 0) return;
+
         if (id < 0) chunk.blocks[idx] = default;
         else
         {
@@ -330,6 +377,7 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
             chunk.blocks[idx] = new BlockData(id, UnityEngine.Random.Range(0, maxKinds), true);
         }
 
+        // Lighting & Mesh update
         if (LightingManager.Instance != null) LightingManager.Instance.UpdateLightingAt(worldX, worldY);
         if (MeshManager.Instance != null)
         {
