@@ -30,18 +30,27 @@ public class LightingManager : Singleton<LightingManager>
 
     private void LateUpdate()
     {
+        // 1. Only update if data has actually changed
         if (isTextureDirty && worldLightTexture != null)
         {
             worldLightTexture.SetPixels32(textureBuffer);
             worldLightTexture.Apply();
             isTextureDirty = false;
 
-            Shader.SetGlobalTexture("_WorldLightMap", worldLightTexture);
-            Shader.SetGlobalVector("_WorldLightSettings", new Vector4(
-                worldLightTexture.width,
-                worldLightTexture.height,
-                0, 0));
+            // 2. Bind to shader ONLY when data changes
+            UpdateShaderProperties();
         }
+    }
+
+    private void UpdateShaderProperties()
+    {
+        if (worldLightTexture == null) return;
+
+        Shader.SetGlobalTexture("_WorldLightMap", worldLightTexture);
+        Shader.SetGlobalVector("_WorldLightSettings", new Vector4(
+            worldLightTexture.width,
+            worldLightTexture.height,
+            0, 0));
     }
 
     #endregion
@@ -71,7 +80,8 @@ public class LightingManager : Singleton<LightingManager>
         worldLightTexture.SetPixels32(textureBuffer);
         worldLightTexture.Apply();
 
-        Shader.SetGlobalTexture("_WorldLightMap", worldLightTexture);
+        // Bind immediately upon creation
+        UpdateShaderProperties();
         return true;
     }
 
@@ -263,6 +273,41 @@ public class LightingManager : Singleton<LightingManager>
         sum += GetLightValue(wx - 1, wy);
         sum += GetLightValue(wx, wy);
         return (sum / 4f) / 255f;
+    }
+
+    #endregion
+
+    #region Chunk Sync (For Clients)
+
+    /// <summary>
+    /// Called by MapManager on clients when a new chunk is synced.
+    /// Updates the GPU Light Map for that specific chunk area.
+    /// </summary>
+    public void SyncChunkLight(int cx, int cy, byte[] lights)
+    {
+        if (!InitializeLightTexture()) return;
+
+        int width = ChunkData.Size;
+        int height = ChunkData.Size;
+        int worldOffsetX = cx * width;
+        int worldOffsetY = cy * height;
+
+        for (int ly = 0; ly < height; ly++)
+        {
+            for (int lx = 0; lx < width; lx++)
+            {
+                int wx = worldOffsetX + lx;
+                int wy = worldOffsetY + ly;
+                byte value = lights[ChunkData.GetIndex(lx, ly)];
+
+                int texIdx = wy * cachedTotalWidth + wx;
+                if (texIdx >= 0 && texIdx < textureBuffer.Length)
+                {
+                    textureBuffer[texIdx] = new Color32(value, value, value, 255);
+                }
+            }
+        }
+        isTextureDirty = true;
     }
 
     #endregion

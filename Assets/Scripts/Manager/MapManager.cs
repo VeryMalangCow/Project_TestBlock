@@ -263,6 +263,12 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         chunk.isSynced = true;
         requestedChunks.Remove(new Vector2Int(cx, cy));
 
+        // Visualize received light data on GPU
+        if (LightingManager.Instance != null)
+        {
+            LightingManager.Instance.SyncChunkLight(cx, cy, chunk.lightValues);
+        }
+
         if (MeshManager.Instance != null)
         {
             MeshManager.Instance.RequestChunkRedraw(cx, cy);
