@@ -16,6 +16,14 @@ public class MeshManager : Singleton<MeshManager>
     [SerializeField] private bool useSlidingWindow = true;
     [SerializeField] private Transform targetTransform; 
     [SerializeField] private int viewDistance = 2; 
+    [SerializeField] private float updateInterval = 0.1f; // Run update 10 times per second instead of every frame
+    [SerializeField] private float moveThreshold = 0.5f; // Minimum distance player must move to trigger update
+
+    private float lastUpdateTime = 0f;
+    private List<PlayerController> trackedPlayers = new List<PlayerController>();
+    private Dictionary<PlayerController, Vector3> lastPlayerPositions = new Dictionary<PlayerController, Vector3>();
+    private float playerListRefreshTimer = 0f;
+    private const float PLAYER_LIST_REFRESH_INTERVAL = 1.0f;
 
     private Stack<MeshFilter> chunkPool = new Stack<MeshFilter>();
     private Dictionary<Vector2Int, MeshFilter> activeChunks = new Dictionary<Vector2Int, MeshFilter>();
@@ -23,12 +31,17 @@ public class MeshManager : Singleton<MeshManager>
     private Stack<GameObject> edgePool = new Stack<GameObject>();
 
     private HashSet<Vector2Int> lastRequiredChunks = new HashSet<Vector2Int>();
+    private HashSet<Vector2Int> currentRequiredChunks = new HashSet<Vector2Int>(); // Added for reuse
+    private List<Vector2Int> toRemoveCache = new List<Vector2Int>(); // Added for reuse
     private bool lastSlidingState = true;
 
     private List<Vector3> cachedVertices = new List<Vector3>(1024);
     private List<int> cachedTriangles = new List<int>(2048);
     private List<Vector3> cachedUVs = new List<Vector3>(1024);
     private List<Color> cachedColors = new List<Color>(1024);
+    private List<Vector2> cachedEdgePoints = new List<Vector2>(2); // Added for EdgeCollider optimization
+
+    private bool[,] neighborStatesCache; // Added for reuse
 
     #endregion
 
@@ -119,14 +132,50 @@ public class MeshManager : Singleton<MeshManager>
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient) return;
 
-        // Correct way to find all players on both Server and Client
-        PlayerController[] players = Object.FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
-        if (players == null || players.Length == 0) return; // Don't prune chunks if no players are found yet
+        // 1. Frequency Control (Timer)
+        if (Time.time - lastUpdateTime < updateInterval) return;
+        lastUpdateTime = Time.time;
 
-        HashSet<Vector2Int> currentRequiredChunks = new HashSet<Vector2Int>();
+        // 2. Refresh Player List (Less frequent)
+        playerListRefreshTimer += updateInterval;
+        if (playerListRefreshTimer >= PLAYER_LIST_REFRESH_INTERVAL || trackedPlayers.Count == 0)
+        {
+            playerListRefreshTimer = 0f;
+            PlayerController[] foundPlayers = Object.FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
+            trackedPlayers.Clear();
+            if (foundPlayers != null)
+            {
+                foreach (var p in foundPlayers)
+                {
+                    if (p != null) trackedPlayers.Add(p);
+                }
+            }
+        }
+
+        if (trackedPlayers.Count == 0) return;
+
+        // 3. Check for Significant Movement
+        bool hasSignificantMovement = false;
+        foreach (var player in trackedPlayers)
+        {
+            if (player == null || !player.IsSpawned) continue;
+            
+            Vector3 currentPos = player.transform.position;
+            if (!lastPlayerPositions.TryGetValue(player, out Vector3 lastPos) || 
+                Vector3.Distance(currentPos, lastPos) > moveThreshold)
+            {
+                hasSignificantMovement = true;
+                lastPlayerPositions[player] = currentPos;
+            }
+        }
+
+        if (!hasSignificantMovement && lastRequiredChunks.Count > 0) return;
+
+        // 4. Calculate Required Chunks
+        currentRequiredChunks.Clear();
         MapData data = MapManager.Instance.activeMapData;
 
-        foreach (var player in players)
+        foreach (var player in trackedPlayers)
         {
             if (player == null || !player.IsSpawned) continue;
 
@@ -148,25 +197,27 @@ public class MeshManager : Singleton<MeshManager>
             }
         }
 
+        // 5. Apply Changes only if needed
         if (!currentRequiredChunks.SetEquals(lastRequiredChunks))
         {
             RefreshChunksMultitarget(currentRequiredChunks);
-            lastRequiredChunks = new HashSet<Vector2Int>(currentRequiredChunks);
+            lastRequiredChunks.Clear();
+            foreach (var coord in currentRequiredChunks) lastRequiredChunks.Add(coord);
         }
     }
 
     private void RefreshChunksMultitarget(HashSet<Vector2Int> requiredCoords)
     {
-        List<Vector2Int> toRemove = new List<Vector2Int>();
+        toRemoveCache.Clear();
         foreach (var activeCoord in activeChunks.Keys)
         {
             if (!requiredCoords.Contains(activeCoord))
             {
-                toRemove.Add(activeCoord);
+                toRemoveCache.Add(activeCoord);
             }
         }
 
-        foreach (var coord in toRemove)
+        foreach (var coord in toRemoveCache)
         {
             MeshFilter filter = activeChunks[coord];
             filter.gameObject.SetActive(false);
@@ -210,12 +261,9 @@ public class MeshManager : Singleton<MeshManager>
     {
         if (activeChunks.ContainsKey(coord)) return;
 
-        // Check if data is synced (Client only)
         if (!MapManager.Instance.IsChunkSynced(coord.x, coord.y))
         {
             MapManager.Instance.RequestChunkSync(coord.x, coord.y);
-            // We don't return here; we spawn the object, but it will be empty 
-            // until the data arrives and triggers RequestChunkRedraw.
         }
 
         MeshFilter filter;
@@ -237,7 +285,6 @@ public class MeshManager : Singleton<MeshManager>
             UpdateChunkCollider(coord.x, coord.y);
         }
     }
-
 
     #endregion
 
@@ -274,12 +321,18 @@ public class MeshManager : Singleton<MeshManager>
 
         int width = ChunkData.ChunkSize.x;
         int height = ChunkData.ChunkSize.y;
-        bool[,] neighborStates = new bool[width + 2, height + 2];
+
+        // Reuse neighborStatesCache
+        if (neighborStatesCache == null || neighborStatesCache.GetLength(0) != width + 2 || neighborStatesCache.GetLength(1) != height + 2)
+        {
+            neighborStatesCache = new bool[width + 2, height + 2];
+        }
+
         for (int x = -1; x <= width; x++)
         {
             for (int y = -1; y <= height; y++)
             {
-                neighborStates[x + 1, y + 1] = HasBlock(cx, cy, x, y);
+                neighborStatesCache[x + 1, y + 1] = HasBlock(cx, cy, x, y);
             }
         }
 
@@ -311,10 +364,10 @@ public class MeshManager : Singleton<MeshManager>
                 int lx = x + 1;
                 int ly = y + 1;
 
-                bool has2 = neighborStates[lx, ly + 1]; 
-                bool has4 = neighborStates[lx - 1, ly]; 
-                bool has6 = neighborStates[lx + 1, ly]; 
-                bool has8 = neighborStates[lx, ly - 1]; 
+                bool has2 = neighborStatesCache[lx, ly + 1]; 
+                bool has4 = neighborStatesCache[lx - 1, ly]; 
+                bool has6 = neighborStatesCache[lx + 1, ly]; 
+                bool has8 = neighborStatesCache[lx, ly - 1]; 
 
                 int bitmask = 0;
                 if (has2) bitmask |= (1 << 0);
@@ -322,10 +375,10 @@ public class MeshManager : Singleton<MeshManager>
                 if (has6) bitmask |= (1 << 2);
                 if (has8) bitmask |= (1 << 3);
 
-                if (has2 && has4 && !neighborStates[lx - 1, ly + 1]) bitmask |= (1 << 4);
-                if (has2 && has6 && !neighborStates[lx + 1, ly + 1]) bitmask |= (1 << 5);
-                if (has8 && has4 && !neighborStates[lx - 1, ly - 1]) bitmask |= (1 << 6);
-                if (has8 && has6 && !neighborStates[lx + 1, ly - 1]) bitmask |= (1 << 7);
+                if (has2 && has4 && !neighborStatesCache[lx - 1, ly + 1]) bitmask |= (1 << 4);
+                if (has2 && has6 && !neighborStatesCache[lx + 1, ly + 1]) bitmask |= (1 << 5);
+                if (has8 && has4 && !neighborStatesCache[lx - 1, ly - 1]) bitmask |= (1 << 6);
+                if (has8 && has6 && !neighborStatesCache[lx + 1, ly - 1]) bitmask |= (1 << 7);
 
                 int variation = block.kindId % 3;
                 float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, bitmask, variation);
@@ -536,11 +589,12 @@ public class MeshManager : Singleton<MeshManager>
         float worldOffsetX = coord.x * ChunkData.ChunkSize.x;
         float worldOffsetY = coord.y * ChunkData.ChunkSize.y;
 
-        Vector2[] points = new Vector2[2];
-        points[0] = new Vector2(worldOffsetX + x1, worldOffsetY + y1);
-        points[1] = new Vector2(worldOffsetX + x2, worldOffsetY + y2);
+        // GC Free Edge Update using cached List<Vector2>
+        cachedEdgePoints.Clear();
+        cachedEdgePoints.Add(new Vector2(worldOffsetX + x1, worldOffsetY + y1));
+        cachedEdgePoints.Add(new Vector2(worldOffsetX + x2, worldOffsetY + y2));
         
-        edge.points = points;
+        edge.SetPoints(cachedEdgePoints);
     }
 
     #endregion
@@ -579,10 +633,8 @@ public class MeshManager : Singleton<MeshManager>
         int chunksProcessed = 0;
         int redrawLimitPerFrame = 200; 
         
-        var entries = new List<KeyValuePair<Vector2Int, MeshFilter>>(activeChunks);
-        int totalChunks = entries.Count;
-
-        foreach (var entry in entries)
+        // Directly iterate over the dictionary to avoid allocation of a new list
+        foreach (var entry in activeChunks)
         {
             if (entry.Value == null || !entry.Value.gameObject.activeInHierarchy) continue;
 

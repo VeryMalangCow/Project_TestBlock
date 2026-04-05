@@ -25,32 +25,39 @@ Shader "Custom/TileArrayShader"
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float3 uv : TEXCOORD0; // UV.z stores the array index
+                float3 uv : TEXCOORD0; // uv.z stores the layer index
                 float4 color : COLOR;
             };
 
             struct Varyings
             {
                 float4 positionCS : SV_POSITION;
-                float3 uv : TEXCOORD0;
+                float2 uv : TEXCOORD0;
+                nointerpolation float layer : TEXCOORD1; // Optimization: Disable interpolation for layer index
                 float4 color : COLOR;
             };
 
             TEXTURE2D_ARRAY(_MainTex);
-            SAMPLER(sampler_MainTex);
+            SAMPLER(sampler_MainTex); // Standard naming to avoid compile errors
 
             Varyings vert (Attributes input)
             {
                 Varyings output;
                 output.positionCS = TransformObjectToHClip(input.positionOS.xyz);
-                output.uv = input.uv;
+                output.uv = input.uv.xy;
+                output.layer = input.uv.z;
                 output.color = input.color;
                 return output;
             }
 
             float4 frag (Varyings input) : SV_Target
             {
-                float4 col = SAMPLE_TEXTURE2D_ARRAY(_MainTex, sampler_MainTex, input.uv.xy, input.uv.z);
+                // Sampling with no-interpolation layer index
+                float4 col = SAMPLE_TEXTURE2D_ARRAY(_MainTex, sampler_MainTex, input.uv, input.layer);
+                
+                // Optimization: Discard transparent pixels to reduce overdraw
+                if(col.a < 0.01) discard;
+
                 return col * input.color;
             }
             ENDHLSL
