@@ -158,26 +158,107 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
         
-        // With 1D arrays, we can potentially send directly, but NGO requires fixed size or native arrays.
-        // For now, keep the array copy but it's much cleaner.
-        BlockData[] blockArray = new BlockData[ChunkData.TotalCells];
-        byte[] lightArray = new byte[ChunkData.TotalCells];
+        // 1. Compress BlockData using RLE
+        List<int> compressedBlocks = new List<int>();
+        if (chunk.blocks.Length > 0)
+        {
+            int currentId = chunk.blocks[0].id;
+            int currentKind = chunk.blocks[0].kindId;
+            bool currentActive = chunk.blocks[0].isActive;
+            int count = 0;
 
-        Array.Copy(chunk.blocks, blockArray, ChunkData.TotalCells);
-        Array.Copy(chunk.lightValues, lightArray, ChunkData.TotalCells);
+            for (int i = 0; i < chunk.blocks.Length; i++)
+            {
+                if (chunk.blocks[i].id == currentId && chunk.blocks[i].kindId == currentKind && chunk.blocks[i].isActive == currentActive && count < 255)
+                {
+                    count++;
+                }
+                else
+                {
+                    compressedBlocks.Add(currentId);
+                    compressedBlocks.Add(currentKind);
+                    compressedBlocks.Add(currentActive ? 1 : 0);
+                    compressedBlocks.Add(count);
 
-        DeliverChunkClientRpc(cx, cy, blockArray, lightArray, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { rpcParams.Receive.SenderClientId } } });
+                    currentId = chunk.blocks[i].id;
+                    currentKind = chunk.blocks[i].kindId;
+                    currentActive = chunk.blocks[i].isActive;
+                    count = 1;
+                }
+            }
+            compressedBlocks.Add(currentId);
+            compressedBlocks.Add(currentKind);
+            compressedBlocks.Add(currentActive ? 1 : 0);
+            compressedBlocks.Add(count);
+        }
+
+        // 2. Compress LightValues using RLE
+        List<int> compressedLights = new List<int>();
+        if (chunk.lightValues.Length > 0)
+        {
+            byte currentVal = chunk.lightValues[0];
+            int count = 0;
+            for (int i = 0; i < chunk.lightValues.Length; i++)
+            {
+                if (chunk.lightValues[i] == currentVal && count < 255) count++;
+                else
+                {
+                    compressedLights.Add(currentVal);
+                    compressedLights.Add(count);
+                    currentVal = chunk.lightValues[i];
+                    count = 1;
+                }
+            }
+            compressedLights.Add(currentVal);
+            compressedLights.Add(count);
+        }
+
+        DeliverChunkClientRpc(cx, cy, compressedBlocks.ToArray(), compressedLights.ToArray(), 
+            new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { rpcParams.Receive.SenderClientId } } });
     }
 
     [ClientRpc]
-    private void DeliverChunkClientRpc(int cx, int cy, BlockData[] blockArray, byte[] lightArray, ClientRpcParams clientRpcParams = default)
+    private void DeliverChunkClientRpc(int cx, int cy, int[] compressedBlocks, int[] compressedLights, ClientRpcParams clientRpcParams = default)
     {
         if (IsServer) return;
         if (activeMapData == null) return;
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
-        Array.Copy(blockArray, chunk.blocks, ChunkData.TotalCells);
-        Array.Copy(lightArray, chunk.lightValues, ChunkData.TotalCells);
+
+        // 1. Decompress BlockData
+        int bIdx = 0;
+        for (int i = 0; i < compressedBlocks.Length; i += 4)
+        {
+            int id = compressedBlocks[i];
+            int kind = compressedBlocks[i + 1];
+            bool active = compressedBlocks[i + 2] == 1;
+            int count = compressedBlocks[i + 3];
+
+            for (int j = 0; j < count; j++)
+            {
+                if (bIdx < chunk.blocks.Length)
+                {
+                    chunk.blocks[bIdx] = new BlockData(id, kind, active);
+                    bIdx++;
+                }
+            }
+        }
+
+        // 2. Decompress LightValues
+        int lIdx = 0;
+        for (int i = 0; i < compressedLights.Length; i += 2)
+        {
+            byte val = (byte)compressedLights[i];
+            int count = compressedLights[i + 1];
+            for (int j = 0; j < count; j++)
+            {
+                if (lIdx < chunk.lightValues.Length)
+                {
+                    chunk.lightValues[lIdx] = val;
+                    lIdx++;
+                }
+            }
+        }
 
         chunk.isSynced = true;
         requestedChunks.Remove(new Vector2Int(cx, cy));
