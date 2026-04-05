@@ -331,8 +331,7 @@ public class MeshManager : Singleton<MeshManager>
     public struct ChunkMeshJob : IJob
     {
         // Inputs
-        [ReadOnly] public NativeArray<BlockData> blocks; // 18x18 grid flattened
-        [ReadOnly] public NativeArray<byte> lights;     // 18x18 grid flattened
+        [ReadOnly] public NativeArray<BlockData> blocks; 
         [ReadOnly] public NativeArray<int> ruleMapping;
         public int worldOffsetX;
         public int worldOffsetY;
@@ -341,11 +340,10 @@ public class MeshManager : Singleton<MeshManager>
         public NativeList<float3> vertices;
         public NativeList<int> triangles;
         public NativeList<float3> uvs;
-        public NativeList<float4> colors;
 
         public void Execute()
         {
-            int sizeWithPadding = ChunkData.Size + 2; // 10
+            int sizeWithPadding = ChunkData.Size + 2; 
 
             for (int y = 0; y < ChunkData.Size; y++)
             {
@@ -360,12 +358,11 @@ public class MeshManager : Singleton<MeshManager>
 
                     // 1. Bitmask calculation
                     int bitmask = 0;
-                    if (blocks[idx + sizeWithPadding].isActive) bitmask |= (1 << 0); // Top
-                    if (blocks[idx - 1].isActive) bitmask |= (1 << 1);               // Left
-                    if (blocks[idx + 1].isActive) bitmask |= (1 << 2);               // Right
-                    if (blocks[idx - sizeWithPadding].isActive) bitmask |= (1 << 3); // Bottom
+                    if (blocks[idx + sizeWithPadding].isActive) bitmask |= (1 << 0);
+                    if (blocks[idx - 1].isActive) bitmask |= (1 << 1);
+                    if (blocks[idx + 1].isActive) bitmask |= (1 << 2);
+                    if (blocks[idx - sizeWithPadding].isActive) bitmask |= (1 << 3);
 
-                    // Diagonals (if orthogonal neighbors exist)
                     bool hasT = (bitmask & (1 << 0)) != 0;
                     bool hasL = (bitmask & (1 << 1)) != 0;
                     bool hasR = (bitmask & (1 << 2)) != 0;
@@ -403,26 +400,8 @@ public class MeshManager : Singleton<MeshManager>
                     uvs.Add(new float3(1, 0, arrayIdx));
                     uvs.Add(new float3(0, 1, arrayIdx));
                     uvs.Add(new float3(1, 1, arrayIdx));
-
-                    // 5. Colors (Interpolated light)
-                    // Simplified average for vertex lighting in Job
-                    AddVertexColor(idx, -1, -1, sizeWithPadding);
-                    AddVertexColor(idx, 1, -1, sizeWithPadding);
-                    AddVertexColor(idx, -1, 1, sizeWithPadding);
-                    AddVertexColor(idx, 1, 1, sizeWithPadding);
                 }
             }
-        }
-
-        private void AddVertexColor(int centerIdx, int ox, int oy, int stride)
-        {
-            float sum = 0;
-            sum += lights[centerIdx];
-            sum += lights[centerIdx + ox];
-            sum += lights[centerIdx + oy * stride];
-            sum += lights[centerIdx + ox + oy * stride];
-            float val = (sum / 4f) / 255f;
-            colors.Add(new float4(val, val, val, 1f));
         }
     }
 
@@ -433,7 +412,6 @@ public class MeshManager : Singleton<MeshManager>
         // --- Step 1: Collect Data for Job ---
         int sizeWithPadding = ChunkData.Size + 2;
         NativeArray<BlockData> blockData = new NativeArray<BlockData>(sizeWithPadding * sizeWithPadding, Allocator.TempJob);
-        NativeArray<byte> lightData = new NativeArray<byte>(sizeWithPadding * sizeWithPadding, Allocator.TempJob);
 
         for (int y = -1; y <= ChunkData.Size; y++)
         {
@@ -441,7 +419,6 @@ public class MeshManager : Singleton<MeshManager>
             {
                 int jobIdx = (y + 1) * sizeWithPadding + (x + 1);
                 blockData[jobIdx] = GetBlockData(cx, cy, x, y);
-                lightData[jobIdx] = GetLightValue(cx, cy, x, y);
             }
         }
 
@@ -449,24 +426,21 @@ public class MeshManager : Singleton<MeshManager>
         NativeList<float3> vertices = new NativeList<float3>(256, Allocator.TempJob);
         NativeList<int> triangles = new NativeList<int>(512, Allocator.TempJob);
         NativeList<float3> uvs = new NativeList<float3>(256, Allocator.TempJob);
-        NativeList<float4> colors = new NativeList<float4>(256, Allocator.TempJob);
 
         // --- Step 3: Schedule Job ---
         ChunkMeshJob job = new ChunkMeshJob
         {
             blocks = blockData,
-            lights = lightData,
             ruleMapping = ruleMappingArray,
             worldOffsetX = cx * ChunkData.Size,
             worldOffsetY = cy * ChunkData.Size,
             vertices = vertices,
             triangles = triangles,
-            uvs = uvs,
-            colors = colors
+            uvs = uvs
         };
 
         JobHandle handle = job.Schedule();
-        handle.Complete(); // Forced completion for prototype, can be async later
+        handle.Complete(); 
 
         // --- Step 4: Apply to Mesh ---
         Mesh mesh = targetFilter.sharedMesh;
@@ -483,18 +457,16 @@ public class MeshManager : Singleton<MeshManager>
             mesh.SetVertices(vertices.AsArray());
             mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
             mesh.SetUVs(0, uvs.AsArray());
-            mesh.SetColors(colors.AsArray());
+            // Colors are no longer needed on CPU!
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
         }
 
         // --- Step 5: Cleanup ---
         blockData.Dispose();
-        lightData.Dispose();
         vertices.Dispose();
         triangles.Dispose();
         uvs.Dispose();
-        colors.Dispose();
     }
 
     private BlockData GetBlockData(int cx, int cy, int x, int y)
@@ -706,7 +678,7 @@ public class MeshManager : Singleton<MeshManager>
 
         MeshFilter mf = chunkObj.AddComponent<MeshFilter>();
         MeshRenderer mr = chunkObj.AddComponent<MeshRenderer>();
-        mr.material = tileMaterial;
+        mr.sharedMaterial = tileMaterial; // Important for SRP Batcher
 
         return mf;
     }

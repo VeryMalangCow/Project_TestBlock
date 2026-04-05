@@ -12,27 +12,87 @@ public class LightingManager : Singleton<LightingManager>
 
     private Queue<Vector2Int> lightQueue = new Queue<Vector2Int>();
 
+    // GPU Lighting
+    private Texture2D worldLightTexture;
+    private Color32[] textureBuffer;
+    private bool isTextureDirty = false;
+    private int cachedTotalWidth;
+    private int cachedTotalHeight;
+
+    #endregion
+
+    #region MonoBehaviour
+
+    protected override void Awake()
+    {
+        base.Awake();
+    }
+
+    private void LateUpdate()
+    {
+        if (isTextureDirty && worldLightTexture != null)
+        {
+            worldLightTexture.SetPixels32(textureBuffer);
+            worldLightTexture.Apply();
+            isTextureDirty = false;
+
+            Shader.SetGlobalTexture("_WorldLightMap", worldLightTexture);
+            Shader.SetGlobalVector("_WorldLightSettings", new Vector4(
+                worldLightTexture.width,
+                worldLightTexture.height,
+                0, 0));
+        }
+    }
+
+    #endregion
+
+    #region Init
+
+    private bool InitializeLightTexture()
+    {
+        if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return false;
+
+        MapData data = MapManager.Instance.activeMapData;
+        cachedTotalWidth = data.mapSize.x * ChunkData.Size;
+        cachedTotalHeight = data.mapSize.y * ChunkData.Size;
+
+        if (cachedTotalWidth <= 0 || cachedTotalHeight <= 0) return false;
+
+        if (worldLightTexture != null && worldLightTexture.width == cachedTotalWidth && worldLightTexture.height == cachedTotalHeight)
+            return true;
+
+        worldLightTexture = new Texture2D(cachedTotalWidth, cachedTotalHeight, TextureFormat.RGBA32, false);
+        worldLightTexture.filterMode = FilterMode.Bilinear;
+        worldLightTexture.wrapMode = TextureWrapMode.Clamp;
+        
+        textureBuffer = new Color32[cachedTotalWidth * cachedTotalHeight];
+        for (int i = 0; i < textureBuffer.Length; i++) textureBuffer[i] = new Color32(0, 0, 0, 255);
+        
+        worldLightTexture.SetPixels32(textureBuffer);
+        worldLightTexture.Apply();
+
+        Shader.SetGlobalTexture("_WorldLightMap", worldLightTexture);
+        return true;
+    }
+
     #endregion
 
     #region Lighting Operation
 
-    /// <summary>
-    /// Initial lighting calculation using BFS for natural propagation.
-    /// </summary>
     public System.Collections.IEnumerator CalculateAllLightingCo()
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) yield break;
 
-        MapData data = MapManager.Instance.activeMapData;
-        int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
+        if (!InitializeLightTexture()) yield break;
+
+        int totalWidth = cachedTotalWidth;
+        int totalHeight = cachedTotalHeight;
 
         lightQueue.Clear();
 
         int opsPerFrame = 100000;
         int currentOps = 0;
 
-        // 1. Reset all to 0 and find initial sunlight sources
         for (int x = 0; x < totalWidth; x++)
         {
             bool hitBlock = false;
@@ -54,8 +114,8 @@ public class LightingManager : Singleton<LightingManager>
             }
         }
 
-        // 2. Propagate
         yield return StartCoroutine(SpreadLightCo(null, opsPerFrame));
+        isTextureDirty = true;
     }
 
     /// <summary>
@@ -65,8 +125,8 @@ public class LightingManager : Singleton<LightingManager>
     {
         int range = 15;
         MapData data = MapManager.Instance.activeMapData;
-        int totalWidth = data.mapSize.x * ChunkData.ChunkSize.x;
-        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
+        int totalWidth = data.mapSize.x * ChunkData.Size;
+        int totalHeight = data.mapSize.y * ChunkData.Size;
 
         lightQueue.Clear();
         HashSet<Vector2Int> chunksToRedraw = new HashSet<Vector2Int>();
@@ -104,7 +164,10 @@ public class LightingManager : Singleton<LightingManager>
         }
 
         SpreadLight(chunksToRedraw);
-        foreach (var coord in chunksToRedraw) MeshManager.Instance.RequestChunkRedraw(coord.x, coord.y);
+        isTextureDirty = true;
+
+        // Chunks no longer need full redraw for lighting, but they might need it for block changes
+        // For pure lighting update, the Global Shader Texture handles it!
     }
 
     private void SpreadLight(HashSet<Vector2Int> affectedChunks)
@@ -218,8 +281,20 @@ public class LightingManager : Singleton<LightingManager>
 
         if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return;
 
+        // 1. Update Logical Data
         ChunkData chunk = MapManager.Instance.activeMapData.chunks[cx, cy];
         chunk.lightValues[ChunkData.GetIndex(lx, ly)] = value;
+
+        // 2. Update Texture Buffer for GPU
+        if (textureBuffer != null)
+        {
+            int texIdx = worldY * cachedTotalWidth + worldX;
+            if (texIdx >= 0 && texIdx < textureBuffer.Length)
+            {
+                textureBuffer[texIdx] = new Color32(value, value, value, 255);
+                isTextureDirty = true;
+            }
+        }
     }
 
     private byte GetLightValue(int worldX, int worldY)
