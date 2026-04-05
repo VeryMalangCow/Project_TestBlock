@@ -31,17 +31,22 @@ public struct BlockData : INetworkSerializable
 [Serializable]
 public class ChunkData
 {
-    public static readonly Vector2Int ChunkSize = new Vector2Int(8, 8);
-    public BlockData[,] blocks;
-    public byte[,] lightValues;
-    public bool isSynced; // Local flag for clients
+    public const int Size = 8;
+    public const int TotalCells = Size * Size;
+    public static readonly Vector2Int ChunkSize = new Vector2Int(Size, Size);
+
+    public BlockData[] blocks;
+    public byte[] lightValues;
+    public bool isSynced; 
 
     public ChunkData()
     {
-        blocks = new BlockData[ChunkSize.x, ChunkSize.y];
-        lightValues = new byte[ChunkSize.x, ChunkSize.y];
+        blocks = new BlockData[TotalCells];
+        lightValues = new byte[TotalCells];
         isSynced = false;
     }
+
+    public static int GetIndex(int x, int y) => y * Size + x;
 }
 
 [Serializable]
@@ -51,7 +56,7 @@ public class MapData
     public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(400, 200);
     public static readonly Vector2Int HellMapSize = new Vector2Int(240, 400);
 
-    // °ð »ç¿ëÇÒ °Í. Áö¿ì±â X
+    // ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ ï¿½ï¿½. ï¿½ï¿½ï¿½ï¿½ï¿½ X
     public static readonly Vector2 StanardSpawnPos = new Vector2(1200, 1360);
     public static readonly Vector2 GreatCaveSpawnPos = new Vector2(1600, 800);
     public static readonly Vector2 HellMapSpawnPos = new Vector2(960, 1600);
@@ -153,21 +158,14 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
         
-        // Flatten 2D to 1D for network transport (NGO doesn't support 2D arrays directly)
-        BlockData[] blockArray = new BlockData[64];
-        byte[] lightArray = new byte[64];
+        // With 1D arrays, we can potentially send directly, but NGO requires fixed size or native arrays.
+        // For now, keep the array copy but it's much cleaner.
+        BlockData[] blockArray = new BlockData[ChunkData.TotalCells];
+        byte[] lightArray = new byte[ChunkData.TotalCells];
 
-        for (int y = 0; y < 8; y++)
-        {
-            for (int x = 0; x < 8; x++)
-            {
-                int idx = y * 8 + x;
-                blockArray[idx] = chunk.blocks[x, y];
-                lightArray[idx] = chunk.lightValues[x, y];
-            }
-        }
+        Array.Copy(chunk.blocks, blockArray, ChunkData.TotalCells);
+        Array.Copy(chunk.lightValues, lightArray, ChunkData.TotalCells);
 
-        // Send back to the specific client who requested it
         DeliverChunkClientRpc(cx, cy, blockArray, lightArray, new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { rpcParams.Receive.SenderClientId } } });
     }
 
@@ -178,19 +176,12 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         if (activeMapData == null) return;
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
-        for (int i = 0; i < 64; i++)
-        {
-            int x = i % 8;
-            int y = i / 8;
-            chunk.blocks[x, y] = blockArray[i];
-            chunk.lightValues[x, y] = lightArray[i];
-        }
+        Array.Copy(blockArray, chunk.blocks, ChunkData.TotalCells);
+        Array.Copy(lightArray, chunk.lightValues, ChunkData.TotalCells);
 
         chunk.isSynced = true;
         requestedChunks.Remove(new Vector2Int(cx, cy));
 
-        // Notify MeshManager to draw this chunk and its 4 neighbors
-        // Neighbors need to redraw because they now have data to connect to this new chunk.
         if (MeshManager.Instance != null)
         {
             MeshManager.Instance.RequestChunkRedraw(cx, cy);
@@ -237,19 +228,25 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
     private void InternalSetBlock(int worldX, int worldY, int id)
     {
         if (activeMapData == null) return;
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
-        int cx = worldX / width; int cy = worldY / height;
-        int lx = worldX % width; int ly = worldY % height;
-        if (lx < 0) { lx += width; cx--; } if (ly < 0) { ly += height; cy--; }
+        int width = ChunkData.Size;
+        int height = ChunkData.Size;
+
+        // More robust chunk/local coord calculation for negative numbers
+        int cx = Mathf.FloorToInt((float)worldX / width);
+        int cy = Mathf.FloorToInt((float)worldY / height);
+        int lx = worldX - (cx * width);
+        int ly = worldY - (cy * height);
+
         if (cx < 0 || cx >= activeMapData.mapSize.x || cy < 0 || cy >= activeMapData.mapSize.y) return;
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
-        if (id < 0) chunk.blocks[lx, ly] = default;
+        int idx = ChunkData.GetIndex(lx, ly);
+
+        if (id < 0) chunk.blocks[idx] = default;
         else
         {
             int maxKinds = ResourceManager.Instance != null ? ResourceManager.Instance.GetTileKindCount(id) : 1;
-            chunk.blocks[lx, ly] = new BlockData(id, UnityEngine.Random.Range(0, maxKinds), true);
+            chunk.blocks[idx] = new BlockData(id, UnityEngine.Random.Range(0, maxKinds), true);
         }
 
         if (LightingManager.Instance != null) LightingManager.Instance.UpdateLightingAt(worldX, worldY);
@@ -280,7 +277,7 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
             ChunkData chunk = activeMapData.chunks[cx, cy];
             for (int ly = ChunkData.ChunkSize.y - 1; ly >= 0; ly--)
             {
-                if (chunk.blocks[lx, ly].isActive) return new Vector2(worldX + 0.5f, (cy * 8) + ly + 2f);
+                if (chunk.blocks[ChunkData.GetIndex(lx, ly)].isActive) return new Vector2(worldX + 0.5f, (cy * 8) + ly + 2f);
             }
         }
         return new Vector2(worldX + 0.5f, (activeMapData.mapSize.y * 8) * 0.6f + 5f);

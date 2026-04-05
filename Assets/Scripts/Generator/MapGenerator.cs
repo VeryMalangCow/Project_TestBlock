@@ -129,7 +129,7 @@ public class MapGenerator : MonoBehaviour
                 if (worldY <= surfaceY)
                 {
                     int kindId = GetRandomKindId(dirtBlockId);
-                    chunk.blocks[x, y] = new BlockData(dirtBlockId, kindId, true);
+                    chunk.blocks[ChunkData.GetIndex(x, y)] = new BlockData(dirtBlockId, kindId, true);
                 }
             }
         }

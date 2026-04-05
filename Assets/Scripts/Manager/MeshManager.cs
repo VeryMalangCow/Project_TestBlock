@@ -1,6 +1,10 @@
 using System.Collections.Generic;
 using Unity.Netcode;
 using UnityEngine;
+using Unity.Collections;
+using Unity.Jobs;
+using Unity.Burst;
+using Unity.Mathematics;
 
 public class MeshManager : Singleton<MeshManager>
 {
@@ -16,8 +20,8 @@ public class MeshManager : Singleton<MeshManager>
     [SerializeField] private bool useSlidingWindow = true;
     [SerializeField] private Transform targetTransform; 
     [SerializeField] private int viewDistance = 2; 
-    [SerializeField] private float updateInterval = 0.1f; // Run update 10 times per second instead of every frame
-    [SerializeField] private float moveThreshold = 0.5f; // Minimum distance player must move to trigger update
+    [SerializeField] private float updateInterval = 0.1f; 
+    [SerializeField] private float moveThreshold = 0.5f; 
 
     private float lastUpdateTime = 0f;
     private List<PlayerController> trackedPlayers = new List<PlayerController>();
@@ -31,17 +35,18 @@ public class MeshManager : Singleton<MeshManager>
     private Stack<GameObject> edgePool = new Stack<GameObject>();
 
     private HashSet<Vector2Int> lastRequiredChunks = new HashSet<Vector2Int>();
-    private HashSet<Vector2Int> currentRequiredChunks = new HashSet<Vector2Int>(); // Added for reuse
-    private List<Vector2Int> toRemoveCache = new List<Vector2Int>(); // Added for reuse
+    private HashSet<Vector2Int> currentRequiredChunks = new HashSet<Vector2Int>(); 
+    private List<Vector2Int> toRemoveCache = new List<Vector2Int>(); 
     private bool lastSlidingState = true;
 
     private List<Vector3> cachedVertices = new List<Vector3>(1024);
     private List<int> cachedTriangles = new List<int>(2048);
     private List<Vector3> cachedUVs = new List<Vector3>(1024);
     private List<Color> cachedColors = new List<Color>(1024);
-    private List<Vector2> cachedEdgePoints = new List<Vector2>(2); // Added for EdgeCollider optimization
+    private List<Vector2> cachedEdgePoints = new List<Vector2>(2); 
 
-    private bool[,] neighborStatesCache; // Added for reuse
+    // Job Data
+    private NativeArray<int> ruleMappingArray;
 
     #endregion
 
@@ -54,6 +59,16 @@ public class MeshManager : Singleton<MeshManager>
         cachedTriangles.Clear();
         cachedUVs.Clear();
         cachedColors.Clear();
+
+        // Initialize rule mapping for Jobs
+        int[] rawMapping = TileSpriteSet.GetRawMappingArray();
+        ruleMappingArray = new NativeArray<int>(256, Allocator.Persistent);
+        ruleMappingArray.CopyFrom(rawMapping);
+    }
+
+    private void OnDestroy()
+    {
+        if (ruleMappingArray.IsCreated) ruleMappingArray.Dispose();
     }
 
 
@@ -310,32 +325,150 @@ public class MeshManager : Singleton<MeshManager>
 
     #endregion
 
-    #region Draw
+    #region Draw (Job System + Burst)
+
+    [BurstCompile]
+    public struct ChunkMeshJob : IJob
+    {
+        // Inputs
+        [ReadOnly] public NativeArray<BlockData> blocks; // 18x18 grid flattened
+        [ReadOnly] public NativeArray<byte> lights;     // 18x18 grid flattened
+        [ReadOnly] public NativeArray<int> ruleMapping;
+        public int worldOffsetX;
+        public int worldOffsetY;
+
+        // Outputs
+        public NativeList<float3> vertices;
+        public NativeList<int> triangles;
+        public NativeList<float3> uvs;
+        public NativeList<float4> colors;
+
+        public void Execute()
+        {
+            int sizeWithPadding = ChunkData.Size + 2; // 10
+
+            for (int y = 0; y < ChunkData.Size; y++)
+            {
+                for (int x = 0; x < ChunkData.Size; x++)
+                {
+                    int lx = x + 1;
+                    int ly = y + 1;
+                    int idx = ly * sizeWithPadding + lx;
+
+                    BlockData block = blocks[idx];
+                    if (!block.isActive) continue;
+
+                    // 1. Bitmask calculation
+                    int bitmask = 0;
+                    if (blocks[idx + sizeWithPadding].isActive) bitmask |= (1 << 0); // Top
+                    if (blocks[idx - 1].isActive) bitmask |= (1 << 1);               // Left
+                    if (blocks[idx + 1].isActive) bitmask |= (1 << 2);               // Right
+                    if (blocks[idx - sizeWithPadding].isActive) bitmask |= (1 << 3); // Bottom
+
+                    // Diagonals (if orthogonal neighbors exist)
+                    bool hasT = (bitmask & (1 << 0)) != 0;
+                    bool hasL = (bitmask & (1 << 1)) != 0;
+                    bool hasR = (bitmask & (1 << 2)) != 0;
+                    bool hasB = (bitmask & (1 << 3)) != 0;
+
+                    if (hasT && hasL && !blocks[idx + sizeWithPadding - 1].isActive) bitmask |= (1 << 4);
+                    if (hasT && hasR && !blocks[idx + sizeWithPadding + 1].isActive) bitmask |= (1 << 5);
+                    if (hasB && hasL && !blocks[idx - sizeWithPadding - 1].isActive) bitmask |= (1 << 6);
+                    if (hasB && hasR && !blocks[idx - sizeWithPadding + 1].isActive) bitmask |= (1 << 7);
+
+                    // 2. Texture Index
+                    int ruleId = ruleMapping[bitmask & 0xFF];
+                    int variation = block.kindId % 3;
+                    float arrayIdx = (block.id * 141) + (ruleId * 3) + variation;
+
+                    // 3. Vertices & Triangles
+                    int vIndex = vertices.Length;
+                    float wx = worldOffsetX + x;
+                    float wy = worldOffsetY + y;
+
+                    vertices.Add(new float3(wx, wy, 0));
+                    vertices.Add(new float3(wx + 1, wy, 0));
+                    vertices.Add(new float3(wx, wy + 1, 0));
+                    vertices.Add(new float3(wx + 1, wy + 1, 0));
+
+                    triangles.Add(vIndex + 0);
+                    triangles.Add(vIndex + 2);
+                    triangles.Add(vIndex + 3);
+                    triangles.Add(vIndex + 0);
+                    triangles.Add(vIndex + 3);
+                    triangles.Add(vIndex + 1);
+
+                    // 4. UVs (Z stores layer index)
+                    uvs.Add(new float3(0, 0, arrayIdx));
+                    uvs.Add(new float3(1, 0, arrayIdx));
+                    uvs.Add(new float3(0, 1, arrayIdx));
+                    uvs.Add(new float3(1, 1, arrayIdx));
+
+                    // 5. Colors (Interpolated light)
+                    // Simplified average for vertex lighting in Job
+                    AddVertexColor(idx, -1, -1, sizeWithPadding);
+                    AddVertexColor(idx, 1, -1, sizeWithPadding);
+                    AddVertexColor(idx, -1, 1, sizeWithPadding);
+                    AddVertexColor(idx, 1, 1, sizeWithPadding);
+                }
+            }
+        }
+
+        private void AddVertexColor(int centerIdx, int ox, int oy, int stride)
+        {
+            float sum = 0;
+            sum += lights[centerIdx];
+            sum += lights[centerIdx + ox];
+            sum += lights[centerIdx + oy * stride];
+            sum += lights[centerIdx + ox + oy * stride];
+            float val = (sum / 4f) / 255f;
+            colors.Add(new float4(val, val, val, 1f));
+        }
+    }
 
     private void DrawChunk(MeshFilter targetFilter, int cx, int cy)
     {
         if (MapManager.Instance.activeMapData == null) return;
-        ChunkData[,] allChunks = MapManager.Instance.activeMapData.chunks;
-        ChunkData chunk = allChunks[cx, cy];
-        if (chunk == null) return;
+        
+        // --- Step 1: Collect Data for Job ---
+        int sizeWithPadding = ChunkData.Size + 2;
+        NativeArray<BlockData> blockData = new NativeArray<BlockData>(sizeWithPadding * sizeWithPadding, Allocator.TempJob);
+        NativeArray<byte> lightData = new NativeArray<byte>(sizeWithPadding * sizeWithPadding, Allocator.TempJob);
 
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
-
-        // Reuse neighborStatesCache
-        if (neighborStatesCache == null || neighborStatesCache.GetLength(0) != width + 2 || neighborStatesCache.GetLength(1) != height + 2)
+        for (int y = -1; y <= ChunkData.Size; y++)
         {
-            neighborStatesCache = new bool[width + 2, height + 2];
-        }
-
-        for (int x = -1; x <= width; x++)
-        {
-            for (int y = -1; y <= height; y++)
+            for (int x = -1; x <= ChunkData.Size; x++)
             {
-                neighborStatesCache[x + 1, y + 1] = HasBlock(cx, cy, x, y);
+                int jobIdx = (y + 1) * sizeWithPadding + (x + 1);
+                blockData[jobIdx] = GetBlockData(cx, cy, x, y);
+                lightData[jobIdx] = GetLightValue(cx, cy, x, y);
             }
         }
 
+        // --- Step 2: Prepare Output Collections ---
+        NativeList<float3> vertices = new NativeList<float3>(256, Allocator.TempJob);
+        NativeList<int> triangles = new NativeList<int>(512, Allocator.TempJob);
+        NativeList<float3> uvs = new NativeList<float3>(256, Allocator.TempJob);
+        NativeList<float4> colors = new NativeList<float4>(256, Allocator.TempJob);
+
+        // --- Step 3: Schedule Job ---
+        ChunkMeshJob job = new ChunkMeshJob
+        {
+            blocks = blockData,
+            lights = lightData,
+            ruleMapping = ruleMappingArray,
+            worldOffsetX = cx * ChunkData.Size,
+            worldOffsetY = cy * ChunkData.Size,
+            vertices = vertices,
+            triangles = triangles,
+            uvs = uvs,
+            colors = colors
+        };
+
+        JobHandle handle = job.Schedule();
+        handle.Complete(); // Forced completion for prototype, can be async later
+
+        // --- Step 4: Apply to Mesh ---
         Mesh mesh = targetFilter.sharedMesh;
         if (mesh == null)
         {
@@ -343,97 +476,47 @@ public class MeshManager : Singleton<MeshManager>
             mesh.name = $"Chunk_{cx}_{cy}";
             targetFilter.sharedMesh = mesh;
         }
-        else
+        else mesh.Clear();
+
+        if (vertices.Length > 0)
         {
-            mesh.Clear();
-            mesh.name = $"Chunk_{cx}_{cy}";
+            mesh.SetVertices(vertices.AsArray());
+            mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
+            mesh.SetUVs(0, uvs.AsArray());
+            mesh.SetColors(colors.AsArray());
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
         }
 
-        cachedVertices.Clear();
-        cachedTriangles.Clear();
-        cachedUVs.Clear();
-        cachedColors.Clear();
+        // --- Step 5: Cleanup ---
+        blockData.Dispose();
+        lightData.Dispose();
+        vertices.Dispose();
+        triangles.Dispose();
+        uvs.Dispose();
+        colors.Dispose();
+    }
 
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                BlockData block = chunk.blocks[x, y];
-                if (!block.isActive) continue;
+    private BlockData GetBlockData(int cx, int cy, int x, int y)
+    {
+        int tx = x, ty = y, tcx = cx, tcy = cy;
+        if (tx < 0) { tx += ChunkData.Size; tcx--; } else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; tcx++; }
+        if (ty < 0) { ty += ChunkData.Size; tcy--; } else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; tcy++; }
 
-                int lx = x + 1;
-                int ly = y + 1;
+        MapData data = MapManager.Instance.activeMapData;
+        if (tcx < 0 || tcx >= data.mapSize.x || tcy < 0 || tcy >= data.mapSize.y) return default;
+        return data.chunks[tcx, tcy].blocks[ChunkData.GetIndex(tx, ty)];
+    }
 
-                bool has2 = neighborStatesCache[lx, ly + 1]; 
-                bool has4 = neighborStatesCache[lx - 1, ly]; 
-                bool has6 = neighborStatesCache[lx + 1, ly]; 
-                bool has8 = neighborStatesCache[lx, ly - 1]; 
+    private byte GetLightValue(int cx, int cy, int x, int y)
+    {
+        int tx = x, ty = y, tcx = cx, tcy = cy;
+        if (tx < 0) { tx += ChunkData.Size; tcx--; } else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; tcx++; }
+        if (ty < 0) { ty += ChunkData.Size; tcy--; } else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; tcy++; }
 
-                int bitmask = 0;
-                if (has2) bitmask |= (1 << 0);
-                if (has4) bitmask |= (1 << 1);
-                if (has6) bitmask |= (1 << 2);
-                if (has8) bitmask |= (1 << 3);
-
-                if (has2 && has4 && !neighborStatesCache[lx - 1, ly + 1]) bitmask |= (1 << 4);
-                if (has2 && has6 && !neighborStatesCache[lx + 1, ly + 1]) bitmask |= (1 << 5);
-                if (has8 && has4 && !neighborStatesCache[lx - 1, ly - 1]) bitmask |= (1 << 6);
-                if (has8 && has6 && !neighborStatesCache[lx + 1, ly - 1]) bitmask |= (1 << 7);
-
-                int variation = block.kindId % 3;
-                float arrayIdx = ResourceManager.Instance.GetTileArrayIndex(block.id, bitmask, variation);
-
-                int vIndex = cachedVertices.Count;
-                int wx = cx * width + x;
-                int wy = cy * height + y;
-
-                cachedVertices.Add(new Vector3(wx, wy, 0));
-                cachedVertices.Add(new Vector3(wx + 1, wy, 0));
-                cachedVertices.Add(new Vector3(wx, wy + 1, 0));
-                cachedVertices.Add(new Vector3(wx + 1, wy + 1, 0));
-
-                cachedTriangles.Add(vIndex + 0);
-                cachedTriangles.Add(vIndex + 2);
-                cachedTriangles.Add(vIndex + 3);
-                cachedTriangles.Add(vIndex + 0);
-                cachedTriangles.Add(vIndex + 3);
-                cachedTriangles.Add(vIndex + 1);
-
-                cachedUVs.Add(new Vector3(0, 0, arrayIdx));
-                cachedUVs.Add(new Vector3(1, 0, arrayIdx));
-                cachedUVs.Add(new Vector3(0, 1, arrayIdx));
-                cachedUVs.Add(new Vector3(1, 1, arrayIdx));
-
-                if (LightingManager.Instance != null)
-                {
-                    float bl = LightingManager.Instance.GetInterpolatedLight(wx, wy);
-                    float br = LightingManager.Instance.GetInterpolatedLight(wx + 1, wy);
-                    float tl = LightingManager.Instance.GetInterpolatedLight(wx, wy + 1);
-                    float tr = LightingManager.Instance.GetInterpolatedLight(wx + 1, wy + 1);
-
-                    cachedColors.Add(new Color(bl, bl, bl, 1f));
-                    cachedColors.Add(new Color(br, br, br, 1f));
-                    cachedColors.Add(new Color(tl, tl, tl, 1f));
-                    cachedColors.Add(new Color(tr, tr, tr, 1f));
-                }
-                else
-                {
-                    cachedColors.Add(Color.white);
-                    cachedColors.Add(Color.white);
-                    cachedColors.Add(Color.white);
-                    cachedColors.Add(Color.white);
-                }
-            }
-        }
-
-        mesh.SetVertices(cachedVertices);
-        mesh.SetTriangles(cachedTriangles, 0);
-        mesh.SetUVs(0, cachedUVs);
-        mesh.SetColors(cachedColors);
-        mesh.RecalculateNormals();
-        mesh.RecalculateBounds();
-
-        targetFilter.mesh = mesh;
+        MapData data = MapManager.Instance.activeMapData;
+        if (tcx < 0 || tcx >= data.mapSize.x || tcy < 0 || tcy >= data.mapSize.y) return 255; // Default sunlight for out of bounds
+        return data.chunks[tcx, tcy].lightValues[ChunkData.GetIndex(tx, ty)];
     }
 
     #endregion
@@ -497,14 +580,14 @@ public class MeshManager : Singleton<MeshManager>
             bool hasFace = false;
             if (isTop)
             {
-                bool blockExists = (y < height) && (c.blocks[x, y].isActive);
-                bool neighborExists = (y + 1 < height) ? (c.blocks[x, y + 1].isActive) : (uC != null && uC.blocks[x, 0].isActive);
+                bool blockExists = (y < height) && (c.blocks[ChunkData.GetIndex(x, y)].isActive);
+                bool neighborExists = (y + 1 < height) ? (c.blocks[ChunkData.GetIndex(x, y + 1)].isActive) : (uC != null && uC.blocks[ChunkData.GetIndex(x, 0)].isActive);
                 if (blockExists && !neighborExists) hasFace = true;
             }
             else
             {
-                bool blockExists = (y < height) && (c.blocks[x, y].isActive);
-                bool neighborExists = (y - 1 >= 0) ? (c.blocks[x, y - 1].isActive) : (dC != null && dC.blocks[x, height - 1].isActive);
+                bool blockExists = (y < height) && (c.blocks[ChunkData.GetIndex(x, y)].isActive);
+                bool neighborExists = (y - 1 >= 0) ? (c.blocks[ChunkData.GetIndex(x, y - 1)].isActive) : (dC != null && dC.blocks[ChunkData.GetIndex(x, height - 1)].isActive);
                 if (blockExists && !neighborExists) hasFace = true;
             }
 
@@ -536,14 +619,24 @@ public class MeshManager : Singleton<MeshManager>
             bool hasFace = false;
             if (isLeft)
             {
-                bool blockExists = (x < width) && (c.blocks[x, y].isActive);
-                bool neighborExists = (x - 1 >= 0) ? (c.blocks[x - 1, y].isActive) : (lC != null && lC.blocks[width - 1, y].isActive);
+                bool blockExists = (x < width) && (c.blocks[ChunkData.GetIndex(x, y)].isActive);
+                bool neighborExists;
+                if (x > 0) 
+                    neighborExists = c.blocks[ChunkData.GetIndex(x - 1, y)].isActive;
+                else 
+                    neighborExists = (lC != null && lC.blocks[ChunkData.GetIndex(width - 1, y)].isActive);
+
                 if (blockExists && !neighborExists) hasFace = true;
             }
             else
             {
-                bool blockExists = (x < width) && (c.blocks[x, y].isActive);
-                bool neighborExists = (x + 1 < width) ? (c.blocks[x + 1, y].isActive) : (rC != null && rC.blocks[0, y].isActive);
+                bool blockExists = (x < width) && (c.blocks[ChunkData.GetIndex(x, y)].isActive);
+                bool neighborExists;
+                if (x + 1 < width)
+                    neighborExists = c.blocks[ChunkData.GetIndex(x + 1, y)].isActive;
+                else
+                    neighborExists = (rC != null && rC.blocks[ChunkData.GetIndex(0, y)].isActive);
+
                 if (blockExists && !neighborExists) hasFace = true;
             }
 
@@ -664,21 +757,31 @@ public class MeshManager : Singleton<MeshManager>
         int targetCX = cx;
         int targetCY = cy;
 
-        if (targetX < 0) { targetX += ChunkData.ChunkSize.x; targetCX--; }
-        else if (targetX >= ChunkData.ChunkSize.x) { targetX -= ChunkData.ChunkSize.x; targetCX++; }
+        // Use Math.Floor for safe chunk coordinate calculation when local x/y is out of bounds
+        if (targetX < 0 || targetX >= ChunkData.Size)
+        {
+            int extraCX = Mathf.FloorToInt((float)targetX / ChunkData.Size);
+            targetCX += extraCX;
+            targetX -= extraCX * ChunkData.Size;
+        }
 
-        if (targetY < 0) { targetY += ChunkData.ChunkSize.y; targetCY--; }
-        else if (targetY >= ChunkData.ChunkSize.y) { targetY -= ChunkData.ChunkSize.y; targetCY++; }
+        if (targetY < 0 || targetY >= ChunkData.Size)
+        {
+            int extraCY = Mathf.FloorToInt((float)targetY / ChunkData.Size);
+            targetCY += extraCY;
+            targetY -= extraCY * ChunkData.Size;
+        }
 
         if (MapManager.Instance.activeMapData == null) return false;
         MapData data = MapManager.Instance.activeMapData;
+        
         if (targetCX < 0 || targetCX >= data.mapSize.x || targetCY < 0 || targetCY >= data.mapSize.y)
             return false;
 
-        ChunkData chunk = MapManager.Instance.activeMapData.chunks[targetCX, targetCY];
+        ChunkData chunk = data.chunks[targetCX, targetCY];
         if (chunk == null) return false;
 
-        return chunk.blocks[targetX, targetY].isActive;
+        return chunk.blocks[ChunkData.GetIndex(targetX, targetY)].isActive;
     }
 
     #endregion

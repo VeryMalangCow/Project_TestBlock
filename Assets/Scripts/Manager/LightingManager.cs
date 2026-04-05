@@ -208,56 +208,50 @@ public class LightingManager : Singleton<LightingManager>
 
     private void SetLightValue(int worldX, int worldY, byte value)
     {
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
+        int width = ChunkData.Size;
+        int height = ChunkData.Size;
 
-        int cx = worldX / width;
-        int cy = worldY / height;
-        int lx = worldX % width;
-        int ly = worldY % height;
-
-        if (lx < 0) { lx += width; cx--; }
-        if (ly < 0) { ly += height; cy--; }
+        int cx = Mathf.FloorToInt((float)worldX / width);
+        int cy = Mathf.FloorToInt((float)worldY / height);
+        int lx = worldX - (cx * width);
+        int ly = worldY - (cy * height);
 
         if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return;
 
-        MapManager.Instance.activeMapData.chunks[cx, cy].lightValues[lx, ly] = value;
+        ChunkData chunk = MapManager.Instance.activeMapData.chunks[cx, cy];
+        chunk.lightValues[ChunkData.GetIndex(lx, ly)] = value;
     }
 
     private byte GetLightValue(int worldX, int worldY)
     {
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
+        int width = ChunkData.Size;
+        int height = ChunkData.Size;
 
-        int cx = worldX / width;
-        int cy = worldY / height;
-        int lx = worldX % width;
-        int ly = worldY % height;
-
-        if (lx < 0) { lx += width; cx--; }
-        if (ly < 0) { ly += height; cy--; }
+        int cx = Mathf.FloorToInt((float)worldX / width);
+        int cy = Mathf.FloorToInt((float)worldY / height);
+        int lx = worldX - (cx * width);
+        int ly = worldY - (cy * height);
 
         if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return 0;
         
-        return MapManager.Instance.activeMapData.chunks[cx, cy].lightValues[lx, ly];
+        ChunkData chunk = MapManager.Instance.activeMapData.chunks[cx, cy];
+        return chunk.lightValues[ChunkData.GetIndex(lx, ly)];
     }
 
     private bool HasBlock(int worldX, int worldY)
     {
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
+        int width = ChunkData.Size;
+        int height = ChunkData.Size;
 
-        int cx = worldX / width;
-        int cy = worldY / height;
-        int lx = worldX % width;
-        int ly = worldY % height;
-
-        if (lx < 0) { lx += width; cx--; }
-        if (ly < 0) { ly += height; cy--; }
+        int cx = Mathf.FloorToInt((float)worldX / width);
+        int cy = Mathf.FloorToInt((float)worldY / height);
+        int lx = worldX - (cx * width);
+        int ly = worldY - (cy * height);
 
         if (cx < 0 || cx >= MapManager.Instance.activeMapData.mapSize.x || cy < 0 || cy >= MapManager.Instance.activeMapData.mapSize.y) return false;
         
-        return MapManager.Instance.activeMapData.chunks[cx, cy].blocks[lx, ly].isActive;
+        ChunkData chunk = MapManager.Instance.activeMapData.chunks[cx, cy];
+        return chunk.blocks[ChunkData.GetIndex(lx, ly)].isActive;
     }
 
     #endregion

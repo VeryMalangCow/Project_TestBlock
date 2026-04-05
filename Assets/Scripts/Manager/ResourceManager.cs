@@ -12,6 +12,12 @@ public class TileSpriteSet
     private static int[] maskToRuleID = new int[256];
     private static bool isMappingInitialized = false;
 
+    public static int[] GetRawMappingArray()
+    {
+        if (!isMappingInitialized) InitializeMapping();
+        return maskToRuleID;
+    }
+
     public static void InitializeMapping()
     {
         if (isMappingInitialized) return;
