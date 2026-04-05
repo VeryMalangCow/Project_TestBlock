@@ -431,13 +431,24 @@ public class MeshManager : Singleton<MeshManager>
             {
                 int jobIdx = (y + 1) * sizeWithPadding + (x + 1);
                 
-                // Fast Lookup using pre-cached neighbors
+                // Optimized Fast Lookup logic
                 int tx = x, ty = y, ncx = 1, ncy = 1;
-                if (tx < 0) { tx += ChunkData.Size; ncx--; } else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; ncx++; }
-                if (ty < 0) { ty += ChunkData.Size; ncy--; } else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; ncy++; }
+                
+                if (tx < 0) { tx += ChunkData.Size; ncx = 0; } 
+                else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; ncx = 2; }
+                
+                if (ty < 0) { ty += ChunkData.Size; ncy = 0; } 
+                else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; ncy = 2; }
 
                 ChunkData targetChunk = neighborChunks[ncx, ncy];
-                blockData[jobIdx] = targetChunk != null ? targetChunk.blocks[ChunkData.GetIndex(tx, ty)] : default;
+                if (targetChunk != null)
+                {
+                    blockData[jobIdx] = targetChunk.blocks[ChunkData.GetIndex(tx, ty)];
+                }
+                else
+                {
+                    blockData[jobIdx] = default;
+                }
             }
         }
 

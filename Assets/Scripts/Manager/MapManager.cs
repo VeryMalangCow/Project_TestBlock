@@ -380,11 +380,23 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         if (LightingManager.Instance != null) LightingManager.Instance.UpdateLightingAt(worldX, worldY);
         if (MeshManager.Instance != null)
         {
+            // 1. Current Chunk
             MeshManager.Instance.RequestChunkRedraw(cx, cy);
-            if (lx == 0) MeshManager.Instance.RequestChunkRedraw(cx - 1, cy);
-            if (lx == width - 1) MeshManager.Instance.RequestChunkRedraw(cx + 1, cy);
-            if (ly == 0) MeshManager.Instance.RequestChunkRedraw(cx, cy - 1);
-            if (ly == height - 1) MeshManager.Instance.RequestChunkRedraw(cx, cy + 1);
+
+            // 2. Neighbor Chunks (Including Diagonals for Bitmask)
+            bool isL = (lx == 0); bool isR = (lx == width - 1);
+            bool isB = (ly == 0); bool isT = (ly == height - 1);
+
+            if (isL) MeshManager.Instance.RequestChunkRedraw(cx - 1, cy);
+            if (isR) MeshManager.Instance.RequestChunkRedraw(cx + 1, cy);
+            if (isB) MeshManager.Instance.RequestChunkRedraw(cx, cy - 1);
+            if (isT) MeshManager.Instance.RequestChunkRedraw(cx, cy + 1);
+
+            // Diagonal neighbors for accurate diagonal bitmask
+            if (isL && isB) MeshManager.Instance.RequestChunkRedraw(cx - 1, cy - 1);
+            if (isL && isT) MeshManager.Instance.RequestChunkRedraw(cx - 1, cy + 1);
+            if (isR && isB) MeshManager.Instance.RequestChunkRedraw(cx + 1, cy - 1);
+            if (isR && isT) MeshManager.Instance.RequestChunkRedraw(cx + 1, cy + 1);
         }
     }
 
