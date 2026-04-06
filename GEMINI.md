@@ -60,7 +60,7 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 ----------
 
 ## 6. Map & Chunk Rules
-- **Chunk Size:** 16 x 16 blocks.
+- **Chunk Size:** 16 x 16 blocks. (Source of Truth: `ChunkData.Size`)
 - **World Sizes (Presets):**
   - **Standard**: 150 x 120 Chunks (2400 x 1920 Blocks)
   - **Great Cave**: 200 x 100 Chunks (3200 x 1600 Blocks)
@@ -71,6 +71,7 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 - **Collider Type:** Optimized `EdgeCollider2D` generated via `MeshManager`'s Greedy Edge Merging algorithm.
 - **Tunneling Prevention:** Any high-speed entity (including `PlayerController`) must use `CollisionDetectionMode2D.Continuous` to prevent tunneling.
 - **Optimization:** Both mesh objects and `EdgeCollider2D` objects must utilize **Object Pooling**.
+- **Sliding Window:** Supports asymmetrical view distances (`viewDistanceX`, `viewDistanceY`) to optimize for widescreen environments.
 
 ----------
 

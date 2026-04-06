@@ -21,10 +21,21 @@ public class MeshManager : Singleton<MeshManager>
     [SerializeField] private Transform targetTransform;
     [SerializeField] private int viewDistanceX = 8;
     [SerializeField] private int viewDistanceY = 5;
+    [SerializeField] private int viewBuffer = 1; // Minimum extra chunks beyond screen
     [SerializeField] private float updateInterval = 0.5f;
     [SerializeField] private float moveThreshold = 0.5f; 
 
+    [Header("# Performance Tuning")]
+    [SerializeField] private int baseMaxChunkBuilds = 2;
+    [SerializeField] private int baseMaxColliderBuilds = 1;
+    [SerializeField] private int emergencyBuildThreshold = 10; 
+
     private float lastUpdateTime = 0f;
+    private Camera mainCam;
+    private float lastOrthographicSize;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
+
     private List<PlayerController> trackedPlayers = new List<PlayerController>();
     private Dictionary<PlayerController, Vector3> lastPlayerPositions = new Dictionary<PlayerController, Vector3>();
     private float playerListRefreshTimer = 0f;
@@ -49,6 +60,11 @@ public class MeshManager : Singleton<MeshManager>
     // Job Data
     private NativeArray<int> ruleMappingArray;
 
+    // Build Queues (Reverted to original names and types for compatibility)
+    private Queue<Vector2Int> pendingDrawQueue = new Queue<Vector2Int>();
+    private HashSet<Vector2Int> pendingDrawSet = new HashSet<Vector2Int>();
+    private Queue<Vector2Int> pendingColliderQueue = new Queue<Vector2Int>();
+    private HashSet<Vector2Int> pendingColliderSet = new HashSet<Vector2Int>();
 
     #endregion
 
@@ -62,6 +78,8 @@ public class MeshManager : Singleton<MeshManager>
         cachedUVs.Clear();
         cachedColors.Clear();
 
+        mainCam = Camera.main;
+
         // Initialize rule mapping for Jobs
         int[] rawMapping = TileSpriteSet.GetRawMappingArray();
         ruleMappingArray = new NativeArray<int>(256, Allocator.Persistent);
@@ -71,6 +89,8 @@ public class MeshManager : Singleton<MeshManager>
     private void Start()
     {
         lastSlidingState = useSlidingWindow;
+        
+        RefreshResolutionSettings();
 
         int initialPoolSize = 100;
 
@@ -113,56 +133,92 @@ public class MeshManager : Singleton<MeshManager>
         }
 
         if (useSlidingWindow)
+        {
+            UpdateDynamicViewDistances();
             UpdateSlidingWindow();
+        }
     }
 
     private void LateUpdate()
     {
+        // Adaptive Build Speed
+        int currentMaxBuilds = baseMaxChunkBuilds;
+        if (pendingDrawQueue.Count > emergencyBuildThreshold)
+            currentMaxBuilds = baseMaxChunkBuilds + (pendingDrawQueue.Count / 5);
+
         int processedMesh = 0;
-        while (processedMesh < maxChunkBuildsPerFrame && pendingDrawQueue.Count > 0)
+        while (processedMesh < currentMaxBuilds && pendingDrawQueue.Count > 0)
         {
             Vector2Int coord = pendingDrawQueue.Dequeue();
             pendingDrawSet.Remove(coord);
-
+            
             if (activeChunks.TryGetValue(coord, out MeshFilter filter))
             {
                 DrawChunk(filter, coord.x, coord.y);
                 EnqueueColliderBuild(coord);
             }
-
             processedMesh++;
         }
 
+        int currentMaxColliders = baseMaxColliderBuilds;
+        if (pendingColliderQueue.Count > emergencyBuildThreshold)
+            currentMaxColliders = baseMaxColliderBuilds + (pendingColliderQueue.Count / 5);
+
         int processedCollider = 0;
-        while (processedCollider < maxColliderBuildsPerFrame && pendingColliderQueue.Count > 0)
+        while (processedCollider < currentMaxColliders && pendingColliderQueue.Count > 0)
         {
             Vector2Int coord = pendingColliderQueue.Dequeue();
             pendingColliderSet.Remove(coord);
 
             if (activeChunks.ContainsKey(coord))
-            {
                 UpdateChunkCollider(coord.x, coord.y);
-            }
-
+            
             processedCollider++;
         }
 
         if (redrawQueue.Count > 0)
         {
-            foreach (var coord in redrawQueue)
-            {
-                EnqueueChunkBuild(coord);
-            }
+            foreach (var coord in redrawQueue) EnqueueChunkBuild(coord);
             redrawQueue.Clear();
         }
     }
-
 
     private void OnDestroy()
     {
         if (ruleMappingArray.IsCreated) ruleMappingArray.Dispose();
     }
 
+    #endregion
+
+    #region Resolution & ViewDistance
+
+    public void RefreshResolutionSettings()
+    {
+        if (mainCam == null) mainCam = Camera.main;
+        if (mainCam == null) return;
+
+        lastOrthographicSize = mainCam.orthographicSize;
+        lastScreenWidth = Screen.width;
+        lastScreenHeight = Screen.height;
+
+        float verticalSize = mainCam.orthographicSize * 2f;
+        float horizontalSize = verticalSize * mainCam.aspect;
+
+        viewDistanceY = Mathf.CeilToInt((verticalSize / 2f) / ChunkData.Size) + viewBuffer;
+        viewDistanceX = Mathf.CeilToInt((horizontalSize / 2f) / ChunkData.Size) + viewBuffer;
+
+        viewDistanceX = Mathf.Max(viewDistanceX, 2);
+        viewDistanceY = Mathf.Max(viewDistanceY, 2);
+    }
+
+    private void UpdateDynamicViewDistances()
+    {
+        if (Mathf.Approximately(mainCam.orthographicSize, lastOrthographicSize) && 
+            Screen.width == lastScreenWidth && Screen.height == lastScreenHeight)
+            return;
+
+        RefreshResolutionSettings();
+    }
 
     #endregion
 
@@ -178,11 +234,10 @@ public class MeshManager : Singleton<MeshManager>
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
         Vector2Int coord = new Vector2Int(cx, cy);
         
-        // Immediately activate and draw
         if (!activeChunks.ContainsKey(coord))
         {
             ActivateChunk(coord, enqueueBuild: true);
-            lastRequiredChunks.Add(coord); // Add to tracking so sliding window doesn't prune it immediately
+            lastRequiredChunks.Add(coord);
         }
     }
 
@@ -191,11 +246,9 @@ public class MeshManager : Singleton<MeshManager>
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient) return;
 
-        // 1. Frequency Control (Timer)
         if (Time.time - lastUpdateTime < updateInterval) return;
         lastUpdateTime = Time.time;
 
-        // 2. Refresh Player List (Less frequent)
         playerListRefreshTimer += updateInterval;
         if (playerListRefreshTimer >= PLAYER_LIST_REFRESH_INTERVAL || trackedPlayers.Count == 0)
         {
@@ -204,16 +257,12 @@ public class MeshManager : Singleton<MeshManager>
             trackedPlayers.Clear();
             if (foundPlayers != null)
             {
-                foreach (var p in foundPlayers)
-                {
-                    if (p != null) trackedPlayers.Add(p);
-                }
+                foreach (var p in foundPlayers) if (p != null) trackedPlayers.Add(p);
             }
         }
 
         if (trackedPlayers.Count == 0) return;
 
-        // 3. Check for Significant Movement
         bool hasSignificantMovement = false;
         foreach (var player in trackedPlayers)
         {
@@ -230,7 +279,6 @@ public class MeshManager : Singleton<MeshManager>
 
         if (!hasSignificantMovement && lastRequiredChunks.Count > 0) return;
 
-        // 4. Calculate Required Chunks
         currentRequiredChunks.Clear();
         MapData data = MapManager.Instance.activeMapData;
 
@@ -256,7 +304,6 @@ public class MeshManager : Singleton<MeshManager>
             }
         }
 
-        // 5. Apply Changes only if needed
         if (!currentRequiredChunks.SetEquals(lastRequiredChunks))
         {
             RefreshChunksMultitarget(currentRequiredChunks);
@@ -268,78 +315,42 @@ public class MeshManager : Singleton<MeshManager>
     private void DeactivateChunk(Vector2Int coord, MeshFilter filter)
     {
         ClearChunkEdges(coord, filter.gameObject);
-
         filter.gameObject.SetActive(false);
         chunkPool.Push(filter);
         activeChunks.Remove(coord);
     }
 
-    private Transform edgePoolRoot;
-
     private void ClearChunkEdges(Vector2Int coord, GameObject chunkObj)
     {
         HashSet<GameObject> processed = new HashSet<GameObject>();
-
         if (activeEdges.TryGetValue(coord, out List<GameObject> edges))
         {
             foreach (var edgeObj in edges)
             {
                 if (edgeObj == null) continue;
-
                 edgeObj.SetActive(false);
-                edgeObj.transform.SetParent(edgePoolRoot);
                 edgePool.Push(edgeObj);
                 processed.Add(edgeObj);
             }
             edges.Clear();
         }
-
-        for (int i = chunkObj.transform.childCount - 1; i >= 0; i--)
-        {
-            Transform child = chunkObj.transform.GetChild(i);
-            if (child == null) continue;
-
-            EdgeCollider2D edge = child.GetComponent<EdgeCollider2D>();
-            if (edge == null) continue;
-
-            GameObject edgeObj = child.gameObject;
-            if (processed.Contains(edgeObj)) continue;
-
-            edgeObj.SetActive(false);
-            edgeObj.transform.SetParent(edgePoolRoot);
-            edgePool.Push(edgeObj);
-        }
     }
+
     private void RefreshChunksMultitarget(HashSet<Vector2Int> requiredCoords)
     {
         toRemoveCache.Clear();
         foreach (var activeCoord in activeChunks.Keys)
         {
-            if (!requiredCoords.Contains(activeCoord))
-            {
-                toRemoveCache.Add(activeCoord);
-            }
+            if (!requiredCoords.Contains(activeCoord)) toRemoveCache.Add(activeCoord);
         }
 
-        foreach (var coord in toRemoveCache)
-        {
-            MeshFilter filter = activeChunks[coord];
-            DeactivateChunk(coord, filter);
-        }
-
-        foreach (var coord in requiredCoords)
-        {
-            ActivateChunk(coord, enqueueBuild: true);
-        }
+        foreach (var coord in toRemoveCache) DeactivateChunk(coord, activeChunks[coord]);
+        foreach (var coord in requiredCoords) ActivateChunk(coord, enqueueBuild: true);
     }
 
     public void ClearAllChunks()
     {
-        foreach (var entry in activeChunks)
-        {
-            DeactivateChunk(entry.Key, entry.Value);
-        }
-
+        foreach (var entry in activeChunks) DeactivateChunk(entry.Key, entry.Value);
         activeChunks.Clear();
         lastRequiredChunks.Clear();
     }
@@ -347,56 +358,24 @@ public class MeshManager : Singleton<MeshManager>
     public void RefreshAllChunks()
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
-
         MapData data = MapManager.Instance.activeMapData;
         for (int x = 0; x < data.mapSize.x; x++)
         {
-            for (int y = 0; y < data.mapSize.y; y++)
-            {
-                ActivateChunk(new Vector2Int(x, y), false); 
-            }
+            for (int y = 0; y < data.mapSize.y; y++) ActivateChunk(new Vector2Int(x, y), false);
         }
     }
 
     private void ActivateChunk(Vector2Int coord, bool enqueueBuild = true)
     {
         if (activeChunks.ContainsKey(coord)) return;
+        if (!MapManager.Instance.IsChunkSynced(coord.x, coord.y)) MapManager.Instance.RequestChunkSync(coord.x, coord.y);
 
-        if (!MapManager.Instance.IsChunkSynced(coord.x, coord.y))
-        {
-            MapManager.Instance.RequestChunkSync(coord.x, coord.y);
-        }
-
-        MeshFilter filter;
-        if (chunkPool.Count > 0)
-            filter = chunkPool.Pop();
-        else
-            filter = CreateChunkObject(activeChunks.Count + chunkPool.Count);
-
+        MeshFilter filter = (chunkPool.Count > 0) ? chunkPool.Pop() : CreateChunkObject(activeChunks.Count + chunkPool.Count);
         filter.gameObject.SetActive(true);
         activeChunks.Add(coord, filter);
-
-        if (enqueueBuild)
-        {
-            EnqueueChunkBuild(coord);
-        }
-    }
-    private void BuildChunkNow(Vector2Int coord)
-    {
-        if (activeChunks.TryGetValue(coord, out MeshFilter filter))
-        {
-            DrawChunk(filter, coord.x, coord.y);
-            UpdateChunkCollider(coord.x, coord.y);
-        }
+        if (enqueueBuild) EnqueueChunkBuild(coord);
     }
 
-    #endregion
-
-    #region Update (Internal)
-
-    private HashSet<Vector2Int> redrawQueue = new HashSet<Vector2Int>();
-
-   
     #endregion
 
     #region Draw (Job System + Burst)
@@ -404,13 +383,10 @@ public class MeshManager : Singleton<MeshManager>
     [BurstCompile]
     public struct ChunkMeshJob : IJob
     {
-        // Inputs
         [ReadOnly] public NativeArray<BlockData> blocks; 
         [ReadOnly] public NativeArray<int> ruleMapping;
         public int worldOffsetX;
         public int worldOffsetY;
-
-        // Outputs
         public NativeList<float3> vertices;
         public NativeList<int> triangles;
         public NativeList<float3> uvs;
@@ -418,19 +394,15 @@ public class MeshManager : Singleton<MeshManager>
         public void Execute()
         {
             int sizeWithPadding = ChunkData.Size + 2; 
-
             for (int y = 0; y < ChunkData.Size; y++)
             {
                 for (int x = 0; x < ChunkData.Size; x++)
                 {
-                    int lx = x + 1;
-                    int ly = y + 1;
+                    int lx = x + 1; int ly = y + 1;
                     int idx = ly * sizeWithPadding + lx;
-
                     BlockData block = blocks[idx];
                     if (!block.isActive) continue;
 
-                    // 1. Bitmask calculation
                     int bitmask = 0;
                     if (blocks[idx + sizeWithPadding].isActive) bitmask |= (1 << 0);
                     if (blocks[idx - 1].isActive) bitmask |= (1 << 1);
@@ -447,33 +419,20 @@ public class MeshManager : Singleton<MeshManager>
                     if (hasB && hasL && !blocks[idx - sizeWithPadding - 1].isActive) bitmask |= (1 << 6);
                     if (hasB && hasR && !blocks[idx - sizeWithPadding + 1].isActive) bitmask |= (1 << 7);
 
-                    // 2. Texture Index
                     int ruleId = ruleMapping[bitmask & 0xFF];
                     int variation = block.kindId % 3;
                     float arrayIdx = (block.id * 141) + (ruleId * 3) + variation;
 
-                    // 3. Vertices & Triangles
                     int vIndex = vertices.Length;
-                    float wx = worldOffsetX + x;
-                    float wy = worldOffsetY + y;
-
+                    float wx = worldOffsetX + x; float wy = worldOffsetY + y;
                     vertices.Add(new float3(wx, wy, 0));
                     vertices.Add(new float3(wx + 1, wy, 0));
                     vertices.Add(new float3(wx, wy + 1, 0));
                     vertices.Add(new float3(wx + 1, wy + 1, 0));
-
-                    triangles.Add(vIndex + 0);
-                    triangles.Add(vIndex + 2);
-                    triangles.Add(vIndex + 3);
-                    triangles.Add(vIndex + 0);
-                    triangles.Add(vIndex + 3);
-                    triangles.Add(vIndex + 1);
-
-                    // 4. UVs (Z stores layer index)
-                    uvs.Add(new float3(0, 0, arrayIdx));
-                    uvs.Add(new float3(1, 0, arrayIdx));
-                    uvs.Add(new float3(0, 1, arrayIdx));
-                    uvs.Add(new float3(1, 1, arrayIdx));
+                    triangles.Add(vIndex + 0); triangles.Add(vIndex + 2); triangles.Add(vIndex + 3);
+                    triangles.Add(vIndex + 0); triangles.Add(vIndex + 3); triangles.Add(vIndex + 1);
+                    uvs.Add(new float3(0, 0, arrayIdx)); uvs.Add(new float3(1, 0, arrayIdx));
+                    uvs.Add(new float3(0, 1, arrayIdx)); uvs.Add(new float3(1, 1, arrayIdx));
                 }
             }
         }
@@ -484,7 +443,6 @@ public class MeshManager : Singleton<MeshManager>
         if (MapManager.Instance.activeMapData == null) return;
         MapData data = MapManager.Instance.activeMapData;
         
-        // --- Step 1: Pre-cache 3x3 Chunks for lightning-fast lookup ---
         ChunkData[,] neighborChunks = new ChunkData[3, 3];
         for (int y = -1; y <= 1; y++)
         {
@@ -504,57 +462,26 @@ public class MeshManager : Singleton<MeshManager>
             for (int x = -1; x <= ChunkData.Size; x++)
             {
                 int jobIdx = (y + 1) * sizeWithPadding + (x + 1);
-                
-                // Optimized Fast Lookup logic
                 int tx = x, ty = y, ncx = 1, ncy = 1;
-                
                 if (tx < 0) { tx += ChunkData.Size; ncx = 0; } 
                 else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; ncx = 2; }
-                
                 if (ty < 0) { ty += ChunkData.Size; ncy = 0; } 
                 else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; ncy = 2; }
 
                 ChunkData targetChunk = neighborChunks[ncx, ncy];
-                if (targetChunk != null)
-                {
-                    blockData[jobIdx] = targetChunk.blocks[ChunkData.GetIndex(tx, ty)];
-                }
-                else
-                {
-                    blockData[jobIdx] = default;
-                }
+                blockData[jobIdx] = (targetChunk != null) ? targetChunk.blocks[ChunkData.GetIndex(tx, ty)] : default;
             }
         }
 
-        // --- Step 2: Prepare Output Collections ---
         NativeList<float3> vertices = new NativeList<float3>(256, Allocator.TempJob);
         NativeList<int> triangles = new NativeList<int>(512, Allocator.TempJob);
         NativeList<float3> uvs = new NativeList<float3>(256, Allocator.TempJob);
 
-        // --- Step 3: Schedule Job ---
-        ChunkMeshJob job = new ChunkMeshJob
-        {
-            blocks = blockData,
-            ruleMapping = ruleMappingArray,
-            worldOffsetX = cx * ChunkData.Size,
-            worldOffsetY = cy * ChunkData.Size,
-            vertices = vertices,
-            triangles = triangles,
-            uvs = uvs
-        };
+        ChunkMeshJob job = new ChunkMeshJob { blocks = blockData, ruleMapping = ruleMappingArray, worldOffsetX = cx * ChunkData.Size, worldOffsetY = cy * ChunkData.Size, vertices = vertices, triangles = triangles, uvs = uvs };
+        job.Schedule().Complete(); 
 
-        JobHandle handle = job.Schedule();
-        handle.Complete(); 
-
-        // --- Step 4: Apply to Mesh ---
         Mesh mesh = targetFilter.sharedMesh;
-        if (mesh == null)
-        {
-            mesh = new Mesh();
-            mesh.name = $"Chunk_{cx}_{cy}";
-            mesh.MarkDynamic();
-            targetFilter.sharedMesh = mesh;
-        }
+        if (mesh == null) { mesh = new Mesh(); mesh.name = $"Chunk_{cx}_{cy}"; mesh.MarkDynamic(); targetFilter.sharedMesh = mesh; }
         else mesh.Clear();
 
         if (vertices.Length > 0)
@@ -562,21 +489,15 @@ public class MeshManager : Singleton<MeshManager>
             mesh.SetVertices(vertices.AsArray());
             mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
             mesh.SetUVs(0, uvs.AsArray());
-            // Colors are no longer needed on CPU!
-            //mesh.RecalculateNormals();
             mesh.RecalculateBounds();
         }
 
-        // --- Step 5: Cleanup ---
-        blockData.Dispose();
-        vertices.Dispose();
-        triangles.Dispose();
-        uvs.Dispose();
+        blockData.Dispose(); vertices.Dispose(); triangles.Dispose(); uvs.Dispose();
     }
 
     #endregion
 
-    #region Physics (High Performance Edge)
+    #region Physics
 
     public void UpdateChunkCollider(int cx, int cy)
     {
@@ -594,29 +515,16 @@ public class MeshManager : Singleton<MeshManager>
         ChunkData chunkR = (cx + 1 < data.mapSize.x) ? allChunks[cx + 1, cy] : null;
 
         GameObject chunkObj = filter.gameObject;
-        
-        if (!activeEdges.TryGetValue(coord, out List<GameObject> edges))
-        {
-            edges = new List<GameObject>();
-            activeEdges.Add(coord, edges);
-        }
-
-        foreach (var edgeObj in edges)
-        {
-            edgeObj.SetActive(false);
-            edgePool.Push(edgeObj);
-        }
+        if (!activeEdges.TryGetValue(coord, out List<GameObject> edges)) { edges = new List<GameObject>(); activeEdges.Add(coord, edges); }
+        foreach (var edgeObj in edges) { edgeObj.SetActive(false); edgePool.Push(edgeObj); }
         edges.Clear();
 
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
-
+        int width = ChunkData.ChunkSize.x; int height = ChunkData.ChunkSize.y;
         for (int y = 0; y <= height; y++)
         {
             ExtractHorizontalSegments(chunkObj, coord, y, true, chunk, chunkU, chunkD, edges);
             ExtractHorizontalSegments(chunkObj, coord, y, false, chunk, chunkU, chunkD, edges);
         }
-
         for (int x = 0; x <= width; x++)
         {
             ExtractVerticalSegments(chunkObj, coord, x, true, chunk, chunkL, chunkR, edges);
@@ -626,10 +534,7 @@ public class MeshManager : Singleton<MeshManager>
 
     private void ExtractHorizontalSegments(GameObject parent, Vector2Int coord, int y, bool isTop, ChunkData c, ChunkData uC, ChunkData dC, List<GameObject> chunkEdges)
     {
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
-        int startX = -1;
-
+        int width = ChunkData.ChunkSize.x; int height = ChunkData.ChunkSize.y; int startX = -1;
         for (int x = 0; x < width; x++)
         {
             bool hasFace = false;
@@ -645,201 +550,75 @@ public class MeshManager : Singleton<MeshManager>
                 bool neighborExists = (y - 1 >= 0) ? (c.blocks[ChunkData.GetIndex(x, y - 1)].isActive) : (dC != null && dC.blocks[ChunkData.GetIndex(x, height - 1)].isActive);
                 if (blockExists && !neighborExists) hasFace = true;
             }
-
-            if (hasFace)
-            {
-                if (startX == -1) startX = x;
-            }
-            else
-            {
-                if (startX != -1)
-                {
-                    GetOrCreateEdge(parent, coord, startX, y + (isTop ? 1 : 0), x, y + (isTop ? 1 : 0), chunkEdges);
-                    startX = -1;
-                }
-            }
+            if (hasFace) { if (startX == -1) startX = x; }
+            else { if (startX != -1) { GetOrCreateEdge(parent, coord, startX, y + (isTop ? 1 : 0), x, y + (isTop ? 1 : 0), chunkEdges); startX = -1; } }
         }
-        if (startX != -1)
-            GetOrCreateEdge(parent, coord, startX, y + (isTop ? 1 : 0), width, y + (isTop ? 1 : 0), chunkEdges);
+        if (startX != -1) GetOrCreateEdge(parent, coord, startX, y + (isTop ? 1 : 0), width, y + (isTop ? 1 : 0), chunkEdges);
     }
 
     private void ExtractVerticalSegments(GameObject parent, Vector2Int coord, int x, bool isLeft, ChunkData c, ChunkData lC, ChunkData rC, List<GameObject> chunkEdges)
     {
-        int width = ChunkData.ChunkSize.x;
-        int height = ChunkData.ChunkSize.y;
-        int startY = -1;
-
+        int width = ChunkData.ChunkSize.x; int height = ChunkData.ChunkSize.y; int startY = -1;
         for (int y = 0; y < height; y++)
         {
             bool hasFace = false;
             if (isLeft)
             {
                 bool blockExists = (x < width) && (c.blocks[ChunkData.GetIndex(x, y)].isActive);
-                bool neighborExists;
-                if (x > 0) 
-                    neighborExists = c.blocks[ChunkData.GetIndex(x - 1, y)].isActive;
-                else 
-                    neighborExists = (lC != null && lC.blocks[ChunkData.GetIndex(width - 1, y)].isActive);
-
+                bool neighborExists = (x > 0) ? c.blocks[ChunkData.GetIndex(x - 1, y)].isActive : (lC != null && lC.blocks[ChunkData.GetIndex(width - 1, y)].isActive);
                 if (blockExists && !neighborExists) hasFace = true;
             }
             else
             {
                 bool blockExists = (x < width) && (c.blocks[ChunkData.GetIndex(x, y)].isActive);
-                bool neighborExists;
-                if (x + 1 < width)
-                    neighborExists = c.blocks[ChunkData.GetIndex(x + 1, y)].isActive;
-                else
-                    neighborExists = (rC != null && rC.blocks[ChunkData.GetIndex(0, y)].isActive);
-
+                bool neighborExists = (x + 1 < width) ? c.blocks[ChunkData.GetIndex(x + 1, y)].isActive : (rC != null && rC.blocks[ChunkData.GetIndex(0, y)].isActive);
                 if (blockExists && !neighborExists) hasFace = true;
             }
-
-            if (hasFace)
-            {
-                if (startY == -1) startY = y;
-            }
-            else
-            {
-                if (startY != -1)
-                {
-                    GetOrCreateEdge(parent, coord, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), y, chunkEdges);
-                    startY = -1;
-                }
-            }
+            if (hasFace) { if (startY == -1) startY = y; }
+            else { if (startY != -1) { GetOrCreateEdge(parent, coord, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), y, chunkEdges); startY = -1; } }
         }
-        if (startY != -1)
-            GetOrCreateEdge(parent, coord, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), height, chunkEdges);
+        if (startY != -1) GetOrCreateEdge(parent, coord, x + (isLeft ? 0 : 1), startY, x + (isLeft ? 0 : 1), height, chunkEdges);
     }
 
     private void GetOrCreateEdge(GameObject parent, Vector2Int coord, float x1, float y1, float x2, float y2, List<GameObject> chunkEdges)
     {
-        GameObject edgeObj;
-
-        if (edgePool.Count > 0)
-        {
-            edgeObj = edgePool.Pop();
-            edgeObj.SetActive(true);
-            edgeObj.transform.SetParent(parent.transform);
-        }
-        else
-        {
-            edgeObj = new GameObject("Edge_Optimized");
-            edgeObj.transform.SetParent(parent.transform);
-            edgeObj.layer = LayerMask.NameToLayer("Ground");
-            edgeObj.AddComponent<EdgeCollider2D>();
-        }
-        edgeObj.transform.localPosition = Vector3.zero;
-        chunkEdges.Add(edgeObj);
-
+        GameObject edgeObj = (edgePool.Count > 0) ? edgePool.Pop() : new GameObject("Edge_Optimized");
+        edgeObj.SetActive(true); edgeObj.transform.SetParent(parent.transform); edgeObj.layer = LayerMask.NameToLayer("Ground");
+        if (edgeObj.GetComponent<EdgeCollider2D>() == null) edgeObj.AddComponent<EdgeCollider2D>();
+        edgeObj.transform.localPosition = Vector3.zero; chunkEdges.Add(edgeObj);
         EdgeCollider2D edge = edgeObj.GetComponent<EdgeCollider2D>();
-        
-        float worldOffsetX = coord.x * ChunkData.Size;
-        float worldOffsetY = coord.y * ChunkData.Size;
-
-        // GC Free Edge Update using cached List<Vector2>
-        cachedEdgePoints.Clear();
-        cachedEdgePoints.Add(new Vector2(worldOffsetX + x1, worldOffsetY + y1));
-        cachedEdgePoints.Add(new Vector2(worldOffsetX + x2, worldOffsetY + y2));
-        
+        float worldOffsetX = coord.x * ChunkData.Size; float worldOffsetY = coord.y * ChunkData.Size;
+        cachedEdgePoints.Clear(); cachedEdgePoints.Add(new Vector2(worldOffsetX + x1, worldOffsetY + y1)); cachedEdgePoints.Add(new Vector2(worldOffsetX + x2, worldOffsetY + y2));
         edge.SetPoints(cachedEdgePoints);
     }
 
     #endregion
 
-    #region Chunk
+    #region Chunk Utility
 
     private MeshFilter CreateChunkObject(int index)
     {
         GameObject chunkObj = new GameObject($"Chunk_Pool_{index}");
         chunkObj.transform.SetParent(this.transform);
-        
         int layer = LayerMask.NameToLayer("Ground");
         if (layer == -1) layer = 0;
         chunkObj.layer = layer;
         chunkObj.SetActive(false);
-
         MeshFilter mf = chunkObj.AddComponent<MeshFilter>();
         MeshRenderer mr = chunkObj.AddComponent<MeshRenderer>();
-        mr.sharedMaterial = tileMaterial; 
-
-        // --- Optimization: Disable Shadows ---
-        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        mr.receiveShadows = false;
-        
-        // --- Optimization: Ensure Batching Order ---
-        // (If using Forward Renderer, sortingOrder helps the engine group them)
-        mr.sortingLayerName = "Default";
-        mr.sortingOrder = 0; 
-
+        mr.sharedMaterial = tileMaterial; mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off; mr.receiveShadows = false;
+        mr.sortingLayerName = "Default"; mr.sortingOrder = 0; 
         return mf;
     }
 
-    #endregion
+    public void RequestChunkRedraw(int cx, int cy) { if (cx >= 0 && cy >= 0) redrawQueue.Add(new Vector2Int(cx, cy)); }
 
-    #region Chunk Redraw
+    private HashSet<Vector2Int> redrawQueue = new HashSet<Vector2Int>();
 
-    public void RequestChunkRedraw(int cx, int cy)
-    {
-        if (cx < 0 || cy < 0) return;
-        redrawQueue.Add(new Vector2Int(cx, cy));
-    }
+    private void EnqueueChunkBuild(Vector2Int coord) { if (pendingDrawSet.Add(coord)) pendingDrawQueue.Enqueue(coord); }
+    private void EnqueueColliderBuild(Vector2Int coord) { if (pendingColliderSet.Add(coord)) pendingColliderQueue.Enqueue(coord); }
 
-
-    public System.Collections.IEnumerator RequestFullRedrawCo()
-    {
-        int chunksProcessed = 0;
-        int enqueueLimitPerFrame = 200;
-
-        // Directly iterate over the dictionary to avoid allocation of a new list
-        foreach (var entry in activeChunks)
-        {
-            if (entry.Value == null || !entry.Value.gameObject.activeInHierarchy) continue;
-
-            EnqueueChunkBuild(entry.Key);
-
-            chunksProcessed++;
-            if (chunksProcessed % enqueueLimitPerFrame == 0) yield return null;
-        }
-    }
-
-    public bool IsChunkActive(int cx, int cy)
-    {
-        return activeChunks.ContainsKey(new Vector2Int(cx, cy));
-    }
-
-    public bool IsSlidingWindowEnabled() => useSlidingWindow;
+    public bool IsChunkActive(int cx, int cy) => activeChunks.ContainsKey(new Vector2Int(cx, cy));
 
     #endregion
-
-
-
-
-    private Queue<Vector2Int> pendingDrawQueue = new Queue<Vector2Int>();
-    private HashSet<Vector2Int> pendingDrawSet = new HashSet<Vector2Int>();
-
-    [SerializeField] private int maxChunkBuildsPerFrame = 2;
-
-    private void EnqueueChunkBuild(Vector2Int coord)
-    {
-        if (pendingDrawSet.Add(coord))
-        {
-            pendingDrawQueue.Enqueue(coord);
-        }
-    }
-
-
-
-    private Queue<Vector2Int> pendingColliderQueue = new Queue<Vector2Int>();
-    private HashSet<Vector2Int> pendingColliderSet = new HashSet<Vector2Int>();
-
-    [SerializeField] private int maxColliderBuildsPerFrame = 1; 
-
-    private void EnqueueColliderBuild(Vector2Int coord)
-    {
-        if (pendingColliderSet.Add(coord))
-        {
-            pendingColliderQueue.Enqueue(coord);
-        }
-    }
 }

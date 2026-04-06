@@ -2127,10 +2127,11 @@ MonoBehaviour:
   useSlidingWindow: 1
   targetTransform: {fileID: 0}
   viewDistanceX: 5
-  viewDistanceY: 3
+  viewDistanceY: 4
   updateInterval: 0.5
   moveThreshold: 0.5
   maxChunkBuildsPerFrame: 1
+  maxColliderBuildsPerFrame: 1
 --- !u!4 &1668643430
 Transform:
   m_ObjectHideFlags: 0
