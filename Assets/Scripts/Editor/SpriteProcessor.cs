@@ -36,7 +36,7 @@ public class SpriteProcessor : Editor
 
     [MenuItem("Tools/Project/Sprite Processor/Tree")]
     public static void ProcessSpritesForTree()
-        => ProcessTileTexture("Trees", "Tree", new Texture2DElement(256, false, new Vector2Int(57, 127), new Vector2(28.5f, 9)));
+        => ProcessTileTexture("Trees", "Tree", new Texture2DElement(256, false, new Vector2Int(57, 150), new Vector2(28.5f, 9)));
 
     [MenuItem("Tools/Project/Sprite Processor/Armor")]
     public static void ProcessSpritesForArmor()
