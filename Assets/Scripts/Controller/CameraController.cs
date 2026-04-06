@@ -8,7 +8,6 @@ public class CameraController : MonoBehaviour
     [Header("# Follow")]
     [SerializeField] private Transform target;
     [SerializeField] private Vector3 offset = new Vector3(0, 0, -10f);
-    [SerializeField] private float smoothSpeed = 0.125f;
 
     #endregion
 
@@ -23,10 +22,7 @@ public class CameraController : MonoBehaviour
             return;
         }
 
-        Vector3 desiredPosition = target.position + offset;
-        // Optional: Add smoothing
-        Vector3 smoothedPosition = Vector3.Lerp(transform.position, desiredPosition, smoothSpeed);
-        transform.position = smoothedPosition;
+        transform.position = target.position + offset;
     }
 
     #endregion

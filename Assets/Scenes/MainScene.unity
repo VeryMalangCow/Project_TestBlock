@@ -494,7 +494,7 @@ MonoBehaviour:
   m_VolumeTrigger: {fileID: 0}
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
-  m_Antialiasing: 0
+  m_Antialiasing: 1
   m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 0
@@ -594,7 +594,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::CameraController
   target: {fileID: 0}
   offset: {x: 0, y: 0, z: -10}
-  smoothSpeed: 0.125
 --- !u!114 &519420034
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -612,7 +611,7 @@ MonoBehaviour:
   m_RefResolutionX: 1920
   m_RefResolutionY: 1080
   m_CropFrame: 0
-  m_GridSnapping: 1
+  m_GridSnapping: 0
   m_FilterMode: 0
   m_UpscaleRT: 0
   m_PixelSnapping: 0
@@ -2127,8 +2126,9 @@ MonoBehaviour:
   tileMaterial: {fileID: 2100000, guid: 2634014bbd2ed2a4bae64b83ac8cc3d8, type: 2}
   useSlidingWindow: 1
   targetTransform: {fileID: 0}
-  viewDistance: 8
-  updateInterval: 0.1
+  viewDistanceX: 8
+  viewDistanceY: 5
+  updateInterval: 0.5
   moveThreshold: 0.5
 --- !u!4 &1668643430
 Transform:

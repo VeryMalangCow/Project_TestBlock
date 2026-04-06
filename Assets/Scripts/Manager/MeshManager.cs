@@ -19,8 +19,9 @@ public class MeshManager : Singleton<MeshManager>
     [Header("# Sliding+Pool")]
     [SerializeField] private bool useSlidingWindow = true;
     [SerializeField] private Transform targetTransform; 
-    [SerializeField] private int viewDistance = 2; 
-    [SerializeField] private float updateInterval = 0.1f; 
+    [SerializeField] private int viewDistanceX = 8;
+    [SerializeField] private int viewDistanceY = 5;
+    [SerializeField] private float updateInterval = 0.5f;
     [SerializeField] private float moveThreshold = 0.5f; 
 
     private float lastUpdateTime = 0f;
@@ -80,7 +81,7 @@ public class MeshManager : Singleton<MeshManager>
 
         if (useSlidingWindow)
         {
-            initialPoolSize = (viewDistance * 2 + 1) * (viewDistance * 2 + 1) * 2; 
+            initialPoolSize = (viewDistanceX * 2 + 1) * (viewDistanceY * 2 + 1) * 2; 
         }
         else if (MapManager.Instance != null && MapManager.Instance.activeMapData != null)
         {
@@ -198,9 +199,9 @@ public class MeshManager : Singleton<MeshManager>
             int cx = Mathf.FloorToInt(pos.x / ChunkData.ChunkSize.x);
             int cy = Mathf.FloorToInt(pos.y / ChunkData.ChunkSize.y);
 
-            for (int x = -viewDistance; x <= viewDistance; x++)
+            for (int x = -viewDistanceX; x <= viewDistanceX; x++)
             {
-                for (int y = -viewDistance; y <= viewDistance; y++)
+                for (int y = -viewDistanceY; y <= viewDistanceY; y++)
                 {
                     Vector2Int coord = new Vector2Int(cx + x, cy + y);
                     if (coord.x >= 0 && coord.x < data.mapSize.x &&
