@@ -612,7 +612,7 @@ MonoBehaviour:
   m_RefResolutionX: 1920
   m_RefResolutionY: 1080
   m_CropFrame: 0
-  m_GridSnapping: 0
+  m_GridSnapping: 1
   m_FilterMode: 0
   m_UpscaleRT: 0
   m_PixelSnapping: 0
@@ -1788,8 +1788,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LightingManager
   maxLightIntensity: 255
-  airDecay: 10
-  blockDecay: 200
+  airDecay: 6
+  blockDecay: 80
 --- !u!1 &1496666894
 GameObject:
   m_ObjectHideFlags: 0
