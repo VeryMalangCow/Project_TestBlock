@@ -3,21 +3,22 @@ Shader "Project/World/TileArray"
     Properties
     {
         _MainTex ("Texture Array", 2DArray) = "" {}
+        _Color ("Main Color", Color) = (1,1,1,1)
     }
     SubShader
     {
         Tags 
         { 
-            "RenderType" = "Transparent" 
-            "Queue" = "Transparent" 
+            "RenderType" = "Opaque" 
+            "Queue" = "Geometry" 
             "RenderPipeline" = "UniversalPipeline" 
         }
         LOD 100
 
         Pass
         {
-            Blend SrcAlpha OneMinusSrcAlpha
-            ZWrite Off
+            // Opaque doesn't need blend, but we use Alpha Clipping
+            ZWrite On
             Cull Off
 
             HLSLPROGRAM
@@ -43,7 +44,15 @@ Shader "Project/World/TileArray"
                 float4 color : COLOR;
             };
 
-            // Global Properties
+            // ----------------------------------------------------------------
+            // SRP Batcher Compatibility
+            // ----------------------------------------------------------------
+            CBUFFER_START(UnityPerMaterial)
+                float4 _MainTex_ST;
+                float4 _Color; // Add color to properties to ensure CBUFFER is valid
+            CBUFFER_END
+
+            // Global Properties (Outside CBUFFER - Shared across all chunks)
             TEXTURE2D_ARRAY(_MainTex);
             SAMPLER(sampler_MainTex);
 
@@ -51,7 +60,7 @@ Shader "Project/World/TileArray"
             SAMPLER(sampler_WorldLightMap);
             
             float4 _WorldLightSettings; 
-
+            // ----------------------------------------------------------------
             Varyings vert (Attributes input)
             {
                 Varyings output = (Varyings)0;

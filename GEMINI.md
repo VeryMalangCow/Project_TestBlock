@@ -60,11 +60,11 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 ----------
 
 ## 6. Map & Chunk Rules
-- **Chunk Size:** 8 x 8 blocks.
+- **Chunk Size:** 16 x 16 blocks.
 - **World Sizes (Presets):**
-  - **Standard**: 300 x 240 Chunks (2400 x 1920 Blocks)
-  - **Great Cave**: 400 x 200 Chunks (3200 x 1600 Blocks)
-  - **Hell**: 240 x 400 Chunks (1920 x 3200 Blocks)
+  - **Standard**: 150 x 120 Chunks (2400 x 1920 Blocks)
+  - **Great Cave**: 200 x 100 Chunks (3200 x 1600 Blocks)
+  - **Hell**: 120 x 200 Chunks (1920 x 3200 Blocks)
 
 ### Rule: Chunk Physics & Optimization
 - **Physics Layer:** All chunk meshes and generated collider objects must be assigned to the **Ground** layer (Index 6).

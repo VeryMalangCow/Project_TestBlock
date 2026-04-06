@@ -681,8 +681,8 @@ public class MeshManager : Singleton<MeshManager>
 
         EdgeCollider2D edge = edgeObj.GetComponent<EdgeCollider2D>();
         
-        float worldOffsetX = coord.x * ChunkData.ChunkSize.x;
-        float worldOffsetY = coord.y * ChunkData.ChunkSize.y;
+        float worldOffsetX = coord.x * ChunkData.Size;
+        float worldOffsetY = coord.y * ChunkData.Size;
 
         // GC Free Edge Update using cached List<Vector2>
         cachedEdgePoints.Clear();
@@ -708,7 +708,16 @@ public class MeshManager : Singleton<MeshManager>
 
         MeshFilter mf = chunkObj.AddComponent<MeshFilter>();
         MeshRenderer mr = chunkObj.AddComponent<MeshRenderer>();
-        mr.sharedMaterial = tileMaterial; // Important for SRP Batcher
+        mr.sharedMaterial = tileMaterial; 
+
+        // --- Optimization: Disable Shadows ---
+        mr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        mr.receiveShadows = false;
+        
+        // --- Optimization: Ensure Batching Order ---
+        // (If using Forward Renderer, sortingOrder helps the engine group them)
+        mr.sortingLayerName = "Default";
+        mr.sortingOrder = 0; 
 
         return mf;
     }
