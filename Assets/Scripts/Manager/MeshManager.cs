@@ -31,17 +31,14 @@ public class MeshManager : Singleton<MeshManager>
     [SerializeField] private int emergencyBuildThreshold = 10; 
 
     private float lastUpdateTime = 0f;
+    private Vector3 lastTargetPosition; // Added to track local target movement
     private Camera mainCam;
     private float lastOrthographicSize;
-    private int lastScreenWidth;
+    private float lastScreenWidth;
     private int lastScreenHeight;
 
-    private List<PlayerController> trackedPlayers = new List<PlayerController>();
-    private Dictionary<PlayerController, Vector3> lastPlayerPositions = new Dictionary<PlayerController, Vector3>();
-    private float playerListRefreshTimer = 0f;
-    private const float PLAYER_LIST_REFRESH_INTERVAL = 1.0f;
-
     private Stack<MeshFilter> chunkPool = new Stack<MeshFilter>();
+
     private Dictionary<Vector2Int, MeshFilter> activeChunks = new Dictionary<Vector2Int, MeshFilter>();
     private Dictionary<Vector2Int, List<GameObject>> activeEdges = new Dictionary<Vector2Int, List<GameObject>>();
     private Stack<GameObject> edgePool = new Stack<GameObject>();
@@ -245,65 +242,38 @@ public class MeshManager : Singleton<MeshManager>
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
         if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient) return;
+        if (targetTransform == null) return;
 
+        // 1. Frequency Control
         if (Time.time - lastUpdateTime < updateInterval) return;
         lastUpdateTime = Time.time;
 
-        playerListRefreshTimer += updateInterval;
-        if (playerListRefreshTimer >= PLAYER_LIST_REFRESH_INTERVAL || trackedPlayers.Count == 0)
-        {
-            playerListRefreshTimer = 0f;
-            PlayerController[] foundPlayers = Object.FindObjectsByType<PlayerController>(FindObjectsSortMode.None);
-            trackedPlayers.Clear();
-            if (foundPlayers != null)
-            {
-                foreach (var p in foundPlayers) if (p != null) trackedPlayers.Add(p);
-            }
-        }
+        // 2. Check for Significant Movement
+        Vector3 currentPos = targetTransform.position;
+        if (lastRequiredChunks.Count > 0 && Vector3.Distance(currentPos, lastTargetPosition) <= moveThreshold) return;
+        lastTargetPosition = currentPos;
 
-        if (trackedPlayers.Count == 0) return;
-
-        bool hasSignificantMovement = false;
-        foreach (var player in trackedPlayers)
-        {
-            if (player == null || !player.IsSpawned) continue;
-            
-            Vector3 currentPos = player.transform.position;
-            if (!lastPlayerPositions.TryGetValue(player, out Vector3 lastPos) || 
-                Vector3.Distance(currentPos, lastPos) > moveThreshold)
-            {
-                hasSignificantMovement = true;
-                lastPlayerPositions[player] = currentPos;
-            }
-        }
-
-        if (!hasSignificantMovement && lastRequiredChunks.Count > 0) return;
-
+        // 3. Calculate Required Chunks for Local Target Only
         currentRequiredChunks.Clear();
         MapData data = MapManager.Instance.activeMapData;
 
-        foreach (var player in trackedPlayers)
+        int cx = Mathf.FloorToInt(currentPos.x / ChunkData.ChunkSize.x);
+        int cy = Mathf.FloorToInt(currentPos.y / ChunkData.ChunkSize.y);
+
+        for (int x = -viewDistanceX; x <= viewDistanceX; x++)
         {
-            if (player == null || !player.IsSpawned) continue;
-
-            Vector3 pos = player.transform.position;
-            int cx = Mathf.FloorToInt(pos.x / ChunkData.ChunkSize.x);
-            int cy = Mathf.FloorToInt(pos.y / ChunkData.ChunkSize.y);
-
-            for (int x = -viewDistanceX; x <= viewDistanceX; x++)
+            for (int y = -viewDistanceY; y <= viewDistanceY; y++)
             {
-                for (int y = -viewDistanceY; y <= viewDistanceY; y++)
+                Vector2Int coord = new Vector2Int(cx + x, cy + y);
+                if (coord.x >= 0 && coord.x < data.mapSize.x &&
+                    coord.y >= 0 && coord.y < data.mapSize.y)
                 {
-                    Vector2Int coord = new Vector2Int(cx + x, cy + y);
-                    if (coord.x >= 0 && coord.x < data.mapSize.x &&
-                        coord.y >= 0 && coord.y < data.mapSize.y)
-                    {
-                        currentRequiredChunks.Add(coord);
-                    }
+                    currentRequiredChunks.Add(coord);
                 }
             }
         }
 
+        // 4. Apply Changes
         if (!currentRequiredChunks.SetEquals(lastRequiredChunks))
         {
             RefreshChunksMultitarget(currentRequiredChunks);
