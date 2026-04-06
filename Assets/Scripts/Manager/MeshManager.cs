@@ -18,7 +18,7 @@ public class MeshManager : Singleton<MeshManager>
     [Header("## Chunk")]
     [Header("# Sliding+Pool")]
     [SerializeField] private bool useSlidingWindow = true;
-    [SerializeField] private Transform targetTransform; 
+    [SerializeField] private Transform targetTransform;
     [SerializeField] private int viewDistanceX = 8;
     [SerializeField] private int viewDistanceY = 5;
     [SerializeField] private float updateInterval = 0.5f;
@@ -222,6 +222,51 @@ public class MeshManager : Singleton<MeshManager>
         }
     }
 
+    private void DeactivateChunk(Vector2Int coord, MeshFilter filter)
+    {
+        ClearChunkEdges(coord, filter.gameObject);
+
+        filter.gameObject.SetActive(false);
+        chunkPool.Push(filter);
+        activeChunks.Remove(coord);
+    }
+
+    private Transform edgePoolRoot;
+
+    private void ClearChunkEdges(Vector2Int coord, GameObject chunkObj)
+    {
+        HashSet<GameObject> processed = new HashSet<GameObject>();
+
+        if (activeEdges.TryGetValue(coord, out List<GameObject> edges))
+        {
+            foreach (var edgeObj in edges)
+            {
+                if (edgeObj == null) continue;
+
+                edgeObj.SetActive(false);
+                edgeObj.transform.SetParent(edgePoolRoot);
+                edgePool.Push(edgeObj);
+                processed.Add(edgeObj);
+            }
+            edges.Clear();
+        }
+
+        for (int i = chunkObj.transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = chunkObj.transform.GetChild(i);
+            if (child == null) continue;
+
+            EdgeCollider2D edge = child.GetComponent<EdgeCollider2D>();
+            if (edge == null) continue;
+
+            GameObject edgeObj = child.gameObject;
+            if (processed.Contains(edgeObj)) continue;
+
+            edgeObj.SetActive(false);
+            edgeObj.transform.SetParent(edgePoolRoot);
+            edgePool.Push(edgeObj);
+        }
+    }
     private void RefreshChunksMultitarget(HashSet<Vector2Int> requiredCoords)
     {
         toRemoveCache.Clear();
@@ -236,9 +281,7 @@ public class MeshManager : Singleton<MeshManager>
         foreach (var coord in toRemoveCache)
         {
             MeshFilter filter = activeChunks[coord];
-            filter.gameObject.SetActive(false);
-            chunkPool.Push(filter);
-            activeChunks.Remove(coord);
+            DeactivateChunk(coord, filter);
         }
 
         foreach (var coord in requiredCoords)
@@ -251,10 +294,9 @@ public class MeshManager : Singleton<MeshManager>
     {
         foreach (var entry in activeChunks)
         {
-            MeshFilter filter = entry.Value;
-            filter.gameObject.SetActive(false);
-            chunkPool.Push(filter);
+            DeactivateChunk(entry.Key, entry.Value);
         }
+
         activeChunks.Clear();
         lastRequiredChunks.Clear();
     }
@@ -500,28 +542,6 @@ public class MeshManager : Singleton<MeshManager>
         uvs.Dispose();
     }
 
-    private BlockData GetBlockData(int cx, int cy, int x, int y)
-    {
-        int tx = x, ty = y, tcx = cx, tcy = cy;
-        if (tx < 0) { tx += ChunkData.Size; tcx--; } else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; tcx++; }
-        if (ty < 0) { ty += ChunkData.Size; tcy--; } else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; tcy++; }
-
-        MapData data = MapManager.Instance.activeMapData;
-        if (tcx < 0 || tcx >= data.mapSize.x || tcy < 0 || tcy >= data.mapSize.y) return default;
-        return data.chunks[tcx, tcy].blocks[ChunkData.GetIndex(tx, ty)];
-    }
-
-    private byte GetLightValue(int cx, int cy, int x, int y)
-    {
-        int tx = x, ty = y, tcx = cx, tcy = cy;
-        if (tx < 0) { tx += ChunkData.Size; tcx--; } else if (tx >= ChunkData.Size) { tx -= ChunkData.Size; tcx++; }
-        if (ty < 0) { ty += ChunkData.Size; tcy--; } else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; tcy++; }
-
-        MapData data = MapManager.Instance.activeMapData;
-        if (tcx < 0 || tcx >= data.mapSize.x || tcy < 0 || tcy >= data.mapSize.y) return 255; // Default sunlight for out of bounds
-        return data.chunks[tcx, tcy].lightValues[ChunkData.GetIndex(tx, ty)];
-    }
-
     #endregion
 
     #region Physics (High Performance Edge)
@@ -757,44 +777,6 @@ public class MeshManager : Singleton<MeshManager>
     }
 
     public bool IsSlidingWindowEnabled() => useSlidingWindow;
-
-    #endregion
-
-    #region Block
-
-    private bool HasBlock(int cx, int cy, int x, int y)
-    {
-        int targetX = x;
-        int targetY = y;
-        int targetCX = cx;
-        int targetCY = cy;
-
-        // Use Math.Floor for safe chunk coordinate calculation when local x/y is out of bounds
-        if (targetX < 0 || targetX >= ChunkData.Size)
-        {
-            int extraCX = Mathf.FloorToInt((float)targetX / ChunkData.Size);
-            targetCX += extraCX;
-            targetX -= extraCX * ChunkData.Size;
-        }
-
-        if (targetY < 0 || targetY >= ChunkData.Size)
-        {
-            int extraCY = Mathf.FloorToInt((float)targetY / ChunkData.Size);
-            targetCY += extraCY;
-            targetY -= extraCY * ChunkData.Size;
-        }
-
-        if (MapManager.Instance.activeMapData == null) return false;
-        MapData data = MapManager.Instance.activeMapData;
-        
-        if (targetCX < 0 || targetCX >= data.mapSize.x || targetCY < 0 || targetCY >= data.mapSize.y)
-            return false;
-
-        ChunkData chunk = data.chunks[targetCX, targetCY];
-        if (chunk == null) return false;
-
-        return chunk.blocks[ChunkData.GetIndex(targetX, targetY)].isActive;
-    }
 
     #endregion
 }
