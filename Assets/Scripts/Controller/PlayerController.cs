@@ -195,14 +195,19 @@ public class PlayerController : NetworkBehaviour
             int retry = 0;
             while (retry < 100) 
             {
-                int cx = Mathf.FloorToInt(transform.position.x / ChunkData.ChunkSize.x);
-                int cy = Mathf.FloorToInt(transform.position.y / ChunkData.ChunkSize.y);
-
-                if (MeshManager.Instance != null && 
-                    MeshManager.Instance.IsChunkActive(cx, cy) && 
-                    MapManager.Instance.IsChunkSynced(cx, cy))
+                if (MapManager.Instance != null && MapManager.Instance.IsTerrainReadyAt(transform.position))
+                {
+                    // Terrain is ready, wait one more frame for Physics to update colliders
+                    yield return new WaitForFixedUpdate();
                     break;
-                if (IsOwner && MeshManager.Instance != null) MeshManager.Instance.ForceRenderChunk(cx, cy);
+                }
+                
+                if (IsOwner && MeshManager.Instance != null)
+                {
+                    int cx = Mathf.FloorToInt(transform.position.x / ChunkData.Size);
+                    int cy = Mathf.FloorToInt(transform.position.y / ChunkData.Size);
+                    MeshManager.Instance.ForceRenderChunk(cx, cy);
+                }
                 retry++;
                 yield return new WaitForSeconds(0.1f);
             }

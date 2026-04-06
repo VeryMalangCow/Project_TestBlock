@@ -379,5 +379,19 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
     public bool IsMapReady() => isMapReady;
 
+    public bool IsTerrainReadyAt(Vector2 worldPos)
+    {
+        if (activeMapData == null) return false;
+        int size = ChunkData.Size;
+        int cx = Mathf.FloorToInt(worldPos.x / size);
+        int cy = Mathf.FloorToInt(worldPos.y / size);
+
+        // Check if the central chunk is synced and FULLY BUILT (Mesh + Collider)
+        if (!IsChunkSynced(cx, cy)) return false;
+        if (MeshManager.Instance != null && !MeshManager.Instance.IsChunkFullyBuilt(cx, cy)) return false;
+
+        return true;
+    }
+
     #endregion
 }

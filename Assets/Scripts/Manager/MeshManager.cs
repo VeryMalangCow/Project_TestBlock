@@ -590,5 +590,17 @@ public class MeshManager : Singleton<MeshManager>
 
     public bool IsChunkActive(int cx, int cy) => activeChunks.ContainsKey(new Vector2Int(cx, cy));
 
+    public bool IsChunkFullyBuilt(int cx, int cy)
+    {
+        Vector2Int coord = new Vector2Int(cx, cy);
+        // 1. Must be in active dictionary
+        if (!activeChunks.ContainsKey(coord)) return false;
+        // 2. Must NOT be in pending queues (meaning build is complete)
+        if (pendingDrawSet.Contains(coord)) return false;
+        if (pendingColliderSet.Contains(coord)) return false;
+        
+        return true;
+    }
+
     #endregion
 }
