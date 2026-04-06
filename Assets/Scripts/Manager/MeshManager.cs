@@ -49,6 +49,7 @@ public class MeshManager : Singleton<MeshManager>
     // Job Data
     private NativeArray<int> ruleMappingArray;
 
+
     #endregion
 
     #region MonoBehaviour
@@ -66,12 +67,6 @@ public class MeshManager : Singleton<MeshManager>
         ruleMappingArray = new NativeArray<int>(256, Allocator.Persistent);
         ruleMappingArray.CopyFrom(rawMapping);
     }
-
-    private void OnDestroy()
-    {
-        if (ruleMappingArray.IsCreated) ruleMappingArray.Dispose();
-    }
-
 
     private void Start()
     {
@@ -121,6 +116,54 @@ public class MeshManager : Singleton<MeshManager>
             UpdateSlidingWindow();
     }
 
+    private void LateUpdate()
+    {
+        int processedMesh = 0;
+        while (processedMesh < maxChunkBuildsPerFrame && pendingDrawQueue.Count > 0)
+        {
+            Vector2Int coord = pendingDrawQueue.Dequeue();
+            pendingDrawSet.Remove(coord);
+
+            if (activeChunks.TryGetValue(coord, out MeshFilter filter))
+            {
+                DrawChunk(filter, coord.x, coord.y);
+                EnqueueColliderBuild(coord);
+            }
+
+            processedMesh++;
+        }
+
+        int processedCollider = 0;
+        while (processedCollider < maxColliderBuildsPerFrame && pendingColliderQueue.Count > 0)
+        {
+            Vector2Int coord = pendingColliderQueue.Dequeue();
+            pendingColliderSet.Remove(coord);
+
+            if (activeChunks.ContainsKey(coord))
+            {
+                UpdateChunkCollider(coord.x, coord.y);
+            }
+
+            processedCollider++;
+        }
+
+        if (redrawQueue.Count > 0)
+        {
+            foreach (var coord in redrawQueue)
+            {
+                EnqueueChunkBuild(coord);
+            }
+            redrawQueue.Clear();
+        }
+    }
+
+
+    private void OnDestroy()
+    {
+        if (ruleMappingArray.IsCreated) ruleMappingArray.Dispose();
+    }
+
+
     #endregion
 
     #region Sliding
@@ -138,7 +181,7 @@ public class MeshManager : Singleton<MeshManager>
         // Immediately activate and draw
         if (!activeChunks.ContainsKey(coord))
         {
-            ActivateChunk(coord, true);
+            ActivateChunk(coord, enqueueBuild: true);
             lastRequiredChunks.Add(coord); // Add to tracking so sliding window doesn't prune it immediately
         }
     }
@@ -286,7 +329,7 @@ public class MeshManager : Singleton<MeshManager>
 
         foreach (var coord in requiredCoords)
         {
-            ActivateChunk(coord, true);
+            ActivateChunk(coord, enqueueBuild: true);
         }
     }
 
@@ -315,7 +358,7 @@ public class MeshManager : Singleton<MeshManager>
         }
     }
 
-    private void ActivateChunk(Vector2Int coord, bool drawImmediately = true)
+    private void ActivateChunk(Vector2Int coord, bool enqueueBuild = true)
     {
         if (activeChunks.ContainsKey(coord)) return;
 
@@ -326,18 +369,21 @@ public class MeshManager : Singleton<MeshManager>
 
         MeshFilter filter;
         if (chunkPool.Count > 0)
-        {
             filter = chunkPool.Pop();
-        }
         else
-        {
             filter = CreateChunkObject(activeChunks.Count + chunkPool.Count);
-        }
 
         filter.gameObject.SetActive(true);
         activeChunks.Add(coord, filter);
 
-        if (drawImmediately)
+        if (enqueueBuild)
+        {
+            EnqueueChunkBuild(coord);
+        }
+    }
+    private void BuildChunkNow(Vector2Int coord)
+    {
+        if (activeChunks.TryGetValue(coord, out MeshFilter filter))
         {
             DrawChunk(filter, coord.x, coord.y);
             UpdateChunkCollider(coord.x, coord.y);
@@ -350,22 +396,7 @@ public class MeshManager : Singleton<MeshManager>
 
     private HashSet<Vector2Int> redrawQueue = new HashSet<Vector2Int>();
 
-    private void LateUpdate()
-    {
-        if (redrawQueue.Count > 0)
-        {
-            foreach (var coord in redrawQueue)
-            {
-                if (activeChunks.TryGetValue(coord, out MeshFilter filter))
-                {
-                    DrawChunk(filter, coord.x, coord.y);
-                    UpdateChunkCollider(coord.x, coord.y);
-                }
-            }
-            redrawQueue.Clear();
-        }
-    }
-
+   
     #endregion
 
     #region Draw (Job System + Burst)
@@ -521,6 +552,7 @@ public class MeshManager : Singleton<MeshManager>
         {
             mesh = new Mesh();
             mesh.name = $"Chunk_{cx}_{cy}";
+            mesh.MarkDynamic();
             targetFilter.sharedMesh = mesh;
         }
         else mesh.Clear();
@@ -531,7 +563,7 @@ public class MeshManager : Singleton<MeshManager>
             mesh.SetTriangles(triangles.AsArray().ToArray(), 0);
             mesh.SetUVs(0, uvs.AsArray());
             // Colors are no longer needed on CPU!
-            mesh.RecalculateNormals();
+            //mesh.RecalculateNormals();
             mesh.RecalculateBounds();
         }
 
@@ -753,21 +785,21 @@ public class MeshManager : Singleton<MeshManager>
         redrawQueue.Add(new Vector2Int(cx, cy));
     }
 
+
     public System.Collections.IEnumerator RequestFullRedrawCo()
     {
         int chunksProcessed = 0;
-        int redrawLimitPerFrame = 200; 
-        
+        int enqueueLimitPerFrame = 200;
+
         // Directly iterate over the dictionary to avoid allocation of a new list
         foreach (var entry in activeChunks)
         {
             if (entry.Value == null || !entry.Value.gameObject.activeInHierarchy) continue;
 
-            DrawChunk(entry.Value, entry.Key.x, entry.Key.y);
-            UpdateChunkCollider(entry.Key.x, entry.Key.y);
+            EnqueueChunkBuild(entry.Key);
 
             chunksProcessed++;
-            if (chunksProcessed % redrawLimitPerFrame == 0) yield return null;
+            if (chunksProcessed % enqueueLimitPerFrame == 0) yield return null;
         }
     }
 
@@ -779,4 +811,35 @@ public class MeshManager : Singleton<MeshManager>
     public bool IsSlidingWindowEnabled() => useSlidingWindow;
 
     #endregion
+
+
+
+
+    private Queue<Vector2Int> pendingDrawQueue = new Queue<Vector2Int>();
+    private HashSet<Vector2Int> pendingDrawSet = new HashSet<Vector2Int>();
+
+    [SerializeField] private int maxChunkBuildsPerFrame = 2;
+
+    private void EnqueueChunkBuild(Vector2Int coord)
+    {
+        if (pendingDrawSet.Add(coord))
+        {
+            pendingDrawQueue.Enqueue(coord);
+        }
+    }
+
+
+
+    private Queue<Vector2Int> pendingColliderQueue = new Queue<Vector2Int>();
+    private HashSet<Vector2Int> pendingColliderSet = new HashSet<Vector2Int>();
+
+    [SerializeField] private int maxColliderBuildsPerFrame = 1; 
+
+    private void EnqueueColliderBuild(Vector2Int coord)
+    {
+        if (pendingColliderSet.Add(coord))
+        {
+            pendingColliderQueue.Enqueue(coord);
+        }
+    }
 }

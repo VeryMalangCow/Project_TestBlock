@@ -2126,10 +2126,11 @@ MonoBehaviour:
   tileMaterial: {fileID: 2100000, guid: 2634014bbd2ed2a4bae64b83ac8cc3d8, type: 2}
   useSlidingWindow: 1
   targetTransform: {fileID: 0}
-  viewDistanceX: 8
-  viewDistanceY: 5
+  viewDistanceX: 5
+  viewDistanceY: 3
   updateInterval: 0.5
   moveThreshold: 0.5
+  maxChunkBuildsPerFrame: 1
 --- !u!4 &1668643430
 Transform:
   m_ObjectHideFlags: 0

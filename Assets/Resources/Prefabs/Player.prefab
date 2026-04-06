@@ -51,7 +51,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4087358549
+  GlobalObjectIdHash: 3836181582
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -81,7 +81,7 @@ MonoBehaviour:
   col: {fileID: 1977730540923760186}
   visuals: {fileID: 4155625903134356229}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  moveSpeed: 8
+  moveSpeed: 16
   acceleration: 300
   deceleration: 600
   jumpForce: 12

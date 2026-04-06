@@ -31,7 +31,7 @@ public struct BlockData : INetworkSerializable
 [Serializable]
 public class ChunkData
 {
-    public const int Size = 8; // THE SOURCE OF TRUTH
+    public const int Size = 16; // THE SOURCE OF TRUTH
     public const int TotalCells = Size * Size;
     public static readonly Vector2Int ChunkSize = new Vector2Int(Size, Size);
 
@@ -55,9 +55,9 @@ public class MapData
     // Preset counts (Blocks = ChunkCount * ChunkData.Size)
     // 8x8: 300x240 (2400x1920)
     // 16x16: 150x120 (2400x1920)
-    public static readonly Vector2Int StandardMapSize = new Vector2Int(300, 240);
-    public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(400, 200);
-    public static readonly Vector2Int HellMapSize = new Vector2Int(240, 400);
+    public static readonly Vector2Int StandardMapSize = new Vector2Int(150, 120);
+    public static readonly Vector2Int GreatCaveMapSize = new Vector2Int(200, 100);
+    public static readonly Vector2Int HellMapSize = new Vector2Int(120, 200);
 
     // Dynamic Spawn Pos based on World Pixels (Blocks)
     public static readonly Vector2 StanardSpawnPos = new Vector2(1200, 1360);
