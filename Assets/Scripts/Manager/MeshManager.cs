@@ -329,9 +329,14 @@ public class MeshManager : Singleton<MeshManager>
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
         MapData data = MapManager.Instance.activeMapData;
-        for (int x = 0; x < data.mapSize.x; x++)
+        Debug.Log("Å×½ºÆ®");
+        /*for (int x = 0; x < data.mapSize.x; x++)
         {
             for (int y = 0; y < data.mapSize.y; y++) ActivateChunk(new Vector2Int(x, y), false);
+        }*/
+        for (int x = 0; x < data.mapSize.x; x++)
+        {
+            for (int y = 0; y < data.mapSize.y; y++) ActivateChunk(new Vector2Int(x, y), true);
         }
     }
 
@@ -589,6 +594,11 @@ public class MeshManager : Singleton<MeshManager>
     private void EnqueueColliderBuild(Vector2Int coord) { if (pendingColliderSet.Add(coord)) pendingColliderQueue.Enqueue(coord); }
 
     public bool IsChunkActive(int cx, int cy) => activeChunks.ContainsKey(new Vector2Int(cx, cy));
+
+    public void SetSlidingWindow(bool enabled)
+    {
+        useSlidingWindow = enabled;
+    }
 
     public bool IsChunkFullyBuilt(int cx, int cy)
     {

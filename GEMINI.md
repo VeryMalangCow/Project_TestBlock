@@ -161,10 +161,13 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [x] **Advanced 8-direction Autotiling (47 Rules)** (2026-03-31)
   - [x] **Texture2DArray Optimization (141 Layers system)** (2026-03-31)
 
-- [ ] **Major Goal 1: Procedural World Generation**
-  - [ ] Seed-based Perlin Noise terrain generation (Height map).
-  - [ ] Biome constants (Dirt, Stone, Cave) and ore distribution logic.
-  - [ ] World Save/Load system (Binary or JSON).
+### 1. Procedural World Generation Rules
+- **Spawn Protection (Safe Zone):**
+  - **Empty Area:** A 6x6 block area centered on the Spawn Point must be empty (no blocks) to prevent player suffocation and for future portal placement.
+  - **Flat Floor:** Exactly 6 blocks directly beneath the 6x6 empty area must be solid and flat to provide a stable landing.
+- **Terrain Baseline:**
+  - The Spawn Point's Y-coordinate minus 1 (the floor) serves as the **Average Height (Baseline)** for the Perlin Noise generation.
+  - The terrain height at the Spawn Point's X-coordinate must align with this baseline to ensure the spawn area feels integrated into the world.
 
 - [x] **Major Goal 2: Multiplayer Core (NGO & Relay)**
   - [x] NGO Package integration and NetworkManager setup. (2026-04-01)
@@ -205,6 +208,7 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 - [ ] **Major Goal 4: Advanced Player Physics & Movement**
   - [x] Smooth Horizontal Movement (Completed)
   - [x] Box-based Ground Detection & Jump (Completed)
+  - [x] **Terraria-style Terrain Following**: Step-up and Slope handling. (2026-04-06)
   - [ ] **Player Dash**: Fast horizontal burst using sprite index 11.
   - [ ] Coyote Time & Jump Buffering for better platforming feel.
 

@@ -1,13 +1,14 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 #region Enum
 
 public enum WorldStyle
 {
-    Standard,   // Surface world (Flat 60%)
-    GreatCave,  // Mid-level world (Flat 40%)
-    Hell        // Deep-level world (Flat 20%)
+    Standard,   // Surface world
+    GreatCave,  // Mid-level world
+    Hell        // Deep-level world
 }
 
 #endregion
@@ -20,7 +21,9 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private string baseSeed = "Project_BlockTest";
     [SerializeField] private bool useRandomSeed = true;
 
-    [Header("### Block Config")]
+    [Header("### Terrain Settings")]
+    [SerializeField] private float noiseFrequency = 0.02f;
+    [SerializeField] private float noiseAmplitude = 20f;
     [SerializeField] private int dirtBlockId = 0;
 
     [Header("### Map Sizes (Chunks)")]
@@ -29,7 +32,7 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private Vector2Int hellMapSize = MapData.HellMapSize;
 
     [Header("### Performance")]
-    [SerializeField] private int chunksPerFrame = 500; // Increase for speed, decrease for smoothness
+    [SerializeField] private int chunksPerFrame = 500; 
 
     // Runtime Cached Data
     private int chunksProcessedInFrame;
@@ -67,9 +70,8 @@ public class MapGenerator : MonoBehaviour
 
         // Step 1: Standard World
         yield return StartCoroutine(GenerateStandardCo());
-        LoadingProgress = 0.33f;
-        Debug.Log("[MapGenerator] Standard World Generated.");
-
+        
+        LoadingProgress = 1.0f;
         IsLoading = false;
         Debug.Log("[MapGenerator] All worlds ready.");
     }
@@ -80,18 +82,23 @@ public class MapGenerator : MonoBehaviour
 
     private IEnumerator GenerateStandardCo()
     {
-        // Use inspector-defined size
         MapData data = InitializeMap(baseSeed, WorldStyle.Standard, MapData.StandardMapSize);
-        int totalHeight = data.mapSize.y * ChunkData.ChunkSize.y;
-        int surfaceY = Mathf.FloorToInt(0.6f * totalHeight);
+
+        // Spawn Rules Constants
+        Vector2 spawnPos = MapData.StanardSpawnPos; // 1200, 1360
+        int spawnX = Mathf.FloorToInt(spawnPos.x);
+        int spawnY = Mathf.FloorToInt(spawnPos.y);
+        int baselineY = spawnY - 1; // 1359
+
+        // Calculate Perlin Offset to ensure Noise(spawnX) aligns with baseline
+        float spawnNoiseVal = Mathf.PerlinNoise(spawnX * noiseFrequency, baseSeed.GetHashCode() % 10000);
 
         for (int cx = 0; cx < data.mapSize.x; cx++)
         {
             for (int cy = 0; cy < data.mapSize.y; cy++)
             {
-                FillFlatChunk(data.chunks[cx, cy], cy, surfaceY);
-                
-                // Direct yielding for performance
+                GenerateStandardChunk(data.chunks[cx, cy], cx, cy, spawnX, spawnY, baselineY, spawnNoiseVal);
+
                 chunksProcessedInFrame++;
                 if (chunksProcessedInFrame >= chunksPerFrame)
                 {
@@ -102,6 +109,49 @@ public class MapGenerator : MonoBehaviour
         }
 
         MapManager.Instance.StoreMap(WorldStyle.Standard, data);
+    }
+
+    private void GenerateStandardChunk(ChunkData chunk, int cx, int cy, int spawnX, int spawnY, int baselineY, float spawnNoiseVal)
+    {
+        int size = ChunkData.Size;
+        int worldOffsetX = cx * size;
+        int worldOffsetY = cy * size;
+
+        for (int x = 0; x < size; x++)
+        {
+            int worldX = worldOffsetX + x;
+
+            // 1. Calculate Terrain Height for this X
+            float noiseVal = Mathf.PerlinNoise(worldX * noiseFrequency, baseSeed.GetHashCode() % 10000);
+            int heightOffset = Mathf.RoundToInt((noiseVal - spawnNoiseVal) * noiseAmplitude);
+            int currentSurfaceY = baselineY + heightOffset;
+
+            for (int y = 0; y < size; y++)
+            {
+                int worldY = worldOffsetY + y;
+                bool isActive = worldY <= currentSurfaceY;
+
+                // 2. Apply Safe Spawn Zone Rules
+                // Rule: 6x6 Empty Area (Centered on SpawnX 1197~1202, Y 1360~1365)
+                if (worldX >= spawnX - 3 && worldX <= spawnX + 2 && 
+                    worldY >= spawnY && worldY <= spawnY + 5)
+                {
+                    isActive = false;
+                }
+
+                // Rule: 6-block Flat Floor (X 1197~1202, Y 1359)
+                if (worldX >= spawnX - 3 && worldX <= spawnX + 2 && worldY == baselineY)
+                {
+                    isActive = true;
+                }
+
+                if (isActive)
+                {
+                    int kindId = GetRandomKindId(dirtBlockId);
+                    chunk.blocks[ChunkData.GetIndex(x, y)] = new BlockData(dirtBlockId, kindId, true);
+                }
+            }
+        }
     }
 
     #endregion
@@ -116,29 +166,35 @@ public class MapGenerator : MonoBehaviour
         return new MapData(size);
     }
 
-    private void FillFlatChunk(ChunkData chunk, int cy, int surfaceY)
-    {
-        int height = ChunkData.ChunkSize.y;
-        int width = ChunkData.ChunkSize.x;
-
-        for (int x = 0; x < width; x++)
-        {
-            for (int y = 0; y < height; y++)
-            {
-                int worldY = cy * height + y;
-                if (worldY <= surfaceY)
-                {
-                    int kindId = GetRandomKindId(dirtBlockId);
-                    chunk.blocks[ChunkData.GetIndex(x, y)] = new BlockData(dirtBlockId, kindId, true);
-                }
-            }
-        }
-    }
-
     private int GetRandomKindId(int blockId)
     {
         if (ResourceManager.Instance == null) return 0;
         return Random.Range(0, ResourceManager.Instance.GetTileKindCount(blockId));
+    }
+
+    #endregion
+
+    #region Test
+
+    [Header("### Test")]
+    [SerializeField] private UnityEngine.UI.Button showAllMapButton;
+
+    private void Start()
+    {
+        if (showAllMapButton != null)
+        {
+            showAllMapButton.onClick.AddListener(ShowAllMap);
+        }
+    }
+
+    public void ShowAllMap()
+    {
+        if (MeshManager.Instance != null)
+        {
+            // Toggle sliding window OFF to render everything
+            MeshManager.Instance.SetSlidingWindow(false);
+            Debug.Log("[MapGenerator] Rendering Entire Map... (Sliding Window Disabled)");
+        }
     }
 
     #endregion
