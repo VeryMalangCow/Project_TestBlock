@@ -1,37 +1,40 @@
 fileFormatVersion: 2
-guid: 94517f2bead83cf4e9fc5cb675bf2b4b
+guid: 2a6f42b6624f02c46866d1f21a2ce445
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3812234233860701024
-    second: Chestplate_ArmBack_000_0
+      213: -8413401914021652674
+    second: Helmet_000_0
   - first:
-      213: -877601230120214360
-    second: Chestplate_ArmBack_000_1
+      213: 6871506952632860156
+    second: Helmet_000_1
   - first:
-      213: 8679057497163289589
-    second: Chestplate_ArmBack_000_2
+      213: -2134506498401057620
+    second: Helmet_000_2
   - first:
-      213: 6582235413835507947
-    second: Chestplate_ArmBack_000_3
+      213: 8273030823574891555
+    second: Helmet_000_3
   - first:
-      213: -5552146547467247743
-    second: Chestplate_ArmBack_000_4
+      213: -7154899752553269874
+    second: Helmet_000_4
   - first:
-      213: -340337256288997944
-    second: Chestplate_ArmBack_000_5
+      213: -3295969800451830660
+    second: Helmet_000_5
   - first:
-      213: 8261621410766957271
-    second: Chestplate_ArmBack_000_6
+      213: 2417450331805383484
+    second: Helmet_000_6
   - first:
-      213: 8006542193806071831
-    second: Chestplate_ArmBack_000_7
+      213: 8190318675734834454
+    second: Helmet_000_7
   - first:
-      213: 2493077282504410970
-    second: Chestplate_ArmBack_000_8
+      213: -2847579250996581630
+    second: Helmet_000_8
   - first:
-      213: 2859468466153785906
-    second: Chestplate_ArmBack_000_9
+      213: -3130094786979596157
+    second: Helmet_000_9
+  - first:
+      213: 3110895665596725357
+    second: Helmet_000_10
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -153,7 +156,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_000
+      name: Helmet_000_000
       rect:
         serializedVersion: 2
         x: 0
@@ -168,14 +171,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1162ef5228e82414ea3d13e3c71f01a3
-      internalID: -964535087
+      spriteID: a76a2e271ad84114380a2f89a8381acf
+      internalID: 857567301
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_001
+      name: Helmet_000_001
       rect:
         serializedVersion: 2
         x: 46
@@ -190,14 +193,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 62baadd1385e9ae458ec6ebe1252f7af
-      internalID: 795869632
+      spriteID: e377b5dfc28cb084892284632acc8a61
+      internalID: 1683768648
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_002
+      name: Helmet_000_002
       rect:
         serializedVersion: 2
         x: 92
@@ -212,14 +215,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7a683fe839b29eb4a8a9407351ac3093
-      internalID: -223026741
+      spriteID: 00aeb7ffd622f5849897bd80c9870759
+      internalID: 416899462
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_003
+      name: Helmet_000_003
       rect:
         serializedVersion: 2
         x: 138
@@ -234,14 +237,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7b0645e2b3ffd4b448c09f8aad301bbc
-      internalID: 1620682185
+      spriteID: c6a2a13b2810bc544946d5c482a5832a
+      internalID: 1367805670
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_004
+      name: Helmet_000_004
       rect:
         serializedVersion: 2
         x: 184
@@ -256,14 +259,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d5bd1b4573ea5654289f8599bc1f6a4a
-      internalID: -2056180972
+      spriteID: f2b0b9d9e941166429f5a4f41a1ff992
+      internalID: 45302388
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_005
+      name: Helmet_000_005
       rect:
         serializedVersion: 2
         x: 0
@@ -278,14 +281,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b381a21ec299c964f9e46ab762be5d01
-      internalID: 1292067210
+      spriteID: 153e953354ca5154790db95076808006
+      internalID: 1792085154
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_006
+      name: Helmet_000_006
       rect:
         serializedVersion: 2
         x: 46
@@ -300,14 +303,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 99706f198b125a54293e1ec85e41e0b6
-      internalID: 1665662445
+      spriteID: fbf69220e33a62344a45d79d55e960f0
+      internalID: -465865630
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_007
+      name: Helmet_000_007
       rect:
         serializedVersion: 2
         x: 92
@@ -322,14 +325,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: cfac42037921dcc4c83ae1899ee53d3b
-      internalID: -802663218
+      spriteID: 40ac8905dc63cd34388dadebcf94e39f
+      internalID: -937999867
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_008
+      name: Helmet_000_008
       rect:
         serializedVersion: 2
         x: 138
@@ -344,14 +347,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 07321b3a111639b498df7255c5469efe
-      internalID: -72758943
+      spriteID: 4bc0ba83b05fb0440b2b499a37cfb4e6
+      internalID: -1010228585
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_009
+      name: Helmet_000_009
       rect:
         serializedVersion: 2
         x: 184
@@ -366,14 +369,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2230576fe10c8854887c0307be66699f
-      internalID: 1635322290
+      spriteID: 104b234e66583cc42a24d4cfd0110388
+      internalID: 503804697
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_010
+      name: Helmet_000_010
       rect:
         serializedVersion: 2
         x: 0
@@ -388,8 +391,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d47b7adc7dd326b4c9f50531f346bc55
-      internalID: -1091796019
+      spriteID: 2d032bf6e7428794294bfe52107180d3
+      internalID: 399161883
       vertices: []
       indices: 
       edges: []
@@ -398,7 +401,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 056a790b036f16c4999455079dc51162
+    spriteID: cc099d731c4297f47a9a1933d23ace4e
     internalID: 0
     vertices: []
     indices: 
@@ -408,27 +411,28 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ChestplateArmBack_Base_000: -964535087
-      ChestplateArmBack_Base_001: 795869632
-      ChestplateArmBack_Base_002: -223026741
-      ChestplateArmBack_Base_003: 1620682185
-      ChestplateArmBack_Base_004: -2056180972
-      ChestplateArmBack_Base_005: 1292067210
-      ChestplateArmBack_Base_006: 1665662445
-      ChestplateArmBack_Base_007: -802663218
-      ChestplateArmBack_Base_008: -72758943
-      ChestplateArmBack_Base_009: 1635322290
-      ChestplateArmBack_Base_010: -1091796019
-      Chestplate_ArmBack_000_0: -3812234233860701024
-      Chestplate_ArmBack_000_1: -877601230120214360
-      Chestplate_ArmBack_000_2: 8679057497163289589
-      Chestplate_ArmBack_000_3: 6582235413835507947
-      Chestplate_ArmBack_000_4: -5552146547467247743
-      Chestplate_ArmBack_000_5: -340337256288997944
-      Chestplate_ArmBack_000_6: 8261621410766957271
-      Chestplate_ArmBack_000_7: 8006542193806071831
-      Chestplate_ArmBack_000_8: 2493077282504410970
-      Chestplate_ArmBack_000_9: 2859468466153785906
+      Helmet_000_0: -8413401914021652674
+      Helmet_000_000: 857567301
+      Helmet_000_001: 1683768648
+      Helmet_000_002: 416899462
+      Helmet_000_003: 1367805670
+      Helmet_000_004: 45302388
+      Helmet_000_005: 1792085154
+      Helmet_000_006: -465865630
+      Helmet_000_007: -937999867
+      Helmet_000_008: -1010228585
+      Helmet_000_009: 503804697
+      Helmet_000_010: 399161883
+      Helmet_000_1: 6871506952632860156
+      Helmet_000_10: 3110895665596725357
+      Helmet_000_2: -2134506498401057620
+      Helmet_000_3: 8273030823574891555
+      Helmet_000_4: -7154899752553269874
+      Helmet_000_5: -3295969800451830660
+      Helmet_000_6: 2417450331805383484
+      Helmet_000_7: 8190318675734834454
+      Helmet_000_8: -2847579250996581630
+      Helmet_000_9: -3130094786979596157
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

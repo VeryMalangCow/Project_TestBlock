@@ -1,37 +1,40 @@
 fileFormatVersion: 2
-guid: 94517f2bead83cf4e9fc5cb675bf2b4b
+guid: 75aedf951275f9d488ab58cf9f63b807
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3812234233860701024
-    second: Chestplate_ArmBack_000_0
+      213: -529429630306791800
+    second: Leggings_000_0
   - first:
-      213: -877601230120214360
-    second: Chestplate_ArmBack_000_1
+      213: -8599124624255486559
+    second: Leggings_000_1
   - first:
-      213: 8679057497163289589
-    second: Chestplate_ArmBack_000_2
+      213: 1915475165147007157
+    second: Leggings_000_2
   - first:
-      213: 6582235413835507947
-    second: Chestplate_ArmBack_000_3
+      213: 4913556851049984234
+    second: Leggings_000_3
   - first:
-      213: -5552146547467247743
-    second: Chestplate_ArmBack_000_4
+      213: 919863168918026069
+    second: Leggings_000_4
   - first:
-      213: -340337256288997944
-    second: Chestplate_ArmBack_000_5
+      213: 9220932046500305078
+    second: Leggings_000_5
   - first:
-      213: 8261621410766957271
-    second: Chestplate_ArmBack_000_6
+      213: -8640964120764021754
+    second: Leggings_000_6
   - first:
-      213: 8006542193806071831
-    second: Chestplate_ArmBack_000_7
+      213: -1090588009058860714
+    second: Leggings_000_7
   - first:
-      213: 2493077282504410970
-    second: Chestplate_ArmBack_000_8
+      213: 5186049086074857896
+    second: Leggings_000_8
   - first:
-      213: 2859468466153785906
-    second: Chestplate_ArmBack_000_9
+      213: 3425924599095033400
+    second: Leggings_000_9
+  - first:
+      213: 5911153536297736995
+    second: Leggings_000_10
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -153,7 +156,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_000
+      name: Leggings_000_000
       rect:
         serializedVersion: 2
         x: 0
@@ -168,14 +171,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1162ef5228e82414ea3d13e3c71f01a3
-      internalID: -964535087
+      spriteID: 11f685fcc1e6806408f84d28da4be643
+      internalID: -1587085284
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_001
+      name: Leggings_000_001
       rect:
         serializedVersion: 2
         x: 46
@@ -190,14 +193,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 62baadd1385e9ae458ec6ebe1252f7af
-      internalID: 795869632
+      spriteID: d6528198e442779499a2008ba9b46b39
+      internalID: -1101786876
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_002
+      name: Leggings_000_002
       rect:
         serializedVersion: 2
         x: 92
@@ -212,14 +215,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7a683fe839b29eb4a8a9407351ac3093
-      internalID: -223026741
+      spriteID: 183659e39f033f04b9f444b40b12c40e
+      internalID: -2096774336
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_003
+      name: Leggings_000_003
       rect:
         serializedVersion: 2
         x: 138
@@ -234,14 +237,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7b0645e2b3ffd4b448c09f8aad301bbc
-      internalID: 1620682185
+      spriteID: 54143d5904c89ef448b78a792576a251
+      internalID: 511307555
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_004
+      name: Leggings_000_004
       rect:
         serializedVersion: 2
         x: 184
@@ -256,14 +259,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d5bd1b4573ea5654289f8599bc1f6a4a
-      internalID: -2056180972
+      spriteID: 00697eedf0c2a9342b4d0d30e6d8e98c
+      internalID: -1497357862
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_005
+      name: Leggings_000_005
       rect:
         serializedVersion: 2
         x: 0
@@ -278,14 +281,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b381a21ec299c964f9e46ab762be5d01
-      internalID: 1292067210
+      spriteID: 1d562c0108970094481bf445c424d986
+      internalID: 1549202431
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_006
+      name: Leggings_000_006
       rect:
         serializedVersion: 2
         x: 46
@@ -300,14 +303,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 99706f198b125a54293e1ec85e41e0b6
-      internalID: 1665662445
+      spriteID: 652dc4b772c3c4e4c988a00e3c6f0bdb
+      internalID: -391501723
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_007
+      name: Leggings_000_007
       rect:
         serializedVersion: 2
         x: 92
@@ -322,14 +325,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: cfac42037921dcc4c83ae1899ee53d3b
-      internalID: -802663218
+      spriteID: 7fa85d1748ae63d48b67f9d65c7ce63f
+      internalID: -1156169341
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_008
+      name: Leggings_000_008
       rect:
         serializedVersion: 2
         x: 138
@@ -344,14 +347,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 07321b3a111639b498df7255c5469efe
-      internalID: -72758943
+      spriteID: 224fe2a2917eb2b46bbbc78eef394298
+      internalID: 1140546469
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_009
+      name: Leggings_000_009
       rect:
         serializedVersion: 2
         x: 184
@@ -366,14 +369,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2230576fe10c8854887c0307be66699f
-      internalID: 1635322290
+      spriteID: 6a64ca84124ab594c9568c9ffebfbba5
+      internalID: -1091207756
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_010
+      name: Leggings_000_010
       rect:
         serializedVersion: 2
         x: 0
@@ -388,8 +391,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d47b7adc7dd326b4c9f50531f346bc55
-      internalID: -1091796019
+      spriteID: e506d853d39e5d749a4da2bf34222efc
+      internalID: -1447145924
       vertices: []
       indices: 
       edges: []
@@ -398,7 +401,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 056a790b036f16c4999455079dc51162
+    spriteID: 3f5533c2edb8a8c489c938da1e91c201
     internalID: 0
     vertices: []
     indices: 
@@ -408,27 +411,28 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ChestplateArmBack_Base_000: -964535087
-      ChestplateArmBack_Base_001: 795869632
-      ChestplateArmBack_Base_002: -223026741
-      ChestplateArmBack_Base_003: 1620682185
-      ChestplateArmBack_Base_004: -2056180972
-      ChestplateArmBack_Base_005: 1292067210
-      ChestplateArmBack_Base_006: 1665662445
-      ChestplateArmBack_Base_007: -802663218
-      ChestplateArmBack_Base_008: -72758943
-      ChestplateArmBack_Base_009: 1635322290
-      ChestplateArmBack_Base_010: -1091796019
-      Chestplate_ArmBack_000_0: -3812234233860701024
-      Chestplate_ArmBack_000_1: -877601230120214360
-      Chestplate_ArmBack_000_2: 8679057497163289589
-      Chestplate_ArmBack_000_3: 6582235413835507947
-      Chestplate_ArmBack_000_4: -5552146547467247743
-      Chestplate_ArmBack_000_5: -340337256288997944
-      Chestplate_ArmBack_000_6: 8261621410766957271
-      Chestplate_ArmBack_000_7: 8006542193806071831
-      Chestplate_ArmBack_000_8: 2493077282504410970
-      Chestplate_ArmBack_000_9: 2859468466153785906
+      Leggings_000_0: -529429630306791800
+      Leggings_000_000: -1587085284
+      Leggings_000_001: -1101786876
+      Leggings_000_002: -2096774336
+      Leggings_000_003: 511307555
+      Leggings_000_004: -1497357862
+      Leggings_000_005: 1549202431
+      Leggings_000_006: -391501723
+      Leggings_000_007: -1156169341
+      Leggings_000_008: 1140546469
+      Leggings_000_009: -1091207756
+      Leggings_000_010: -1447145924
+      Leggings_000_1: -8599124624255486559
+      Leggings_000_10: 5911153536297736995
+      Leggings_000_2: 1915475165147007157
+      Leggings_000_3: 4913556851049984234
+      Leggings_000_4: 919863168918026069
+      Leggings_000_5: 9220932046500305078
+      Leggings_000_6: -8640964120764021754
+      Leggings_000_7: -1090588009058860714
+      Leggings_000_8: 5186049086074857896
+      Leggings_000_9: 3425924599095033400
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

@@ -6,9 +6,8 @@ using UnityEngine.InputSystem;
 public class InventoryUI : MonoBehaviour
 {
     [Header("### Settings")]
-    [SerializeField] private GameObject slotPrefab;
-    [SerializeField] private Transform slotParent;
-    [SerializeField] private GameObject inventoryPanel; 
+    [SerializeField] private Transform slotParent; // 자식 슬롯들이 이미 배치된 부모
+    [SerializeField] private GameObject inventoryPanel; // 가방이 열렸을 때 보일 패널
 
     [Header("### Input")]
     [SerializeField] private InputActionAsset inputActions;
@@ -16,6 +15,7 @@ public class InventoryUI : MonoBehaviour
 
     private List<InventorySlotUI> uiSlots = new List<InventorySlotUI>();
     private bool isInitialized = false;
+    private const int HOTBAR_COUNT = 10; // 항상 보여줄 슬롯 수
 
     private void Awake()
     {
@@ -24,7 +24,6 @@ public class InventoryUI : MonoBehaviour
             inventoryPanel.SetActive(false);
         }
 
-        // Initialize Input System
         if (inputActions != null)
         {
             var playerMap = inputActions.FindActionMap("Player");
@@ -35,15 +34,8 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    private void OnEnable()
-    {
-        inventoryAction?.Enable();
-    }
-
-    private void OnDisable()
-    {
-        inventoryAction?.Disable();
-    }
+    private void OnEnable() => inventoryAction?.Enable();
+    private void OnDisable() => inventoryAction?.Disable();
 
     private void Start()
     {
@@ -67,58 +59,60 @@ public class InventoryUI : MonoBehaviour
     {
         if (!isInitialized) return;
 
-        // Check for Inventory Toggle using new Input System
         if (inventoryAction != null && inventoryAction.WasPressedThisFrame())
         {
             ToggleInventory();
         }
 
-        if (inventoryPanel != null && inventoryPanel.activeSelf)
-        {
-            RefreshUI();
-        }
+        RefreshUI();
     }
 
     public void ToggleInventory()
     {
         if (inventoryPanel == null) return;
-
         bool newState = !inventoryPanel.activeSelf;
         inventoryPanel.SetActive(newState);
 
-        if (newState)
-        {
-            RefreshUI();
-        }
+        UpdateSlotsVisibility(newState);
     }
 
     private void InitializeUI()
     {
         if (isInitialized) return;
 
-        foreach (Transform child in slotParent)
-        {
-            if (child != null) Destroy(child.gameObject);
-        }
         uiSlots.Clear();
 
-        var data = PlayerController.Local.Data;
-        if (data == null || data.inventory == null) return;
-
-        int slotCount = data.inventory.slots.Length;
-        for (int i = 0; i < slotCount; i++)
+        // 1. 하이어라키 순서대로 슬롯 수집 및 인덱스 할당
+        int childCount = slotParent.childCount;
+        for (int i = 0; i < childCount; i++)
         {
-            GameObject obj = Instantiate(slotPrefab, slotParent);
-            InventorySlotUI slotUI = obj.GetComponent<InventorySlotUI>();
+            Transform child = slotParent.GetChild(i);
+            InventorySlotUI slotUI = child.GetComponent<InventorySlotUI>();
+            
             if (slotUI != null)
             {
-                slotUI.Init(i);
                 uiSlots.Add(slotUI);
+                slotUI.Init(uiSlots.Count - 1);
+                
+                // 0~9번(핫바)은 항상 활성화, 나머지는 초기 상태에서 비활성화
+                // (위치는 에디터에 배치된 그대로 유지됨)
+                child.gameObject.SetActive(uiSlots.Count - 1 < HOTBAR_COUNT);
             }
         }
 
         isInitialized = true;
-        Debug.Log($"[InventoryUI] {slotCount} slots initialized successfully.");
+        Debug.Log($"[InventoryUI] {uiSlots.Count} slots connected. Layout is managed by Editor.");
+    }
+
+    private void UpdateSlotsVisibility(bool showAll)
+    {
+        for (int i = 0; i < uiSlots.Count; i++)
+        {
+            if (i >= HOTBAR_COUNT) 
+            {
+                uiSlots[i].gameObject.SetActive(showAll);
+            }
+        }
     }
 
     public void RefreshUI()
@@ -128,7 +122,7 @@ public class InventoryUI : MonoBehaviour
         var inventory = PlayerController.Local.Data.inventory;
         for (int i = 0; i < uiSlots.Count; i++)
         {
-            if (i < inventory.slots.Length)
+            if (uiSlots[i].gameObject.activeSelf && i < inventory.slots.Length)
             {
                 uiSlots[i].UpdateSlot(inventory.GetSlot(i));
             }

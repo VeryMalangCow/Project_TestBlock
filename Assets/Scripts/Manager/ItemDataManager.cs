@@ -50,12 +50,17 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
                 item.useTime = float.Parse(parts[9]);
 
                 // Load Icon Sprite
-                // If IconPath is empty, use default naming convention: Sprites/Items/Item_XXXXX
+                // Default naming convention: Sprites/Items/Item_XXXXX (5 digits)
                 string finalIconPath = string.IsNullOrEmpty(item.iconPath) 
                     ? $"Sprites/Items/Item_{item.id:D5}" 
                     : item.iconPath;
 
                 item.icon = Resources.Load<Sprite>(finalIconPath);
+                
+                if (item.id != -1 && item.icon == null)
+                {
+                    Debug.LogWarning($"[ItemDataManager] Sprite not found at: {finalIconPath} for Item ID: {item.id}");
+                }
 
                 itemCache[item.id] = item;
             }

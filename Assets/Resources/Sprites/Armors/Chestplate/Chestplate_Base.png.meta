@@ -64,7 +64,7 @@ TextureImporter:
   maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
-    filterMode: 1
+    filterMode: 0
     aniso: 1
     mipBias: 0
     wrapU: 1
@@ -75,12 +75,12 @@ TextureImporter:
   compressionQuality: 50
   spriteMode: 2
   spriteExtrude: 1
-  spriteMeshType: 1
+  spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
-  spriteGenerateFallbackPhysicsShape: 1
+  spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
   alphaIsTransparency: 1
   spriteTessellationDetail: -1
@@ -99,10 +99,10 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 2048
+    maxTextureSize: 256
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 1
+    textureCompression: 0
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -153,221 +153,243 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Chestplate_000_0
+      name: Chestplate_Base_000
       rect:
         serializedVersion: 2
-        x: 16
-        y: 211
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 176
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: ddb00f86b2a845890800000000000000
-      internalID: -7470193962852021283
+      spriteID: e5476d8bd9504aa43aa6a69245c62f78
+      internalID: 540405224
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_1
+      name: Chestplate_Base_001
       rect:
         serializedVersion: 2
-        x: 62
-        y: 213
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 46
+        y: 176
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: a2c1bdb9d109e2400800000000000000
-      internalID: 301336681923681322
+      spriteID: 57ddea186e24be3499451baab7289745
+      internalID: 242707586
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_2
+      name: Chestplate_Base_002
       rect:
         serializedVersion: 2
-        x: 108
-        y: 212
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 92
+        y: 176
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: e4c23929a3dbe2be0800000000000000
-      internalID: -1500053566602924978
+      spriteID: 3fb7411007ba8c54ab6c5e28c6ecaec5
+      internalID: 981213691
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_3
+      name: Chestplate_Base_003
       rect:
         serializedVersion: 2
-        x: 154
-        y: 211
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 138
+        y: 176
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: bf7748597056b1c60800000000000000
-      internalID: 7789931063715067899
+      spriteID: 3be1685ca2a6b9a459b8dc03f4f96e11
+      internalID: -190620100
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_4
+      name: Chestplate_Base_004
       rect:
         serializedVersion: 2
-        x: 200
-        y: 212
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 184
+        y: 176
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 7377535a84262b0c0800000000000000
-      internalID: -4561475408423979209
+      spriteID: 2f9bacbed16a7504e80658a417306190
+      internalID: -170551190
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_5
+      name: Chestplate_Base_005
       rect:
         serializedVersion: 2
-        x: 16
-        y: 132
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 0
+        y: 95
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 8482b6682c793fd50800000000000000
-      internalID: 6769921526602606664
+      spriteID: d75e3e2efaab7ff42b13f5e68132af6a
+      internalID: 1008990304
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_6
+      name: Chestplate_Base_006
       rect:
         serializedVersion: 2
-        x: 62
-        y: 131
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 46
+        y: 95
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 35c36dbed0aa90300800000000000000
-      internalID: 218893033672162387
+      spriteID: e2ec14dde449b04459e0e5f6f686a0a1
+      internalID: -895233758
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_7
+      name: Chestplate_Base_007
       rect:
         serializedVersion: 2
-        x: 108
-        y: 130
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 92
+        y: 95
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: fefa80e51c1dae620800000000000000
-      internalID: 2804284346428076015
+      spriteID: dbdc9b9030618784da8712e94ff19977
+      internalID: -1409338788
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_8
+      name: Chestplate_Base_008
       rect:
         serializedVersion: 2
-        x: 154
-        y: 131
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 138
+        y: 95
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 848cc5eba644b3080800000000000000
-      internalID: -9206689787977873336
+      spriteID: 75f5aae300c372c4eb7e9920f8b1f035
+      internalID: -2083979211
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Chestplate_000_9
+      name: Chestplate_Base_009
       rect:
         serializedVersion: 2
-        x: 200
-        y: 132
-        width: 16
-        height: 22
-      alignment: 0
-      pivot: {x: 0, y: 0}
+        x: 184
+        y: 95
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
-      tessellationDetail: -1
+      tessellationDetail: 0
       bones: []
-      spriteID: 267a871e0da0454d0800000000000000
-      internalID: -3146878347372877982
+      spriteID: ac5a7f3eb7c523645bb40c21db89eb73
+      internalID: -1794335199
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Chestplate_Base_010
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 14
+        width: 45
+        height: 80
+      alignment: 9
+      pivot: {x: 0.54444444, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6427c4560346a1d4bb7246265bc92f9a
+      internalID: 1850288972
       vertices: []
       indices: 
       edges: []
@@ -376,7 +398,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: 3c9b95a9b183b4440a86bb8f83345c21
     internalID: 0
     vertices: []
     indices: 
@@ -396,6 +418,17 @@ TextureImporter:
       Chestplate_000_7: 2804284346428076015
       Chestplate_000_8: -9206689787977873336
       Chestplate_000_9: -3146878347372877982
+      Chestplate_Base_000: 540405224
+      Chestplate_Base_001: 242707586
+      Chestplate_Base_002: 981213691
+      Chestplate_Base_003: -190620100
+      Chestplate_Base_004: -170551190
+      Chestplate_Base_005: 1008990304
+      Chestplate_Base_006: -895233758
+      Chestplate_Base_007: -1409338788
+      Chestplate_Base_008: -2083979211
+      Chestplate_Base_009: -1794335199
+      Chestplate_Base_010: 1850288972
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

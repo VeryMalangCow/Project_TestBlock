@@ -1,37 +1,40 @@
 fileFormatVersion: 2
-guid: 94517f2bead83cf4e9fc5cb675bf2b4b
+guid: 737a2352df67cc04eb088acad6b65c46
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -3812234233860701024
-    second: Chestplate_ArmBack_000_0
+      213: -7391016906338347008
+    second: ChestplateArmBack_000_0
   - first:
-      213: -877601230120214360
-    second: Chestplate_ArmBack_000_1
+      213: 4177278021272902813
+    second: ChestplateArmBack_000_1
   - first:
-      213: 8679057497163289589
-    second: Chestplate_ArmBack_000_2
+      213: 3078454110334035856
+    second: ChestplateArmBack_000_2
   - first:
-      213: 6582235413835507947
-    second: Chestplate_ArmBack_000_3
+      213: 6248738428635750251
+    second: ChestplateArmBack_000_3
   - first:
-      213: -5552146547467247743
-    second: Chestplate_ArmBack_000_4
+      213: 1293926391629596703
+    second: ChestplateArmBack_000_4
   - first:
-      213: -340337256288997944
-    second: Chestplate_ArmBack_000_5
+      213: -4923450051821721108
+    second: ChestplateArmBack_000_5
   - first:
-      213: 8261621410766957271
-    second: Chestplate_ArmBack_000_6
+      213: 5372472879096389305
+    second: ChestplateArmBack_000_6
   - first:
-      213: 8006542193806071831
-    second: Chestplate_ArmBack_000_7
+      213: -150442895474686639
+    second: ChestplateArmBack_000_7
   - first:
-      213: 2493077282504410970
-    second: Chestplate_ArmBack_000_8
+      213: 8602628468854517130
+    second: ChestplateArmBack_000_8
   - first:
-      213: 2859468466153785906
-    second: Chestplate_ArmBack_000_9
+      213: -1560936927458184656
+    second: ChestplateArmBack_000_9
+  - first:
+      213: 6422294545696234879
+    second: ChestplateArmBack_000_10
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -153,7 +156,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_000
+      name: ChestplateArmBack_000_000
       rect:
         serializedVersion: 2
         x: 0
@@ -168,14 +171,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1162ef5228e82414ea3d13e3c71f01a3
-      internalID: -964535087
+      spriteID: 9ee09f103b4f5a841bb575ebdeab79c7
+      internalID: 1156179652
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_001
+      name: ChestplateArmBack_000_001
       rect:
         serializedVersion: 2
         x: 46
@@ -190,14 +193,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 62baadd1385e9ae458ec6ebe1252f7af
-      internalID: 795869632
+      spriteID: f044940f62406464688363613944cd81
+      internalID: -1654811348
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_002
+      name: ChestplateArmBack_000_002
       rect:
         serializedVersion: 2
         x: 92
@@ -212,14 +215,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7a683fe839b29eb4a8a9407351ac3093
-      internalID: -223026741
+      spriteID: 52f7139771176bd4d83054b47d32f0cd
+      internalID: -1606961676
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_003
+      name: ChestplateArmBack_000_003
       rect:
         serializedVersion: 2
         x: 138
@@ -234,14 +237,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 7b0645e2b3ffd4b448c09f8aad301bbc
-      internalID: 1620682185
+      spriteID: a688d50109f48724db058f8987abfbeb
+      internalID: -383633611
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_004
+      name: ChestplateArmBack_000_004
       rect:
         serializedVersion: 2
         x: 184
@@ -256,14 +259,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d5bd1b4573ea5654289f8599bc1f6a4a
-      internalID: -2056180972
+      spriteID: 206ee954ef4c2f44ebb05c361608cca0
+      internalID: 1806320360
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_005
+      name: ChestplateArmBack_000_005
       rect:
         serializedVersion: 2
         x: 0
@@ -278,14 +281,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b381a21ec299c964f9e46ab762be5d01
-      internalID: 1292067210
+      spriteID: 400fe12b7779e6a4e92409b3b3363541
+      internalID: 1812827602
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_006
+      name: ChestplateArmBack_000_006
       rect:
         serializedVersion: 2
         x: 46
@@ -300,14 +303,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 99706f198b125a54293e1ec85e41e0b6
-      internalID: 1665662445
+      spriteID: 5fa763b18d4623e4789d946b2159628a
+      internalID: 2111225921
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_007
+      name: ChestplateArmBack_000_007
       rect:
         serializedVersion: 2
         x: 92
@@ -322,14 +325,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: cfac42037921dcc4c83ae1899ee53d3b
-      internalID: -802663218
+      spriteID: c626a442e4646c04d8a54cb4a97930a8
+      internalID: -574113804
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_008
+      name: ChestplateArmBack_000_008
       rect:
         serializedVersion: 2
         x: 138
@@ -344,14 +347,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 07321b3a111639b498df7255c5469efe
-      internalID: -72758943
+      spriteID: 1fb35f6b7b7d97f4b8110f4533d45179
+      internalID: 182807020
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_009
+      name: ChestplateArmBack_000_009
       rect:
         serializedVersion: 2
         x: 184
@@ -366,14 +369,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 2230576fe10c8854887c0307be66699f
-      internalID: 1635322290
+      spriteID: 7d272aa0c7c79a1458671b1914491985
+      internalID: 157805582
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmBack_Base_010
+      name: ChestplateArmBack_000_010
       rect:
         serializedVersion: 2
         x: 0
@@ -388,8 +391,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: d47b7adc7dd326b4c9f50531f346bc55
-      internalID: -1091796019
+      spriteID: 1b74c71f51c99774ca0ba07b08169d42
+      internalID: -513990742
       vertices: []
       indices: 
       edges: []
@@ -398,7 +401,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 056a790b036f16c4999455079dc51162
+    spriteID: a1ac10b54ab00a2489347668854fedb1
     internalID: 0
     vertices: []
     indices: 
@@ -408,27 +411,28 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ChestplateArmBack_Base_000: -964535087
-      ChestplateArmBack_Base_001: 795869632
-      ChestplateArmBack_Base_002: -223026741
-      ChestplateArmBack_Base_003: 1620682185
-      ChestplateArmBack_Base_004: -2056180972
-      ChestplateArmBack_Base_005: 1292067210
-      ChestplateArmBack_Base_006: 1665662445
-      ChestplateArmBack_Base_007: -802663218
-      ChestplateArmBack_Base_008: -72758943
-      ChestplateArmBack_Base_009: 1635322290
-      ChestplateArmBack_Base_010: -1091796019
-      Chestplate_ArmBack_000_0: -3812234233860701024
-      Chestplate_ArmBack_000_1: -877601230120214360
-      Chestplate_ArmBack_000_2: 8679057497163289589
-      Chestplate_ArmBack_000_3: 6582235413835507947
-      Chestplate_ArmBack_000_4: -5552146547467247743
-      Chestplate_ArmBack_000_5: -340337256288997944
-      Chestplate_ArmBack_000_6: 8261621410766957271
-      Chestplate_ArmBack_000_7: 8006542193806071831
-      Chestplate_ArmBack_000_8: 2493077282504410970
-      Chestplate_ArmBack_000_9: 2859468466153785906
+      ChestplateArmBack_000_0: -7391016906338347008
+      ChestplateArmBack_000_000: 1156179652
+      ChestplateArmBack_000_001: -1654811348
+      ChestplateArmBack_000_002: -1606961676
+      ChestplateArmBack_000_003: -383633611
+      ChestplateArmBack_000_004: 1806320360
+      ChestplateArmBack_000_005: 1812827602
+      ChestplateArmBack_000_006: 2111225921
+      ChestplateArmBack_000_007: -574113804
+      ChestplateArmBack_000_008: 182807020
+      ChestplateArmBack_000_009: 157805582
+      ChestplateArmBack_000_010: -513990742
+      ChestplateArmBack_000_1: 4177278021272902813
+      ChestplateArmBack_000_10: 6422294545696234879
+      ChestplateArmBack_000_2: 3078454110334035856
+      ChestplateArmBack_000_3: 6248738428635750251
+      ChestplateArmBack_000_4: 1293926391629596703
+      ChestplateArmBack_000_5: -4923450051821721108
+      ChestplateArmBack_000_6: 5372472879096389305
+      ChestplateArmBack_000_7: -150442895474686639
+      ChestplateArmBack_000_8: 8602628468854517130
+      ChestplateArmBack_000_9: -1560936927458184656
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
