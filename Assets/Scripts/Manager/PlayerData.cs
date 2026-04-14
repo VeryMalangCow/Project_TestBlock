@@ -9,13 +9,13 @@ public class PlayerData
     // Equipment
     public PlayerEquipmentData equipment = new PlayerEquipmentData();
 
-    // Inventory (Placeholder)
-    public int[] inventorySlots = new int[50]; 
+    // Inventory
+    public PlayerInventoryData inventory = new PlayerInventoryData(50); 
 
     public PlayerData()
     {
         visual = new PlayerVisualData();
         equipment = new PlayerEquipmentData();
-        inventorySlots = new int[50];
+        inventory = new PlayerInventoryData(50);
     }
 }

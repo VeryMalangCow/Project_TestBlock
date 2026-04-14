@@ -1,0 +1,8 @@
+ID,Name,Description,Type,MaxStack,IconPath,Value,Damage,Defense,UseTime
+-1,None,Empty Slot,None,0,,0,0,0,0
+0,Dirt Block,A simple block of dirt,Block,999,,0,0,0,0.2
+1,Stone Block,A hard block of stone,Block,999,,0,0,0,0.2
+100,Iron Sword,A basic iron sword,Weapon,1,,50,12,0,0.5
+200,Iron Helmet,Basic iron protection,Armor,1,,30,0,4,0
+201,Iron Chestplate,Basic iron chestplate,Armor,1,,50,0,6,0
+202,Iron Leggings,Basic iron leggings,Armor,1,,40,0,3,0

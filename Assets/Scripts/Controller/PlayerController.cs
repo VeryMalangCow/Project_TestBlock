@@ -19,7 +19,6 @@ public class PlayerController : NetworkBehaviour
     private InputAction moveAction;
     private InputAction jumpAction;
     private InputAction dashAction;
-    private InputAction attackAction;
     private InputAction interactAction;
 
     [Header("### Move")]
@@ -49,7 +48,13 @@ public class PlayerController : NetworkBehaviour
     private Vector2 moveInput;
     private bool isGrounded;
     private float walkCycleTime;
+    [Header("### Visuals")]
     [SerializeField] private float walkAnimSpeedMultiplier = 2.5f;
+
+    private PlayerData playerData;
+    public PlayerData Data => playerData;
+
+    public static PlayerController Local { get; private set; }
 
     private string debugStatus = "Initializing...";
 
@@ -62,7 +67,7 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<bool> isFlippedSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> currentFrameSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // 2. State Sync (Important for Jump/Dash consistency)
+    // 2. State Sync
     private NetworkVariable<bool> isDashingSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<float> dashDirectionSync = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<int> jumpCountSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -96,7 +101,7 @@ public class PlayerController : NetworkBehaviour
     {
         if (inputActions == null)
         {
-            Debug.LogError("[PlayerController] InputActionAsset is missing! Please assign it in the Inspector.");
+            Debug.LogError("[PlayerController] InputActionAsset is missing!");
             return;
         }
 
@@ -106,13 +111,11 @@ public class PlayerController : NetworkBehaviour
             moveAction = playerMap.FindAction("Move");
             jumpAction = playerMap.FindAction("Jump");
             dashAction = playerMap.FindAction("Dash");
-            attackAction = playerMap.FindAction("Attack");
             interactAction = playerMap.FindAction("Interact");
 
             moveAction.Enable();
             jumpAction.Enable();
             dashAction.Enable();
-            attackAction.Enable();
             interactAction.Enable();
         }
     }
@@ -123,7 +126,6 @@ public class PlayerController : NetworkBehaviour
         moveAction?.Disable();
         jumpAction?.Disable();
         dashAction?.Disable();
-        attackAction?.Disable();
         interactAction?.Disable();
     }
 
@@ -158,7 +160,8 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // Bind Visual & Equipment Change Events (Only fires when value actually changes)
+        if (IsOwner) Local = this;
+
         helmetIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Heads", newVal); };
         chestplateIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Clothes", newVal); };
         leggingsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Leggings", newVal); };
@@ -197,10 +200,9 @@ public class PlayerController : NetworkBehaviour
             RequestSpawnServerRpc();
             yield return new WaitForSeconds(0.5f);
 
-            // 1. Initial Data Setup (Load JSON here in the future)
-            PlayerData data = new PlayerData();
-            UpdateAppearance(data.visual);
-            UpdateEquipment(data.equipment);
+            playerData = new PlayerData();
+            UpdateAppearance(playerData.visual);
+            UpdateEquipment(playerData.equipment);
         }
 
         if (!IsServer || IsOwner)
@@ -231,7 +233,6 @@ public class PlayerController : NetworkBehaviour
             visuals.gameObject.SetActive(true);
             visuals.Init();
             
-            // Explicitly sync visuals for initial state (In case events already fired)
             visuals.SetSkinColor(skinColorSync.Value);
             visuals.SetEyeColor(eyeColorSync.Value);
             visuals.SetHairColor(hairColorSync.Value);
@@ -276,10 +277,8 @@ public class PlayerController : NetworkBehaviour
             transform.position = pos;
             rb.position = pos;
             rb.linearVelocity = Vector2.zero;
-            
             var networkTransform = GetComponent<NetworkTransform>();
             if (networkTransform != null) networkTransform.Teleport(pos, Quaternion.identity, transform.localScale);
-            
             debugStatus = "Spawned at Surface";
         }
     }
@@ -471,19 +470,16 @@ public class PlayerController : NetworkBehaviour
     public void UpdateAppearance(PlayerVisualData visualData)
     {
         if (!IsOwner) return;
-
         Color sCol, eCol, hCol;
         if (ColorUtility.TryParseHtmlString(visualData.skinColorHex, out sCol)) skinColorSync.Value = sCol;
         if (ColorUtility.TryParseHtmlString(visualData.eyeColorHex, out eCol)) eyeColorSync.Value = eCol;
         if (ColorUtility.TryParseHtmlString(visualData.hairColorHex, out hCol)) hairColorSync.Value = hCol;
-        
         hairStyleSync.Value = visualData.hairStyleIndex;
     }
 
     public void UpdateEquipment(PlayerEquipmentData equipmentData)
     {
         if (!IsOwner) return;
-
         helmetIdSync.Value = equipmentData.helmetIndex;
         chestplateIdSync.Value = equipmentData.chestplateIndex;
         leggingsIdSync.Value = equipmentData.leggingsIndex;
@@ -495,8 +491,7 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleInteraction()
     {
-        if (!IsOwner || attackAction == null || interactAction == null) return;
-        if (attackAction.WasPressedThisFrame()) UpdateBlock(-1);
+        if (!IsOwner || interactAction == null) return;
         if (interactAction.WasPressedThisFrame()) UpdateBlock(selectedBlockId);
     }
 
