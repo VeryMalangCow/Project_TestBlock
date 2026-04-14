@@ -21,9 +21,19 @@ public class MapGenerator : MonoBehaviour
     [SerializeField] private string baseSeed = "Project_BlockTest";
     [SerializeField] private bool useRandomSeed = true;
 
-    [Header("### Terrain Settings")]
-    [SerializeField] private float noiseFrequency = 0.02f;
-    [SerializeField] private float noiseAmplitude = 20f;
+    [Header("### Terrain Settings (Multi-Octave)")]
+    [Tooltip("Main hills (Large scale)")]
+    [SerializeField] private float noiseFrequency = 0.015f; 
+    [SerializeField] private float noiseAmplitude = 25f;
+
+    [Tooltip("Secondary hills (Mid scale)")]
+    [SerializeField] private float detailFrequency = 0.06f;
+    [SerializeField] private float detailAmplitude = 6f;
+
+    [Tooltip("Surface roughness (Small scale)")]
+    [SerializeField] private float roughFrequency = 0.18f;
+    [SerializeField] private float roughAmplitude = 1.8f;
+
     [SerializeField] private int dirtBlockId = 0;
 
     [Header("### Map Sizes (Chunks)")]
@@ -83,6 +93,7 @@ public class MapGenerator : MonoBehaviour
     private IEnumerator GenerateStandardCo()
     {
         MapData data = InitializeMap(baseSeed, WorldStyle.Standard, MapData.StandardMapSize);
+        int seedHash = baseSeed.GetHashCode();
 
         // Spawn Rules Constants
         Vector2 spawnPos = MapData.StanardSpawnPos; // 1200, 1360
@@ -90,14 +101,14 @@ public class MapGenerator : MonoBehaviour
         int spawnY = Mathf.FloorToInt(spawnPos.y);
         int baselineY = spawnY - 1; // 1359
 
-        // Calculate Perlin Offset to ensure Noise(spawnX) aligns with baseline
-        float spawnNoiseVal = Mathf.PerlinNoise(spawnX * noiseFrequency, baseSeed.GetHashCode() % 10000);
+        // Calculate Fractal Height at Spawn Point
+        float spawnHeightVal = GetFractalHeight(spawnX, seedHash);
 
         for (int cx = 0; cx < data.mapSize.x; cx++)
         {
             for (int cy = 0; cy < data.mapSize.y; cy++)
             {
-                GenerateStandardChunk(data.chunks[cx, cy], cx, cy, spawnX, spawnY, baselineY, spawnNoiseVal);
+                GenerateStandardChunk(data.chunks[cx, cy], cx, cy, spawnX, spawnY, baselineY, spawnHeightVal, seedHash);
 
                 chunksProcessedInFrame++;
                 if (chunksProcessedInFrame >= chunksPerFrame)
@@ -111,7 +122,7 @@ public class MapGenerator : MonoBehaviour
         MapManager.Instance.StoreMap(WorldStyle.Standard, data);
     }
 
-    private void GenerateStandardChunk(ChunkData chunk, int cx, int cy, int spawnX, int spawnY, int baselineY, float spawnNoiseVal)
+    private void GenerateStandardChunk(ChunkData chunk, int cx, int cy, int spawnX, int spawnY, int baselineY, float spawnHeightVal, int seedHash)
     {
         int size = ChunkData.Size;
         int worldOffsetX = cx * size;
@@ -121,9 +132,9 @@ public class MapGenerator : MonoBehaviour
         {
             int worldX = worldOffsetX + x;
 
-            // 1. Calculate Terrain Height for this X
-            float noiseVal = Mathf.PerlinNoise(worldX * noiseFrequency, baseSeed.GetHashCode() % 10000);
-            int heightOffset = Mathf.RoundToInt((noiseVal - spawnNoiseVal) * noiseAmplitude);
+            // 1. Calculate Multi-Octave Terrain Height
+            float currentHeightVal = GetFractalHeight(worldX, seedHash);
+            int heightOffset = Mathf.RoundToInt(currentHeightVal - spawnHeightVal);
             int currentSurfaceY = baselineY + heightOffset;
 
             for (int y = 0; y < size; y++)
@@ -132,14 +143,14 @@ public class MapGenerator : MonoBehaviour
                 bool isActive = worldY <= currentSurfaceY;
 
                 // 2. Apply Safe Spawn Zone Rules
-                // Rule: 6x6 Empty Area (Centered on SpawnX 1197~1202, Y 1360~1365)
+                // Rule: 6x6 Empty Area
                 if (worldX >= spawnX - 3 && worldX <= spawnX + 2 && 
                     worldY >= spawnY && worldY <= spawnY + 5)
                 {
                     isActive = false;
                 }
 
-                // Rule: 6-block Flat Floor (X 1197~1202, Y 1359)
+                // Rule: 6-block Flat Floor
                 if (worldX >= spawnX - 3 && worldX <= spawnX + 2 && worldY == baselineY)
                 {
                     isActive = true;
@@ -157,6 +168,18 @@ public class MapGenerator : MonoBehaviour
     #endregion
 
     #region Shared Sub-Steps & Utils
+
+    private float GetFractalHeight(float x, int seedHash)
+    {
+        float val = 0;
+        // Octave 1: Main Shape (Large Scale)
+        val += Mathf.PerlinNoise(x * noiseFrequency, seedHash % 10000) * noiseAmplitude;
+        // Octave 2: Details (Mid Scale)
+        val += Mathf.PerlinNoise(x * detailFrequency, (seedHash + 123) % 10000) * detailAmplitude;
+        // Octave 3: Roughness (Small Scale)
+        val += Mathf.PerlinNoise(x * roughFrequency, (seedHash + 456) % 10000) * roughAmplitude;
+        return val;
+    }
 
     private MapData InitializeMap(string seed, WorldStyle style, Vector2Int size)
     {
