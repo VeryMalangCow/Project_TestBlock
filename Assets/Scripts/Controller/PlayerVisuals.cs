@@ -38,11 +38,12 @@ public class PlayerVisuals : MonoBehaviour
 
     #region Armor Management
 
-    private readonly string[] bodyParts = { "ArmBack", "Leg", "Body", "Head", "ArmFront" };
+    private readonly string[] skinParts = { "ArmBack", "Leg", "Body", "Head", "ArmFront" };
 
     public void SetBody()
     {
-        foreach (string part in bodyParts)
+        // 1. Load Skin Parts
+        foreach (string part in skinParts)
         {
             Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(part);
             if (sheet == null) continue;
@@ -54,6 +55,49 @@ public class PlayerVisuals : MonoBehaviour
                 target.SetSprite(0);
             }
         }
+
+        // 2. Load Static Parts (Eye, Pupil)
+        SetStaticPart("Eye", "Eye/Eye", 0);
+        SetStaticPart("Pupil", "Pupil/Pupil", 0);
+    }
+
+    private void SetStaticPart(string layerName, string resourcePath, int id)
+    {
+        Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(resourcePath, id);
+        if (sheet == null) return;
+
+        VisualLayer target = layers.Find(l => l.name.Equals(layerName, System.StringComparison.OrdinalIgnoreCase));
+        if (target != null)
+        {
+            target.currentSheet = sheet;
+            target.SetSprite(0);
+        }
+    }
+
+    public void SetHair(int styleIndex)
+    {
+        SetStaticPart("Hair", "Hair/Hair", styleIndex);
+    }
+
+    public void SetSkinColor(Color color)
+    {
+        foreach (string part in skinParts)
+        {
+            VisualLayer target = layers.Find(l => l.name.Equals(part, System.StringComparison.OrdinalIgnoreCase));
+            if (target != null && target.renderer != null) target.renderer.color = color;
+        }
+    }
+
+    public void SetEyeColor(Color color)
+    {
+        VisualLayer target = layers.Find(l => l.name.Equals("Pupil", System.StringComparison.OrdinalIgnoreCase));
+        if (target != null && target.renderer != null) target.renderer.color = color;
+    }
+
+    public void SetHairColor(Color color)
+    {
+        VisualLayer target = layers.Find(l => l.name.Equals("Hair", System.StringComparison.OrdinalIgnoreCase));
+        if (target != null && target.renderer != null) target.renderer.color = color;
     }
 
     public void SetArmor(string category, int id)

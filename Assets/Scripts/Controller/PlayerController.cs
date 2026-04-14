@@ -68,11 +68,16 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<int> jumpCountSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int lastProcessedJumpCount;
 
-    // 3. Armor Sync
+    // 3. Armor & Appearance Sync
     private NetworkVariable<int> clothesIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> backpackIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> headIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> cloakIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+
+    private NetworkVariable<Color> skinColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<Color> eyeColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> hairStyleSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     #endregion
 
@@ -151,10 +156,16 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // Bind Appearance Sync
         clothesIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Clothes", newVal); };
         backpackIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Backpacks", newVal); };
         headIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Heads", newVal); };
         cloakIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Cloaks", newVal); };
+
+        skinColorSync.OnValueChanged += (oldVal, newVal) => { visuals.SetSkinColor(newVal); };
+        eyeColorSync.OnValueChanged += (oldVal, newVal) => { visuals.SetEyeColor(newVal); };
+        hairColorSync.OnValueChanged += (oldVal, newVal) => { visuals.SetHairColor(newVal); };
+        hairStyleSync.OnValueChanged += (oldVal, newVal) => { visuals.SetHair(newVal); };
 
         StartCoroutine(InitPlayerCo());
     }
@@ -182,6 +193,20 @@ public class PlayerController : NetworkBehaviour
             debugStatus = "Requesting Spawn...";
             RequestSpawnServerRpc();
             yield return new WaitForSeconds(0.5f);
+
+            // Apply Local PlayerData (Temporary random for testing)
+            PlayerData data = new PlayerData();
+            // You can load JSON here later
+            
+            Color sCol, eCol, hCol;
+            ColorUtility.TryParseHtmlString(data.skinColorHex, out sCol);
+            ColorUtility.TryParseHtmlString(data.eyeColorHex, out eCol);
+            ColorUtility.TryParseHtmlString(data.hairColorHex, out hCol);
+
+            skinColorSync.Value = sCol;
+            eyeColorSync.Value = eCol;
+            hairColorSync.Value = hCol;
+            hairStyleSync.Value = data.hairStyleIndex;
 
             clothesIdSync.Value = 0;
             backpackIdSync.Value = 0;
@@ -217,6 +242,13 @@ public class PlayerController : NetworkBehaviour
         {
             visuals.gameObject.SetActive(true);
             visuals.Init();
+            
+            // Explicitly call visual updates for initial state
+            visuals.SetSkinColor(skinColorSync.Value);
+            visuals.SetEyeColor(eyeColorSync.Value);
+            visuals.SetHairColor(hairColorSync.Value);
+            visuals.SetHair(hairStyleSync.Value);
+
             visuals.SetArmor("Clothes", clothesIdSync.Value);
             visuals.SetArmor("Backpacks", backpackIdSync.Value);
             visuals.SetArmor("Heads", headIdSync.Value);
@@ -489,6 +521,26 @@ public class PlayerController : NetworkBehaviour
     private void EndDashServerRpc()
     {
         isDashingSync.Value = false;
+    }
+
+    #endregion
+
+    #region Appearance Update
+
+    /// <summary>
+    /// Updates the player's appearance data and synchronizes it across the network.
+    /// Only the Owner can call this.
+    /// </summary>
+    public void UpdateAppearance(PlayerData data)
+    {
+        if (!IsOwner) return;
+
+        Color sCol, eCol, hCol;
+        if (ColorUtility.TryParseHtmlString(data.skinColorHex, out sCol)) skinColorSync.Value = sCol;
+        if (ColorUtility.TryParseHtmlString(data.eyeColorHex, out eCol)) eyeColorSync.Value = eCol;
+        if (ColorUtility.TryParseHtmlString(data.hairColorHex, out hCol)) hairColorSync.Value = hCol;
+        
+        hairStyleSync.Value = data.hairStyleIndex;
     }
 
     #endregion
