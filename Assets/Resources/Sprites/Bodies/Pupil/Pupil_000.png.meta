@@ -1,37 +1,10 @@
 fileFormatVersion: 2
-guid: 3461e138465f3d644aea005e289297e9
+guid: 8dcdfc4803438d845aa5259f8e88f0b1
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: -6058809557123113370
-    second: Leg_000_0
-  - first:
-      213: -2427228886796941622
-    second: Leg_000_1
-  - first:
-      213: 5201599654979468606
-    second: Leg_000_2
-  - first:
-      213: -6785006501986512497
-    second: Leg_000_3
-  - first:
-      213: 974793860266770260
-    second: Leg_000_4
-  - first:
-      213: -9050539024749417851
-    second: Leg_000_5
-  - first:
-      213: -3351309312375220114
-    second: Leg_000_6
-  - first:
-      213: -8107061154071025834
-    second: Leg_000_7
-  - first:
-      213: 8220847382673608263
-    second: Leg_000_8
-  - first:
-      213: 4167829297855103785
-    second: Leg_000_9
+      213: 553160736794398353
+    second: Pupil_000_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -153,7 +126,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Leg_000_000
+      name: Pupil_000_000
       rect:
         serializedVersion: 2
         x: 0
@@ -168,14 +141,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 26e0eeddc22349a4ab814dfe193270ba
-      internalID: -427518942
+      spriteID: f974287cfd761174691f943a43fbbf45
+      internalID: 408766544
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_001
+      name: Pupil_000_001
       rect:
         serializedVersion: 2
         x: 46
@@ -190,14 +163,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 037ccde99636f4e4589989286c69edd9
-      internalID: -729096694
+      spriteID: 5e23de6a099350447b9919b7c2512817
+      internalID: 256718962
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_002
+      name: Pupil_000_002
       rect:
         serializedVersion: 2
         x: 92
@@ -212,14 +185,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 681e5851945bfbb4e830683d00e6e832
-      internalID: -583318741
+      spriteID: 0ed6040e6386e284e84b0bdccbbd5b03
+      internalID: 260772590
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_003
+      name: Pupil_000_003
       rect:
         serializedVersion: 2
         x: 138
@@ -234,14 +207,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a1d968aa47a2dca43b8c1519c5caab9a
-      internalID: 1910849425
+      spriteID: c8edcc0da29d871479abeeaf9fcc9de4
+      internalID: -985985777
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_004
+      name: Pupil_000_004
       rect:
         serializedVersion: 2
         x: 184
@@ -256,14 +229,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 89a14ac4d4f09334eb00f9567ccf70b8
-      internalID: 1507433395
+      spriteID: 49daf383fdaac934484e538f2b918e79
+      internalID: 1146609879
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_005
+      name: Pupil_000_005
       rect:
         serializedVersion: 2
         x: 0
@@ -278,14 +251,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 112b196c7daee9941b2d8d23290aceae
-      internalID: -710555670
+      spriteID: 91e67a6864d101042b7c696d4e7d3c6f
+      internalID: -1901803507
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_006
+      name: Pupil_000_006
       rect:
         serializedVersion: 2
         x: 46
@@ -300,14 +273,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: fb4b17b7d4b1e824ca75489c3ee3abc9
-      internalID: 282433973
+      spriteID: 29b9abe4828ba30458f38a81565689f6
+      internalID: -836844396
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_007
+      name: Pupil_000_007
       rect:
         serializedVersion: 2
         x: 92
@@ -322,14 +295,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f248d1a3896b7b34cbc8266824b08aa0
-      internalID: -589612600
+      spriteID: dea1ec2b81c60c54998ea075a4275766
+      internalID: 1720017379
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_008
+      name: Pupil_000_008
       rect:
         serializedVersion: 2
         x: 138
@@ -344,14 +317,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: c0a707d1715af6b41b9d68e80e0b12d7
-      internalID: 1967400254
+      spriteID: 05676e9c1a1137347b4c3845cdfa4b4e
+      internalID: 432511700
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Leg_000_009
+      name: Pupil_000_009
       rect:
         serializedVersion: 2
         x: 184
@@ -366,8 +339,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: a42b25d0023cb554495d4ac89cafd9e0
-      internalID: -1031674343
+      spriteID: d2fd7cba33da97440a5cc8f05f46e04f
+      internalID: 696368772
       vertices: []
       indices: 
       edges: []
@@ -376,7 +349,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: f86eec530ab0c6b48b5a39eb92594905
+    spriteID: 9ae5d2a811dc15e4f9517412c25fb668
     internalID: 0
     vertices: []
     indices: 
@@ -386,26 +359,17 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Leg_000_0: -6058809557123113370
-      Leg_000_000: -427518942
-      Leg_000_001: -729096694
-      Leg_000_002: -583318741
-      Leg_000_003: 1910849425
-      Leg_000_004: 1507433395
-      Leg_000_005: -710555670
-      Leg_000_006: 282433973
-      Leg_000_007: -589612600
-      Leg_000_008: 1967400254
-      Leg_000_009: -1031674343
-      Leg_000_1: -2427228886796941622
-      Leg_000_2: 5201599654979468606
-      Leg_000_3: -6785006501986512497
-      Leg_000_4: 974793860266770260
-      Leg_000_5: -9050539024749417851
-      Leg_000_6: -3351309312375220114
-      Leg_000_7: -8107061154071025834
-      Leg_000_8: 8220847382673608263
-      Leg_000_9: 4167829297855103785
+      Pupil_000_0: 553160736794398353
+      Pupil_000_000: 408766544
+      Pupil_000_001: 256718962
+      Pupil_000_002: 260772590
+      Pupil_000_003: -985985777
+      Pupil_000_004: 1146609879
+      Pupil_000_005: -1901803507
+      Pupil_000_006: -836844396
+      Pupil_000_007: 1720017379
+      Pupil_000_008: 432511700
+      Pupil_000_009: 696368772
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

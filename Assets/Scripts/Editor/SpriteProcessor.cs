@@ -12,13 +12,15 @@ public class SpriteProcessor : Editor
         public bool isReadable;
         public Vector2Int cellSize;
         public Vector2 pivot;
+        public int ppu;
 
-        public Texture2DElement(int _maxSize, bool _isReadable, Vector2Int _cellSize, Vector2 _pivot)
+        public Texture2DElement(int _maxSize, bool _isReadable, Vector2Int _cellSize, Vector2 _pivot, int _ppu = 100)
         {
             maxSize = _maxSize;
             isReadable = _isReadable;
             cellSize = _cellSize;
             pivot = _pivot;
+            ppu = _ppu;
         }
     }
 
@@ -41,7 +43,7 @@ public class SpriteProcessor : Editor
     [MenuItem("Tools/Project/Sprite Processor/Body")]
     public static void ProcessSpritesForArmor()
     {
-        ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40)));
+        ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16));
     }
 
     private static void ProcessTileTexture(string fileName, string debugName, Texture2DElement texture2DElement)
@@ -76,6 +78,7 @@ public class SpriteProcessor : Editor
         importer.maxTextureSize = texture2DElement.maxSize;
         importer.alphaIsTransparency = true;
         importer.sRGBTexture = true;
+        importer.spritePixelsPerUnit = texture2DElement.ppu;
         
         TextureImporterSettings settings = new TextureImporterSettings();
         importer.ReadTextureSettings(settings);
