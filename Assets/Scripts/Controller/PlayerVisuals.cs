@@ -42,7 +42,7 @@ public class PlayerVisuals : MonoBehaviour
 
     public void SetBody()
     {
-        // 1. Load Skin Parts
+        // 1. Load Skin Parts (Always Visible)
         foreach (string part in skinParts)
         {
             Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(part);
@@ -56,18 +56,25 @@ public class PlayerVisuals : MonoBehaviour
             }
         }
 
-        // 2. Load Static Parts (Eye, Pupil)
+        // 2. Load Static Parts (Eye, Pupil - Always Visible)
         SetStaticPart("Eye", "Eye/Eye", 0);
         SetStaticPart("Pupil", "Pupil/Pupil", 0);
     }
 
     private void SetStaticPart(string layerName, string resourcePath, int id)
     {
-        Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(resourcePath, id);
-        if (sheet == null) return;
-
         VisualLayer target = layers.Find(l => l.name.Equals(layerName, System.StringComparison.OrdinalIgnoreCase));
-        if (target != null)
+        if (target == null) return;
+
+        if (id == -1)
+        {
+            target.currentSheet = null;
+            if (target.renderer != null) target.renderer.sprite = null;
+            return;
+        }
+
+        Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(resourcePath, id);
+        if (sheet != null)
         {
             target.currentSheet = sheet;
             target.SetSprite(0);
@@ -77,6 +84,7 @@ public class PlayerVisuals : MonoBehaviour
     public void SetHair(int styleIndex)
     {
         SetStaticPart("Hair", "Hair/Hair", styleIndex);
+        UpdateHairVisibility();
     }
 
     public void SetSkinColor(Color color)
@@ -102,23 +110,46 @@ public class PlayerVisuals : MonoBehaviour
 
     public void SetArmor(string category, int id)
     {
-        Sprite[] sheet = ResourceManager.Instance.GetArmorSprites(category, id);
-        if (sheet == null) return;
-
-        // Standardize layer name mapping (Same logic as ResourceManager)
+        // Standardize layer name mapping
         string layerName = category;
-        if (category.Equals("Clothes", System.StringComparison.OrdinalIgnoreCase)) layerName = "Cloth";
+        if (category.Equals("Clothes", System.StringComparison.OrdinalIgnoreCase)) layerName = "Chestplate";
+        else if (category.Equals("Heads", System.StringComparison.OrdinalIgnoreCase)) layerName = "Helmet";
         else if (category.EndsWith("s", System.StringComparison.OrdinalIgnoreCase)) layerName = category.Substring(0, category.Length - 1);
         
         VisualLayer target = layers.Find(l => l.name.Equals(layerName, System.StringComparison.OrdinalIgnoreCase));
-        if (target != null)
+        if (target == null) return;
+
+        if (id == -1)
         {
-            target.currentSheet = sheet;
-            target.SetSprite(0);
+            target.currentSheet = null;
+            if (target.renderer != null) target.renderer.sprite = null;
         }
         else
         {
-            Debug.LogWarning($"[PlayerVisuals] Could not find layer named: {layerName} in the Inspector list.");
+            Sprite[] sheet = ResourceManager.Instance.GetArmorSprites(category, id);
+            if (sheet != null)
+            {
+                target.currentSheet = sheet;
+                target.SetSprite(0);
+            }
+        }
+
+        if (layerName.Equals("Helmet", System.StringComparison.OrdinalIgnoreCase))
+        {
+            UpdateHairVisibility();
+        }
+    }
+
+    private void UpdateHairVisibility()
+    {
+        VisualLayer helmetLayer = layers.Find(l => l.name.Equals("Helmet", System.StringComparison.OrdinalIgnoreCase));
+        VisualLayer hairLayer = layers.Find(l => l.name.Equals("Hair", System.StringComparison.OrdinalIgnoreCase));
+
+        if (hairLayer != null && hairLayer.renderer != null)
+        {
+            // Hide hair if helmet is equipped (id != -1)
+            bool hasHelmet = helmetLayer != null && helmetLayer.currentSheet != null;
+            hairLayer.renderer.enabled = !hasHelmet;
         }
     }
 

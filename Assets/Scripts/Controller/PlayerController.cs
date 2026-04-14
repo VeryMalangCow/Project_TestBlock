@@ -68,12 +68,14 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<int> jumpCountSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int lastProcessedJumpCount;
 
-    // 3. Armor & Appearance Sync
-    private NetworkVariable<int> clothesIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> backpackIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> headIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> cloakIdSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    // 3. Equipment Sync
+    private NetworkVariable<int> helmetIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> chestplateIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> leggingsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> backpackIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> cloakIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    // 4. Visual Appearance Sync
     private NetworkVariable<Color> skinColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> eyeColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -156,10 +158,11 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
-        // Bind Appearance Sync
-        clothesIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Clothes", newVal); };
+        // Bind Visual & Equipment Change Events (Only fires when value actually changes)
+        helmetIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Heads", newVal); };
+        chestplateIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Clothes", newVal); };
+        leggingsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Leggings", newVal); };
         backpackIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Backpacks", newVal); };
-        headIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Heads", newVal); };
         cloakIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Cloaks", newVal); };
 
         skinColorSync.OnValueChanged += (oldVal, newVal) => { visuals.SetSkinColor(newVal); };
@@ -194,24 +197,10 @@ public class PlayerController : NetworkBehaviour
             RequestSpawnServerRpc();
             yield return new WaitForSeconds(0.5f);
 
-            // Apply Local PlayerData (Temporary random for testing)
+            // 1. Initial Data Setup (Load JSON here in the future)
             PlayerData data = new PlayerData();
-            // You can load JSON here later
-            
-            Color sCol, eCol, hCol;
-            ColorUtility.TryParseHtmlString(data.skinColorHex, out sCol);
-            ColorUtility.TryParseHtmlString(data.eyeColorHex, out eCol);
-            ColorUtility.TryParseHtmlString(data.hairColorHex, out hCol);
-
-            skinColorSync.Value = sCol;
-            eyeColorSync.Value = eCol;
-            hairColorSync.Value = hCol;
-            hairStyleSync.Value = data.hairStyleIndex;
-
-            clothesIdSync.Value = 0;
-            backpackIdSync.Value = 0;
-            headIdSync.Value = 0;
-            cloakIdSync.Value = 0;
+            UpdateAppearance(data.visual);
+            UpdateEquipment(data.equipment);
         }
 
         if (!IsServer || IsOwner)
@@ -222,7 +211,6 @@ public class PlayerController : NetworkBehaviour
             {
                 if (MapManager.Instance != null && MapManager.Instance.IsTerrainReadyAt(transform.position))
                 {
-                    // Terrain is ready, wait one more frame for Physics to update colliders
                     yield return new WaitForFixedUpdate();
                     break;
                 }
@@ -243,16 +231,14 @@ public class PlayerController : NetworkBehaviour
             visuals.gameObject.SetActive(true);
             visuals.Init();
             
-            // Explicitly call visual updates for initial state
+            // Explicitly sync visuals for initial state (In case events already fired)
             visuals.SetSkinColor(skinColorSync.Value);
             visuals.SetEyeColor(eyeColorSync.Value);
             visuals.SetHairColor(hairColorSync.Value);
             visuals.SetHair(hairStyleSync.Value);
-
-            visuals.SetArmor("Clothes", clothesIdSync.Value);
-            visuals.SetArmor("Backpacks", backpackIdSync.Value);
-            visuals.SetArmor("Heads", headIdSync.Value);
-            visuals.SetArmor("Cloaks", cloakIdSync.Value);
+            visuals.SetArmor("Heads", helmetIdSync.Value);
+            visuals.SetArmor("Clothes", chestplateIdSync.Value);
+            visuals.SetArmor("Leggings", leggingsIdSync.Value);
         }
 
         if (IsOwner && Camera.main != null)
@@ -278,10 +264,7 @@ public class PlayerController : NetworkBehaviour
     [ServerRpc]
     private void RequestSpawnServerRpc()
     {
-        // 1. Server calculates valid spawn position
         Vector2 spawnPos = MapManager.Instance.GetSurfacePosition(50f);
-        
-        // 2. Broadcast to Owner Client
         ConfirmSpawnClientRpc(spawnPos);
     }
 
@@ -290,20 +273,14 @@ public class PlayerController : NetworkBehaviour
     {
         if (IsOwner)
         {
-            // 3. Owner Client teleports to the server-assigned position
             transform.position = pos;
             rb.position = pos;
             rb.linearVelocity = Vector2.zero;
             
-            // Sync the ClientNetworkTransform explicitly
             var networkTransform = GetComponent<NetworkTransform>();
-            if (networkTransform != null)
-            {
-                networkTransform.Teleport(pos, Quaternion.identity, transform.localScale);
-            }
+            if (networkTransform != null) networkTransform.Teleport(pos, Quaternion.identity, transform.localScale);
             
             debugStatus = "Spawned at Surface";
-            Debug.Log($"[PlayerController] Owner spawned at: {pos}");
         }
     }
 
@@ -333,13 +310,10 @@ public class PlayerController : NetworkBehaviour
     {
         if (debugStatus != "READY") return;
 
-        // CRITICAL: With ClientNetworkTransform, ONLY the Owner runs physics.
-        // The server and other clients will just follow the transform sync.
         if (IsOwner)
         {
             CheckGrounded();
 
-            // Handle Jump via Counter
             if (jumpCountSync.Value > lastProcessedJumpCount)
             {
                 if (isGrounded) ApplyJumpPhysics();
@@ -349,7 +323,7 @@ public class PlayerController : NetworkBehaviour
             if (isDashingSync.Value)
             {
                 HandleDash();
-                HandleStepClimb(Vector2.zero); // Input is ignored during dash
+                HandleStepClimb(Vector2.zero);
             }
             else
             {
@@ -367,7 +341,6 @@ public class PlayerController : NetworkBehaviour
     {
         if (visuals == null) return;
 
-        // Flip logic
         if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
         {
             isFlippedSync.Value = moveInput.x < 0;
@@ -377,24 +350,22 @@ public class PlayerController : NetworkBehaviour
         int targetFrame = 0;
         if (isDashingSync.Value)
         {
-            targetFrame = 11; // DASH FRAME
+            targetFrame = 11;
         }
         else if (!isGrounded)
         {
-            targetFrame = 9; // JUMP/FALL FRAME (Revised from 10)
+            targetFrame = 9;
         }
         else
         {
             float currentHorizontalSpeed = Mathf.Abs(rb.linearVelocity.x);
             if (currentHorizontalSpeed > 0.1f)
             {
-                // WALK FRAME (1~8)
                 walkCycleTime += Time.deltaTime * currentHorizontalSpeed * walkAnimSpeedMultiplier;
                 targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8);
             }
             else
             {
-                // IDLE FRAME
                 targetFrame = 0;
                 walkCycleTime = 0;
             }
@@ -411,17 +382,11 @@ public class PlayerController : NetworkBehaviour
     {
         if (IsOwner)
         {
-            // Owner manages their own cooldown for input prediction
             if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
-
-            // Handle Dash duration on Owner for physics prediction
             if (isDashingSync.Value)
             {
                 dashTimeLeft -= Time.deltaTime;
-                if (dashTimeLeft <= 0)
-                {
-                    EndDashServerRpc();
-                }
+                if (dashTimeLeft <= 0) EndDashServerRpc();
             }
         }
     }
@@ -446,10 +411,7 @@ public class PlayerController : NetworkBehaviour
         {
             Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
             RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
-            if (hitUpper.collider == null)
-            {
-                rb.position += new Vector2(0, 0.25f);
-            }
+            if (hitUpper.collider == null) rb.position += new Vector2(0, 0.25f);
         }
     }
 
@@ -467,10 +429,8 @@ public class PlayerController : NetworkBehaviour
         rb.gravityScale = 3f;
         float targetSpeed = input.x * moveSpeed;
         float currentSpeed = rb.linearVelocity.x;
-        
         float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
         float newX = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.fixedDeltaTime);
-        
         rb.linearVelocity = new Vector2(newX, rb.linearVelocity.y);
     }
 
@@ -487,60 +447,46 @@ public class PlayerController : NetworkBehaviour
     private void HandleOwnerInput()
     {
         if (!IsOwner || moveAction == null) return;
-
-        // 1. Horizontal Movement
         moveInput = moveAction.ReadValue<Vector2>();
         moveInputSync.Value = moveInput; 
 
-        // 2. Jump
-        if (jumpAction.WasPressedThisFrame() && isGrounded && !isDashingSync.Value)
-        {
-            jumpCountSync.Value++;
-        }
+        if (jumpAction.WasPressedThisFrame() && isGrounded && !isDashingSync.Value) jumpCountSync.Value++;
 
-        // 3. Dash
         if (dashAction.WasPressedThisFrame() && !isDashingSync.Value && dashCooldownTimer <= 0)
         {
             float dir = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (isFlippedSync.Value ? -1f : 1f);
             TriggerDashServerRpc(dir);
-            
-            // Local Prediction
             dashTimeLeft = dashDuration;
             dashCooldownTimer = dashCooldown;
         }
     }
 
-    [ServerRpc]
-    private void TriggerDashServerRpc(float direction)
-    {
-        isDashingSync.Value = true;
-        dashDirectionSync.Value = direction;
-    }
-
-    [ServerRpc]
-    private void EndDashServerRpc()
-    {
-        isDashingSync.Value = false;
-    }
+    [ServerRpc] private void TriggerDashServerRpc(float direction) { isDashingSync.Value = true; dashDirectionSync.Value = direction; }
+    [ServerRpc] private void EndDashServerRpc() { isDashingSync.Value = false; }
 
     #endregion
 
-    #region Appearance Update
+    #region Data Update (Visual & Equipment)
 
-    /// <summary>
-    /// Updates the player's appearance data and synchronizes it across the network.
-    /// Only the Owner can call this.
-    /// </summary>
-    public void UpdateAppearance(PlayerData data)
+    public void UpdateAppearance(PlayerVisualData visualData)
     {
         if (!IsOwner) return;
 
         Color sCol, eCol, hCol;
-        if (ColorUtility.TryParseHtmlString(data.skinColorHex, out sCol)) skinColorSync.Value = sCol;
-        if (ColorUtility.TryParseHtmlString(data.eyeColorHex, out eCol)) eyeColorSync.Value = eCol;
-        if (ColorUtility.TryParseHtmlString(data.hairColorHex, out hCol)) hairColorSync.Value = hCol;
+        if (ColorUtility.TryParseHtmlString(visualData.skinColorHex, out sCol)) skinColorSync.Value = sCol;
+        if (ColorUtility.TryParseHtmlString(visualData.eyeColorHex, out eCol)) eyeColorSync.Value = eCol;
+        if (ColorUtility.TryParseHtmlString(visualData.hairColorHex, out hCol)) hairColorSync.Value = hCol;
         
-        hairStyleSync.Value = data.hairStyleIndex;
+        hairStyleSync.Value = visualData.hairStyleIndex;
+    }
+
+    public void UpdateEquipment(PlayerEquipmentData equipmentData)
+    {
+        if (!IsOwner) return;
+
+        helmetIdSync.Value = equipmentData.helmetIndex;
+        chestplateIdSync.Value = equipmentData.chestplateIndex;
+        leggingsIdSync.Value = equipmentData.leggingsIndex;
     }
 
     #endregion
@@ -550,18 +496,8 @@ public class PlayerController : NetworkBehaviour
     private void HandleInteraction()
     {
         if (!IsOwner || attackAction == null || interactAction == null) return;
-
-        // Attack Action (Destroy Block - Left Click by default)
-        if (attackAction.WasPressedThisFrame())
-        {
-            UpdateBlock(-1);
-        }
-        
-        // Interact Action (Place Block - Right Click by default)
-        if (interactAction.WasPressedThisFrame())
-        {
-            UpdateBlock(selectedBlockId);
-        }
+        if (attackAction.WasPressedThisFrame()) UpdateBlock(-1);
+        if (interactAction.WasPressedThisFrame()) UpdateBlock(selectedBlockId);
     }
 
     private void UpdateBlock(int id)
@@ -573,8 +509,7 @@ public class PlayerController : NetworkBehaviour
         UpdateBlockServerRpc(Mathf.FloorToInt(worldPos.x), Mathf.FloorToInt(worldPos.y), id);
     }
 
-    [ServerRpc]
-    private void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
+    [ServerRpc] private void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
 
     #endregion
 
