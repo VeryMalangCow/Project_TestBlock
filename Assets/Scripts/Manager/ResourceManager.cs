@@ -175,9 +175,10 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
 
     #region Armor Sprite
 
-    public Sprite[] GetBodySprites()
+    public Sprite[] GetBodyPartSprites(string partName)
     {
-        Sprite[] sprites = Resources.LoadAll<Sprite>("Sprites/Bodies/Body");
+        string path = $"Sprites/Bodies/{partName}";
+        Sprite[] sprites = Resources.LoadAll<Sprite>(path);
         if (sprites == null || sprites.Length == 0) return null;
 
         Sprite[] result = new Sprite[12];

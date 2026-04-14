@@ -38,16 +38,21 @@ public class PlayerVisuals : MonoBehaviour
 
     #region Armor Management
 
+    private readonly string[] bodyParts = { "ArmBack", "Leg", "Body", "Head", "ArmFront" };
+
     public void SetBody()
     {
-        Sprite[] sheet = ResourceManager.Instance.GetBodySprites();
-        if (sheet == null) return;
-
-        VisualLayer target = layers.Find(l => l.name.Equals("Body", System.StringComparison.OrdinalIgnoreCase));
-        if (target != null)
+        foreach (string part in bodyParts)
         {
-            target.currentSheet = sheet;
-            target.SetSprite(0);
+            Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(part);
+            if (sheet == null) continue;
+
+            VisualLayer target = layers.Find(l => l.name.Equals(part, System.StringComparison.OrdinalIgnoreCase));
+            if (target != null)
+            {
+                target.currentSheet = sheet;
+                target.SetSprite(0);
+            }
         }
     }
 

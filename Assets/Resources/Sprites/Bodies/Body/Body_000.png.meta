@@ -1,43 +1,37 @@
 fileFormatVersion: 2
-guid: 2fcac1a795f75e744bb9ea62927b4b94
+guid: 20ccd237dda9e3646aa7087bcd009f90
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 6122115350620471529
-    second: Cloak_0000_0
+      213: -2899176408149900846
+    second: Body_000_0
   - first:
-      213: -5167131131383720951
-    second: Cloak_0000_1
+      213: -2339555224917831846
+    second: Body_000_1
   - first:
-      213: 6259352157239856881
-    second: Cloak_0000_2
+      213: 8337749236612821063
+    second: Body_000_2
   - first:
-      213: -7626559527644462381
-    second: Cloak_0000_3
+      213: -206822910671774278
+    second: Body_000_3
   - first:
-      213: -5143588555532608955
-    second: Cloak_0000_4
+      213: 8739768589900248724
+    second: Body_000_4
   - first:
-      213: -6274649208013587845
-    second: Cloak_0000_5
+      213: 6762793558774759506
+    second: Body_000_5
   - first:
-      213: -4246077759795704411
-    second: Cloak_0000_6
+      213: 1758954768710472702
+    second: Body_000_6
   - first:
-      213: 6746399497182655901
-    second: Cloak_0000_7
+      213: 6500016177643964188
+    second: Body_000_7
   - first:
-      213: -2792332697939756599
-    second: Cloak_0000_8
+      213: -5212340905913620163
+    second: Body_000_8
   - first:
-      213: 4896047469563843176
-    second: Cloak_0000_9
-  - first:
-      213: -4489406461310587647
-    second: Cloak_0000_10
-  - first:
-      213: -1148355227966768477
-    second: Cloak_0000_11
+      213: 6583583951620436583
+    second: Body_000_9
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -67,7 +61,7 @@ TextureImporter:
   cubemapConvolution: 0
   seamlessCubemap: 0
   textureFormat: 1
-  maxTextureSize: 128
+  maxTextureSize: 2048
   textureSettings:
     serializedVersion: 2
     filterMode: 0
@@ -84,7 +78,7 @@ TextureImporter:
   spriteMeshType: 0
   alignment: 0
   spritePivot: {x: 0.5, y: 0.5}
-  spritePixelsToUnits: 100
+  spritePixelsToUnits: 16
   spriteBorder: {x: 0, y: 0, z: 0, w: 0}
   spriteGenerateFallbackPhysicsShape: 0
   alphaUsage: 1
@@ -105,7 +99,7 @@ TextureImporter:
   platformSettings:
   - serializedVersion: 4
     buildTarget: DefaultTexturePlatform
-    maxTextureSize: 128
+    maxTextureSize: 256
     resizeAlgorithm: 0
     textureFormat: -1
     textureCompression: 0
@@ -118,10 +112,10 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Standalone
-    maxTextureSize: 128
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -131,10 +125,10 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: Android
-    maxTextureSize: 128
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -144,10 +138,10 @@ TextureImporter:
     forceMaximumCompressionQuality_BC6H_BC7: 0
   - serializedVersion: 4
     buildTarget: iOS
-    maxTextureSize: 128
+    maxTextureSize: 2048
     resizeAlgorithm: 0
     textureFormat: -1
-    textureCompression: 0
+    textureCompression: 1
     compressionQuality: 50
     crunchedCompression: 0
     allowsAlphaSplitting: 0
@@ -159,265 +153,221 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Cloak_0000_000
+      name: Body_000_000
       rect:
         serializedVersion: 2
         x: 0
-        y: 112
-        width: 16
-        height: 16
+        y: 176
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e16684f9de5853e4883fadace6e78612
-      internalID: 1703024938
+      spriteID: 76a09076ec736314b8275264027bebc7
+      internalID: 366577554
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_001
+      name: Body_000_001
       rect:
         serializedVersion: 2
-        x: 17
-        y: 112
-        width: 16
-        height: 16
+        x: 46
+        y: 176
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: f3d011f917a106d4bae0ad66110517ed
-      internalID: 1670451312
+      spriteID: 12e28dcb5382cdb49b240126b92afc8c
+      internalID: -1736459626
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_002
+      name: Body_000_002
       rect:
         serializedVersion: 2
-        x: 34
-        y: 112
-        width: 16
-        height: 16
+        x: 92
+        y: 176
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 90eaa3286731bfc4b92fb05c5ab65121
-      internalID: 390662743
+      spriteID: 169cb1fcda52ff342ab0df7803491b7b
+      internalID: -319017014
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_003
+      name: Body_000_003
       rect:
         serializedVersion: 2
-        x: 51
-        y: 112
-        width: 16
-        height: 16
+        x: 138
+        y: 176
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 868f180c7dd72ee43bdd7320c861256b
-      internalID: -2129995418
+      spriteID: f3430cf447554534588a79bd9cf4648c
+      internalID: 881157455
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_004
+      name: Body_000_004
       rect:
         serializedVersion: 2
-        x: 68
-        y: 112
-        width: 16
-        height: 16
+        x: 184
+        y: 176
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5e1b7514b4f440341a48b68efb545edf
-      internalID: -1342871489
+      spriteID: db508b99922980740addeb6a4d4be424
+      internalID: -107303612
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_005
-      rect:
-        serializedVersion: 2
-        x: 85
-        y: 112
-        width: 16
-        height: 16
-      alignment: 9
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 94668e40314040d4ea8ae16444f766a1
-      internalID: 1883701742
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Cloak_0000_006
-      rect:
-        serializedVersion: 2
-        x: 102
-        y: 112
-        width: 16
-        height: 16
-      alignment: 9
-      pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
-      customData: 
-      outline: []
-      physicsShape: []
-      tessellationDetail: 0
-      bones: []
-      spriteID: 1847e1bdc36319147b033c906585e05c
-      internalID: -718360306
-      vertices: []
-      indices: 
-      edges: []
-      weights: []
-    - serializedVersion: 2
-      name: Cloak_0000_007
+      name: Body_000_005
       rect:
         serializedVersion: 2
         x: 0
         y: 95
-        width: 16
-        height: 16
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 91d24a7fd379ba74486bbe84669f1530
-      internalID: 423665682
+      spriteID: fb9f4533341ca1045a9b903c626bfecb
+      internalID: 803432119
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_008
+      name: Body_000_006
       rect:
         serializedVersion: 2
-        x: 17
+        x: 46
         y: 95
-        width: 16
-        height: 16
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: bd2a7dfedb0218547a29df0e498e65ad
-      internalID: 476780599
+      spriteID: a0558e2a90d484947b9c82bcebaa37d5
+      internalID: 2066088294
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_009
+      name: Body_000_007
       rect:
         serializedVersion: 2
-        x: 34
+        x: 92
         y: 95
-        width: 16
-        height: 16
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: db31a9cf309c9be4fb7252eb5f7fe4e5
-      internalID: 319263907
+      spriteID: 2070c7b0bbfa2014f9679a16b4ed90c8
+      internalID: -1718266943
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_010
+      name: Body_000_008
       rect:
         serializedVersion: 2
-        x: 51
+        x: 138
         y: 95
-        width: 16
-        height: 16
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: da041b79eb833a14ba31d5c4303162ae
-      internalID: -1181707615
+      spriteID: 50720721e63052140a92c222b4601742
+      internalID: 118249772
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Cloak_0000_011
+      name: Body_000_009
       rect:
         serializedVersion: 2
-        x: 68
+        x: 184
         y: 95
-        width: 16
-        height: 16
+        width: 45
+        height: 80
       alignment: 9
-      pivot: {x: 0.5, y: 0.5}
+      pivot: {x: 0.54444444, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: ae8bef0d4a9360446a0b30063596e287
-      internalID: -1445179481
+      spriteID: f781e3dc46bfc514a8a58970af7bab0b
+      internalID: -721994921
       vertices: []
       indices: 
       edges: []
@@ -426,7 +376,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 5bd82ca784c170046ae6816b7dca25b8
+    spriteID: 60ee0b55e1855c646833e04f515f5c08
     internalID: 0
     vertices: []
     indices: 
@@ -434,34 +384,28 @@ TextureImporter:
     weights: []
     secondaryTextures: []
     spriteCustomMetadata:
-      entries:
-      - key: SpriteEditor.SliceSettings
-        value: '{"sliceOnImport":false,"gridCellCount":{"x":1.0,"y":1.0},"gridSpriteSize":{"x":16.0,"y":16.0},"gridSpriteOffset":{"x":0.0,"y":0.0},"gridSpritePadding":{"x":1.0,"y":1.0},"pivot":{"x":0.5,"y":0.5},"pivotPixels":{"x":0.0,"y":0.0},"autoSlicingMethod":0,"spriteAlignment":0,"pivotUnitMode":0,"slicingType":1,"keepEmptyRects":false,"isAlternate":false}'
+      entries: []
     nameFileIdTable:
-      Cloak_0000_0: 6122115350620471529
-      Cloak_0000_000: 1703024938
-      Cloak_0000_001: 1670451312
-      Cloak_0000_002: 390662743
-      Cloak_0000_003: -2129995418
-      Cloak_0000_004: -1342871489
-      Cloak_0000_005: 1883701742
-      Cloak_0000_006: -718360306
-      Cloak_0000_007: 423665682
-      Cloak_0000_008: 476780599
-      Cloak_0000_009: 319263907
-      Cloak_0000_010: -1181707615
-      Cloak_0000_011: -1445179481
-      Cloak_0000_1: -5167131131383720951
-      Cloak_0000_10: -4489406461310587647
-      Cloak_0000_11: -1148355227966768477
-      Cloak_0000_2: 6259352157239856881
-      Cloak_0000_3: -7626559527644462381
-      Cloak_0000_4: -5143588555532608955
-      Cloak_0000_5: -6274649208013587845
-      Cloak_0000_6: -4246077759795704411
-      Cloak_0000_7: 6746399497182655901
-      Cloak_0000_8: -2792332697939756599
-      Cloak_0000_9: 4896047469563843176
+      Body_000_0: -2899176408149900846
+      Body_000_000: 366577554
+      Body_000_001: -1736459626
+      Body_000_002: -319017014
+      Body_000_003: 881157455
+      Body_000_004: -107303612
+      Body_000_005: 803432119
+      Body_000_006: 2066088294
+      Body_000_007: -1718266943
+      Body_000_008: 118249772
+      Body_000_009: -721994921
+      Body_000_1: -2339555224917831846
+      Body_000_2: 8337749236612821063
+      Body_000_3: -206822910671774278
+      Body_000_4: 8739768589900248724
+      Body_000_5: 6762793558774759506
+      Body_000_6: 1758954768710472702
+      Body_000_7: 6500016177643964188
+      Body_000_8: -5212340905913620163
+      Body_000_9: 6583583951620436583
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

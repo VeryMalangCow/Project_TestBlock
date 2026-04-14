@@ -38,10 +38,10 @@ public class SpriteProcessor : Editor
     public static void ProcessSpritesForTree()
         => ProcessTileTexture("Trees", "Tree", new Texture2DElement(256, false, new Vector2Int(57, 150), new Vector2(28.5f, 9)));
 
-    [MenuItem("Tools/Project/Sprite Processor/Armor")]
+    [MenuItem("Tools/Project/Sprite Processor/Body")]
     public static void ProcessSpritesForArmor()
     {
-        ProcessTileTexture("Armors", "Armor", new Texture2DElement(128, false, new Vector2Int(16, 16), new Vector2(8, 8)));
+        ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40)));
     }
 
     private static void ProcessTileTexture(string fileName, string debugName, Texture2DElement texture2DElement)

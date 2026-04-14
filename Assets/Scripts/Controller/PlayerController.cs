@@ -349,15 +349,22 @@ public class PlayerController : NetworkBehaviour
         }
         else if (!isGrounded)
         {
-            targetFrame = 10; // JUMP/FALL FRAME
+            targetFrame = 9; // JUMP/FALL FRAME (Revised from 10)
         }
         else
         {
             float currentHorizontalSpeed = Mathf.Abs(rb.linearVelocity.x);
             if (currentHorizontalSpeed > 0.1f)
             {
+                // WALK FRAME (1~8)
                 walkCycleTime += Time.deltaTime * currentHorizontalSpeed * walkAnimSpeedMultiplier;
-                targetFrame = Mathf.FloorToInt(walkCycleTime) % 10;
+                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8);
+            }
+            else
+            {
+                // IDLE FRAME
+                targetFrame = 0;
+                walkCycleTime = 0;
             }
         }
 
