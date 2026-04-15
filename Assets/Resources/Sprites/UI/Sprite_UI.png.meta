@@ -126,16 +126,16 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: Sprite_UI_0
+      name: UI_Slot_00
       rect:
         serializedVersion: 2
-        x: 0
+        x: 71
         y: 0
-        width: 10
-        height: 10
+        width: 36
+        height: 36
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 5, y: 5, z: 5, w: 5}
+      border: {x: 12, y: 12, z: 12, w: 12}
       customData: 
       outline: []
       physicsShape: []
@@ -143,6 +143,138 @@ TextureImporter:
       bones: []
       spriteID: 8e9049b2f2ba46c60800000000000000
       internalID: 7810555872850217448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Slot_01
+      rect:
+        serializedVersion: 2
+        x: 71
+        y: 37
+        width: 36
+        height: 36
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 14, y: 14, z: 14, w: 14}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: af779a261fcd97148bdc1e8a45e9d775
+      internalID: -1970593529
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Panel_00
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 0
+        width: 70
+        height: 66
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 33, y: 31, z: 33, w: 31}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 18c1d6556212dab4a8f9526a46be35dd
+      internalID: -1549992443
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Panel_01
+      rect:
+        serializedVersion: 2
+        x: 123
+        y: 13
+        width: 11
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 5, y: 6, z: 5, w: 6}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 7fe6a0fc7516e744a8350232f70e664f
+      internalID: 564234129
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Deco_00
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 13
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a82786d01a55b4344837060b773dec85
+      internalID: 258850448
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Deco_01
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 13
+        width: 4
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cfb93fdf0acf29940a6283b45ac10522
+      internalID: 1473317769
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Deco_02
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 0
+        width: 63
+        height: 12
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 58e1c9ac7126ac548ad11680789c75f8
+      internalID: 20220665
       vertices: []
       indices: 
       edges: []
@@ -161,7 +293,13 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sprite_UI_0: 7810555872850217448
+      UI_Deco_00: 258850448
+      UI_Deco_01: 1473317769
+      UI_Deco_02: 20220665
+      UI_Panel_00: -1549992443
+      UI_Panel_01: 564234129
+      UI_Slot_00: 7810555872850217448
+      UI_Slot_01: -1970593529
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
