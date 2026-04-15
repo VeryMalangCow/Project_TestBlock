@@ -329,7 +329,7 @@ public class MeshManager : Singleton<MeshManager>
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
         MapData data = MapManager.Instance.activeMapData;
-        Debug.Log("�׽�Ʈ");
+        Debug.Log("�׽�Ʈ");
         /*for (int x = 0; x < data.mapSize.x; x++)
         {
             for (int y = 0; y < data.mapSize.y; y++) ActivateChunk(new Vector2Int(x, y), false);
@@ -558,12 +558,33 @@ public class MeshManager : Singleton<MeshManager>
     private void GetOrCreateEdge(GameObject parent, Vector2Int coord, float x1, float y1, float x2, float y2, List<GameObject> chunkEdges)
     {
         GameObject edgeObj = (edgePool.Count > 0) ? edgePool.Pop() : new GameObject("Edge_Optimized");
-        edgeObj.SetActive(true); edgeObj.transform.SetParent(parent.transform); edgeObj.layer = LayerMask.NameToLayer("Ground");
-        if (edgeObj.GetComponent<EdgeCollider2D>() == null) edgeObj.AddComponent<EdgeCollider2D>();
-        edgeObj.transform.localPosition = Vector3.zero; chunkEdges.Add(edgeObj);
+        edgeObj.SetActive(true); 
+        edgeObj.transform.SetParent(parent.transform); 
+        edgeObj.layer = LayerMask.NameToLayer("Ground");
+
         EdgeCollider2D edge = edgeObj.GetComponent<EdgeCollider2D>();
-        float worldOffsetX = coord.x * ChunkData.Size; float worldOffsetY = coord.y * ChunkData.Size;
-        cachedEdgePoints.Clear(); cachedEdgePoints.Add(new Vector2(worldOffsetX + x1, worldOffsetY + y1)); cachedEdgePoints.Add(new Vector2(worldOffsetX + x2, worldOffsetY + y2));
+        if (edge == null) 
+        {
+            edge = edgeObj.AddComponent<EdgeCollider2D>();
+            
+            // [Optimization] Include Layers 설정 (Player와 Item 레이어만 충돌 판별)
+            int playerLayer = LayerMask.NameToLayer("Player");
+            int itemLayer = LayerMask.NameToLayer("Item");
+            int mask = 0;
+            if (playerLayer != -1) mask |= (1 << playerLayer);
+            if (itemLayer != -1) mask |= (1 << itemLayer);
+            
+            if (mask != 0) edge.includeLayers = mask;
+        }
+
+        edgeObj.transform.localPosition = Vector3.zero; 
+        chunkEdges.Add(edgeObj);
+
+        float worldOffsetX = coord.x * ChunkData.Size; 
+        float worldOffsetY = coord.y * ChunkData.Size;
+        cachedEdgePoints.Clear(); 
+        cachedEdgePoints.Add(new Vector2(worldOffsetX + x1, worldOffsetY + y1)); 
+        cachedEdgePoints.Add(new Vector2(worldOffsetX + x2, worldOffsetY + y2));
         edge.SetPoints(cachedEdgePoints);
     }
 
