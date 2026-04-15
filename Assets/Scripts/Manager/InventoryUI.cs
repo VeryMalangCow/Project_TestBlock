@@ -6,7 +6,8 @@ using UnityEngine.InputSystem;
 public class InventoryUI : MonoBehaviour
 {
     [Header("### Settings")]
-    [SerializeField] private Transform slotParent; // 자식 슬롯들이 이미 배치된 부모
+    [SerializeField] private Transform hotbarParent; // 0~9번 슬롯 부모
+    [SerializeField] private Transform mainInventoryParent; // 나머지 슬롯 부모
     [SerializeField] private GameObject inventoryPanel; // 가방이 열렸을 때 보일 패널
 
     [Header("### Input")]
@@ -82,26 +83,37 @@ public class InventoryUI : MonoBehaviour
 
         uiSlots.Clear();
 
-        // 1. 하이어라키 순서대로 슬롯 수집 및 인덱스 할당
-        int childCount = slotParent.childCount;
+        // 1. Hotbar 슬롯 수집 (첫 번째 부모)
+        CollectSlotsFromParent(hotbarParent);
+
+        // 2. Main Inventory 슬롯 수집 (두 번째 부모)
+        CollectSlotsFromParent(mainInventoryParent);
+
+        isInitialized = true;
+        Debug.Log($"[InventoryUI] {uiSlots.Count} slots connected from two parents.");
+    }
+
+    private void CollectSlotsFromParent(Transform parent)
+    {
+        if (parent == null) return;
+
+        int childCount = parent.childCount;
         for (int i = 0; i < childCount; i++)
         {
-            Transform child = slotParent.GetChild(i);
+            Transform child = parent.GetChild(i);
             InventorySlotUI slotUI = child.GetComponent<InventorySlotUI>();
             
             if (slotUI != null)
             {
+                int currentIndex = uiSlots.Count;
                 uiSlots.Add(slotUI);
-                slotUI.Init(uiSlots.Count - 1);
+                slotUI.Init(currentIndex);
                 
                 // 0~9번(핫바)은 항상 활성화, 나머지는 초기 상태에서 비활성화
-                // (위치는 에디터에 배치된 그대로 유지됨)
-                child.gameObject.SetActive(uiSlots.Count - 1 < HOTBAR_COUNT);
+                // (일반적으로 hotbarParent의 자식들이 먼저 들어가게 됨)
+                child.gameObject.SetActive(currentIndex < HOTBAR_COUNT);
             }
         }
-
-        isInitialized = true;
-        Debug.Log($"[InventoryUI] {uiSlots.Count} slots connected. Layout is managed by Editor.");
     }
 
     private void UpdateSlotsVisibility(bool showAll)
