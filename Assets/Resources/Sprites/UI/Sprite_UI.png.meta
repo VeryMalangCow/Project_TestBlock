@@ -135,7 +135,7 @@ TextureImporter:
         height: 36
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 12, y: 12, z: 12, w: 12}
+      border: {x: 18, y: 18, z: 18, w: 18}
       customData: 
       outline: []
       physicsShape: []
@@ -157,7 +157,7 @@ TextureImporter:
         height: 36
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 14, y: 14, z: 14, w: 14}
+      border: {x: 18, y: 18, z: 18, w: 18}
       customData: 
       outline: []
       physicsShape: []
@@ -179,7 +179,7 @@ TextureImporter:
         height: 66
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 33, y: 31, z: 33, w: 31}
+      border: {x: 35, y: 33, z: 35, w: 33}
       customData: 
       outline: []
       physicsShape: []
@@ -242,7 +242,7 @@ TextureImporter:
         x: 135
         y: 13
         width: 4
-        height: 4
+        height: 5
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -279,6 +279,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: UI_Deco_03
+      rect:
+        serializedVersion: 2
+        x: 135
+        y: 13
+        width: 5
+        height: 4
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: adc38f5339411e14197b4913fefe58e8
+      internalID: -102472445
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -296,6 +318,7 @@ TextureImporter:
       UI_Deco_00: 258850448
       UI_Deco_01: 1473317769
       UI_Deco_02: 20220665
+      UI_Deco_03: -102472445
       UI_Panel_00: -1549992443
       UI_Panel_01: 564234129
       UI_Slot_00: 7810555872850217448
