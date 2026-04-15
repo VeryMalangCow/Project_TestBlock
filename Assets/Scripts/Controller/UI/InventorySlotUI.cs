@@ -1,17 +1,20 @@
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.EventSystems;
 using TMPro;
 
-public class InventorySlotUI : MonoBehaviour
+public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
 {
     [Header("### UI References")]
     [SerializeField] private Image iconImage;
     [SerializeField] private TextMeshProUGUI stackText;
 
+    private InventoryUI ownerUI;
     private int slotIndex = -1;
 
-    public void Init(int index)
+    public void Init(InventoryUI ui, int index)
     {
+        ownerUI = ui;
         slotIndex = index;
         ClearSlot();
     }
@@ -45,5 +48,13 @@ public class InventorySlotUI : MonoBehaviour
         iconImage.enabled = false;
         stackText.text = "";
         stackText.enabled = false;
+    }
+
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (ownerUI != null && slotIndex != -1)
+        {
+            ownerUI.OnSlotClicked(slotIndex);
+        }
     }
 }

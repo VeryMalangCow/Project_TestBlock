@@ -201,6 +201,17 @@ public class PlayerController : NetworkBehaviour
             yield return new WaitForSeconds(0.5f);
 
             playerData = new PlayerData();
+
+            // [Test] 초기 아이템 지급 (ID 0~5)
+            for (int i = 0; i <= 5; i++)
+            {
+                ItemData item = ItemDataManager.Instance.GetItem(i);
+                if (item != null)
+                {
+                    playerData.inventory.AddItem(i, item.maxStack);
+                }
+            }
+
             UpdateAppearance(playerData.visual);
             UpdateEquipment(playerData.equipment);
         }

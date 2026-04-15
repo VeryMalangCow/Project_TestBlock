@@ -1,21 +1,27 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.InputSystem;
+using TMPro;
 
 public class InventoryUI : MonoBehaviour
 {
     [Header("### Settings")]
-    [SerializeField] private Transform hotbarParent; // 0~9번 슬롯 부모
-    [SerializeField] private Transform mainInventoryParent; // 나머지 슬롯 부모
+    [SerializeField] private Transform hotbarParent; 
+    [SerializeField] private Transform mainInventoryParent; 
     
     [Header("### UI Panels")]
-    [SerializeField] private GameObject[] alwaysOnObjects; // 항상 켜져 있을 오브젝트들
-    [SerializeField] private GameObject[] toggleObjects;   // 가방 열 때만 켜질 오브젝트들
+    [SerializeField] private GameObject[] alwaysOnObjects; 
+    [SerializeField] private GameObject[] toggleObjects;   
 
     [Header("### Animation Settings")]
-    [SerializeField] private float animationDuration = 0.2f; // 애니메이션 속도
-    [SerializeField] private float yOffset = -50f;          // 꺼져있을 때의 Y 오프셋 값
+    [SerializeField] private float animationDuration = 0.2f; 
+    [SerializeField] private float yOffset = -50f;          
+
+    [Header("### Drag & Drop UI")]
+    [SerializeField] private Image ghostIcon;       
+    [SerializeField] private TextMeshProUGUI ghostStackText; 
 
     [Header("### Input")]
     [SerializeField] private InputActionAsset inputActions;
@@ -26,43 +32,36 @@ public class InventoryUI : MonoBehaviour
     private List<RectTransform> toggleRects = new List<RectTransform>();
 
     private bool isInitialized = false;
-    private const int HOTBAR_COUNT = 10; // 항상 보여줄 슬롯 수
+    private const int HOTBAR_COUNT = 10; 
     private bool isInventoryOpen = false;
     private bool isAnimating = false;
 
+    private int draggingSlotIndex = -1;
+    private PlayerInventorySlotData draggingItemData = null;
+
     private void Awake()
     {
-        // 항상 켜져 있어야 하는 오브젝트들 활성화
-        if (alwaysOnObjects != null)
+        if (ghostIcon != null)
         {
-            foreach (var obj in alwaysOnObjects)
-            {
-                if (obj != null) obj.SetActive(true);
-            }
+            ghostIcon.raycastTarget = false; 
+            ghostIcon.gameObject.SetActive(false);
         }
 
-        // 토글 대상 오브젝트 초기화 (CanvasGroup, RectTransform 캐싱 및 초기 상태 설정)
+        if (alwaysOnObjects != null)
+        {
+            foreach (var obj in alwaysOnObjects) if (obj != null) obj.SetActive(true);
+        }
+
         if (toggleObjects != null)
         {
             foreach (var obj in toggleObjects)
             {
                 if (obj == null) continue;
-
-                // CanvasGroup이 없으면 추가
-                if (!obj.TryGetComponent<CanvasGroup>(out var cg))
-                {
-                    cg = obj.AddComponent<CanvasGroup>();
-                }
+                if (!obj.TryGetComponent<CanvasGroup>(out var cg)) cg = obj.AddComponent<CanvasGroup>();
                 toggleCanvasGroups.Add(cg);
+                if (obj.transform is RectTransform rt) toggleRects.Add(rt);
 
-                // RectTransform 캐싱
-                if (obj.transform is RectTransform rt)
-                {
-                    toggleRects.Add(rt);
-                }
-
-                // 초기 상태: 꺼짐 (Alpha 0, Y 오프셋)
-                obj.SetActive(true); // 코루틴 제어를 위해 액티브는 켜두고 Alpha로 조절
+                obj.SetActive(true);
                 cg.alpha = 0;
                 cg.interactable = false;
                 cg.blocksRaycasts = false;
@@ -77,10 +76,7 @@ public class InventoryUI : MonoBehaviour
         if (inputActions != null)
         {
             var playerMap = inputActions.FindActionMap("Player");
-            if (playerMap != null)
-            {
-                inventoryAction = playerMap.FindAction("Inventory");
-            }
+            if (playerMap != null) inventoryAction = playerMap.FindAction("Inventory");
         }
     }
 
@@ -89,85 +85,66 @@ public class InventoryUI : MonoBehaviour
 
     private void Start()
     {
-        if (gameObject.activeInHierarchy)
-        {
-            StartCoroutine(InitializeRoutine());
-        }
+        if (gameObject.activeInHierarchy) StartCoroutine(InitializeRoutine());
     }
 
     private IEnumerator InitializeRoutine()
     {
-        while (PlayerController.Local == null || PlayerController.Local.Data == null)
-        {
-            yield return null;
-        }
-
+        while (PlayerController.Local == null || PlayerController.Local.Data == null) yield return null;
         InitializeUI();
     }
 
     private void Update()
     {
         if (!isInitialized) return;
-
-        if (inventoryAction != null && inventoryAction.WasPressedThisFrame())
-        {
-            ToggleInventory();
-        }
-
+        if (inventoryAction != null && inventoryAction.WasPressedThisFrame()) ToggleInventory();
+        HandleGhostIconFollow();
         RefreshUI();
+    }
+
+    private void HandleGhostIconFollow()
+    {
+        if (draggingItemData == null || ghostIcon == null) return;
+        ghostIcon.rectTransform.position = Mouse.current.position.ReadValue();
     }
 
     public void ToggleInventory()
     {
-        if (isAnimating) return; // 애니메이션 중에는 입력 무시
-
+        if (isAnimating) return;
         isInventoryOpen = !isInventoryOpen;
-        StopAllCoroutines(); // 기존 애니메이션 중단 (필요 시)
+        if (!isInventoryOpen && draggingItemData != null) CancelDragging();
+        StopAllCoroutines();
         StartCoroutine(ToggleAnimationRoutine(isInventoryOpen));
     }
 
     private IEnumerator ToggleAnimationRoutine(bool isOpen)
     {
         isAnimating = true;
-
         float elapsedTime = 0f;
-        
-        // 시작 값 설정
         float startAlpha = isOpen ? 0f : 1f;
         float endAlpha = isOpen ? 1f : 0f;
         float startY = isOpen ? yOffset : 0f;
         float endY = isOpen ? 0f : yOffset;
 
-        // 슬롯 가시성 업데이트 (애니메이션 시작 시 즉시 처리하거나 필요에 따라 조절)
         UpdateSlotsVisibility(isOpen);
 
         while (elapsedTime < animationDuration)
         {
             elapsedTime += Time.deltaTime;
             float t = Mathf.Clamp01(elapsedTime / animationDuration);
-            
-            // 부드러운 보간 (Ease Out)
             float curveT = 1f - Mathf.Pow(1f - t, 3f); 
-
             float currentAlpha = Mathf.Lerp(startAlpha, endAlpha, curveT);
             float currentY = Mathf.Lerp(startY, endY, curveT);
 
             for (int i = 0; i < toggleCanvasGroups.Count; i++)
             {
-                if (toggleCanvasGroups[i] != null)
-                {
-                    toggleCanvasGroups[i].alpha = currentAlpha;
-                }
+                if (toggleCanvasGroups[i] != null) toggleCanvasGroups[i].alpha = currentAlpha;
                 if (i < toggleRects.Count && toggleRects[i] != null)
-                {
                     toggleRects[i].anchoredPosition = new Vector2(toggleRects[i].anchoredPosition.x, currentY);
-                }
             }
-
             yield return null;
         }
 
-        // 최종 값 확정 및 상호작용 설정
         for (int i = 0; i < toggleCanvasGroups.Count; i++)
         {
             if (toggleCanvasGroups[i] != null)
@@ -177,79 +154,144 @@ public class InventoryUI : MonoBehaviour
                 toggleCanvasGroups[i].blocksRaycasts = isOpen;
             }
             if (i < toggleRects.Count && toggleRects[i] != null)
-            {
                 toggleRects[i].anchoredPosition = new Vector2(toggleRects[i].anchoredPosition.x, endY);
-            }
         }
-
         isAnimating = false;
     }
 
     private void InitializeUI()
     {
         if (isInitialized) return;
-
         uiSlots.Clear();
-
-        // 1. Hotbar 슬롯 수집 (첫 번째 부모)
         CollectSlotsFromParent(hotbarParent);
-
-        // 2. Main Inventory 슬롯 수집 (두 번째 부모)
         CollectSlotsFromParent(mainInventoryParent);
-
         isInitialized = true;
-        Debug.Log($"[InventoryUI] {uiSlots.Count} slots connected from two parents.");
     }
 
     private void CollectSlotsFromParent(Transform parent)
     {
         if (parent == null) return;
-
-        int childCount = parent.childCount;
-        for (int i = 0; i < childCount; i++)
+        for (int i = 0; i < parent.childCount; i++)
         {
-            Transform child = parent.GetChild(i);
-            InventorySlotUI slotUI = child.GetComponent<InventorySlotUI>();
-            
-            if (slotUI != null)
+            if (parent.GetChild(i).TryGetComponent<InventorySlotUI>(out var slotUI))
             {
                 int currentIndex = uiSlots.Count;
                 uiSlots.Add(slotUI);
-                slotUI.Init(currentIndex);
-                
-                // 0~9번(핫바)은 항상 활성화, 나머지는 초기 상태에서 비활성화
-                child.gameObject.SetActive(currentIndex < HOTBAR_COUNT);
+                slotUI.Init(this, currentIndex); 
+                slotUI.gameObject.SetActive(currentIndex < HOTBAR_COUNT);
             }
         }
     }
 
     private void UpdateSlotsVisibility(bool showAll)
     {
-        // 애니메이션 도중에도 슬롯의 Active 상태는 적절히 관리되어야 함
-        // 여기서는 논리적인 상태만 제어
         for (int i = 0; i < uiSlots.Count; i++)
         {
-            if (i >= HOTBAR_COUNT) 
-            {
-                uiSlots[i].gameObject.SetActive(showAll);
-            }
+            if (i >= HOTBAR_COUNT) uiSlots[i].gameObject.SetActive(showAll);
         }
     }
 
     public void RefreshUI()
     {
-        if (PlayerController.Local == null || !isInitialized) return;
+        if (PlayerController.Local == null || PlayerController.Local.Data == null || !isInitialized) return;
 
         var inventory = PlayerController.Local.Data.inventory;
         for (int i = 0; i < uiSlots.Count; i++)
         {
-            // 슬롯이 속한 부모가 꺼져있을 수 있으므로 activeInHierarchy 체크는 생략하거나
-            // 혹은 상위 CanvasGroup의 alpha를 체크하는 방식으로 갈 수 있음.
-            // 여기서는 데이터 업데이트만 수행
-            if (i < inventory.slots.Length)
+            if (i == draggingSlotIndex) uiSlots[i].UpdateSlot(null);
+            else if (i < inventory.slots.Length) uiSlots[i].UpdateSlot(inventory.GetSlot(i));
+        }
+    }
+
+    public void OnSlotClicked(int index)
+    {
+        if (PlayerController.Local == null || PlayerController.Local.Data == null) return;
+        var inventory = PlayerController.Local.Data.inventory;
+        var clickedSlot = inventory.GetSlot(index);
+        if (clickedSlot == null) return;
+
+        if (draggingItemData == null)
+        {
+            if (!clickedSlot.IsEmpty)
             {
-                uiSlots[i].UpdateSlot(inventory.GetSlot(i));
+                draggingSlotIndex = index;
+                draggingItemData = new PlayerInventorySlotData(clickedSlot.itemID, clickedSlot.stackCount);
+                clickedSlot.Clear();
+                UpdateGhostUI();
             }
         }
+        else
+        {
+            if (clickedSlot.IsEmpty)
+            {
+                clickedSlot.itemID = draggingItemData.itemID;
+                clickedSlot.stackCount = draggingItemData.stackCount;
+                ClearDragging();
+            }
+            else if (clickedSlot.itemID == draggingItemData.itemID)
+            {
+                ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
+                int max = data != null ? data.maxStack : 999;
+                int canAdd = max - clickedSlot.stackCount;
+                int addAmount = Mathf.Min(canAdd, draggingItemData.stackCount);
+                clickedSlot.stackCount += addAmount;
+                draggingItemData.stackCount -= addAmount;
+                if (draggingItemData.stackCount <= 0) ClearDragging();
+                else UpdateGhostUI();
+            }
+            else
+            {
+                int tempID = clickedSlot.itemID;
+                int tempCount = clickedSlot.stackCount;
+                clickedSlot.itemID = draggingItemData.itemID;
+                clickedSlot.stackCount = draggingItemData.stackCount;
+                draggingItemData.itemID = tempID;
+                draggingItemData.stackCount = tempCount;
+                UpdateGhostUI();
+            }
+        }
+    }
+
+    private void UpdateGhostUI()
+    {
+        if (draggingItemData == null || draggingItemData.IsEmpty)
+        {
+            ClearDragging();
+            return;
+        }
+
+        if (ghostIcon != null)
+        {
+            ghostIcon.gameObject.SetActive(true);
+            ItemData data = ItemDataManager.Instance.GetItem(draggingItemData.itemID);
+            if (data != null)
+            {
+                ghostIcon.sprite = data.icon;
+                if (ghostStackText != null) ghostStackText.text = draggingItemData.stackCount > 1 ? draggingItemData.stackCount.ToString() : "";
+            }
+        }
+    }
+
+    private void ClearDragging()
+    {
+        draggingSlotIndex = -1;
+        draggingItemData = null;
+        if (ghostIcon != null) ghostIcon.gameObject.SetActive(false);
+    }
+
+    private void CancelDragging()
+    {
+        if (draggingItemData != null && draggingSlotIndex != -1)
+        {
+            var inventory = PlayerController.Local.Data.inventory;
+            var originalSlot = inventory.GetSlot(draggingSlotIndex);
+            if (originalSlot != null && originalSlot.IsEmpty)
+            {
+                originalSlot.itemID = draggingItemData.itemID;
+                originalSlot.stackCount = draggingItemData.stackCount;
+            }
+            else inventory.AddItem(draggingItemData.itemID, draggingItemData.stackCount);
+        }
+        ClearDragging();
     }
 }

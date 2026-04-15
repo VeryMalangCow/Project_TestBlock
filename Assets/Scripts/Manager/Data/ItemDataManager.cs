@@ -20,21 +20,19 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
         TextAsset csvFile = Resources.Load<TextAsset>("Data/ItemDatabase");
         if (csvFile == null)
         {
-            Debug.LogError("[ItemDataManager] Failed to load CSV from Resources/Data/ItemDatabase.csv");
+            Debug.LogError("[ItemDataManager] Failed to load CSV from Resources/Data/ItemDatabase.csv.");
             return;
         }
 
         string[] lines = csvFile.text.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.RemoveEmptyEntries);
         
-        // Skip header (i=0)
         for (int i = 1; i < lines.Length; i++)
         {
             string line = lines[i].Trim();
             if (string.IsNullOrWhiteSpace(line)) continue;
 
             string[] parts = line.Split(',');
-            // CSV structure: ID(0), Name(1), Description(2), MaxStack(3), ItemType(4), UseTime(5)
-            if (parts.Length < 6) continue; 
+            if (parts.Length < 5) continue; 
 
             try
             {
@@ -44,39 +42,53 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
                 item.description = parts[2];
                 item.maxStack = int.Parse(parts[3]);
                 item.type = (ItemType)Enum.Parse(typeof(ItemType), parts[4], true);
-                item.useTime = float.Parse(parts[5]);
+                
+                // useTime이 CSV에 있다면 (6번째 컬럼)
+                if (parts.Length >= 6)
+                {
+                    item.useTime = float.Parse(parts[5]);
+                }
 
-                // Load Icon Sprite based on ID (Default naming convention: Sprites/Items/Item_XXXXX)
-                string finalIconPath = $"Sprites/Items/Item_{item.id:D5}";
-                item.icon = Resources.Load<Sprite>(finalIconPath);
+                // 슬라이스된 스프라이트일 수도 있으므로 LoadAll을 시도
+                string finalPath = $"Sprites/Items/Item_{item.id:D5}";
+                Sprite[] allSprites = Resources.LoadAll<Sprite>(finalPath);
+                
+                if (allSprites != null && allSprites.Length > 0)
+                {
+                    // 파일 내의 첫 번째 스프라이트를 할당
+                    item.icon = allSprites[0];
+                }
+                else
+                {
+                    // 가변 길이 파일명도 시도 (예: Item_1)
+                    allSprites = Resources.LoadAll<Sprite>($"Sprites/Items/Item_{item.id}");
+                    if (allSprites != null && allSprites.Length > 0)
+                    {
+                        item.icon = allSprites[0];
+                    }
+                }
                 
                 if (item.id != -1 && item.icon == null)
                 {
-                    Debug.LogWarning($"[ItemDataManager] Sprite not found at: {finalIconPath} for Item ID: {item.id}");
+                    Debug.LogWarning($"[ItemDataManager] Sprite not found for Item ID {item.id} at {finalPath}");
                 }
 
                 itemCache[item.id] = item;
             }
             catch (Exception e)
             {
-                Debug.LogWarning($"[ItemDataManager] Skipping line {i} due to parsing error: {e.Message}");
+                Debug.LogWarning($"[ItemDataManager] Parsing error at line {i}: {e.Message}");
             }
         }
 
-        Debug.Log($"[ItemDataManager] Successfully loaded {itemCache.Count} items from CSV.");
+        Debug.Log($"[ItemDataManager] Successfully loaded {itemCache.Count} items.");
     }
 
     public ItemData GetItem(int id)
     {
-        if (itemCache.TryGetValue(id, out ItemData data))
-        {
-            return data;
-        }
+        if (itemCache.TryGetValue(id, out ItemData data)) return data;
         return null;
     }
 
-    public List<ItemData> GetAllItems()
-    {
-        return itemCache.Values.ToList();
-    }
+    public List<ItemData> GetAllItems() => itemCache.Values.ToList();
 }

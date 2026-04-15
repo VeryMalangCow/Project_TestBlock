@@ -4,7 +4,7 @@ ID,Name,Description,MaxStack,Type,UseTime
 1,Dirt,A simple block of dirt,999,Block,0.2
 2,Stone,A simple block of stone,999,Block,0.2
 3,Wood,A simple block of wood,999,Block,0.2
-4,Wood Sword,A wooden sword that is not special at all,1,Weapon,2
+4,Wood Sword,A wooden sword that is not special at all,1,Sword,2
 5,Wood Helmet,A wooden helmet that is not special at all,1,Helmet,0.2
 6,Wood Chestplate,A wooden chestplate that is not special at all,1,Chestplate,0.2
 7,Wood Leggings,A wooden leggings that is not special at all,1,Leggings,0.2
