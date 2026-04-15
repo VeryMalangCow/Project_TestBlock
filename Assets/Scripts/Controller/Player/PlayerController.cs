@@ -58,6 +58,10 @@ public class PlayerController : NetworkBehaviour
 
     public static PlayerController Local { get; private set; }
 
+    // [Static Settings] 아이템 던지기 힘 설정
+    public static float DropThrowForce = 10f;   // 가로 던지는 힘
+    public static float DropUpwardForce = 4f;  // 세로(위쪽) 던지는 힘
+
     private string debugStatus = "Initializing...";
 
     #endregion
@@ -547,7 +551,7 @@ public class PlayerController : NetworkBehaviour
 
         // 3. 던지는 연출 (바라보는 방향 + 위쪽)
         float lookDir = isFlippedSync.Value ? -1f : 1f;
-        Vector2 throwForce = new Vector2(lookDir * 4f, 6f);
+        Vector2 throwForce = new Vector2(lookDir * DropThrowForce, DropUpwardForce);
         
         // ItemController 내부에 Rigidbody2D가 있으므로 힘 전달
         if (netObj.TryGetComponent<Rigidbody2D>(out var rb))
