@@ -45,6 +45,7 @@ public class PlayerController : NetworkBehaviour
     [Header("### Interaction")]
     [SerializeField] private int selectedBlockId = 0;
     [SerializeField] private float interactRange = 6f;
+    [SerializeField] private GameObject itemDropPrefab;
 
     private Vector2 moveInput;
     private bool isGrounded;
@@ -526,6 +527,37 @@ public class PlayerController : NetworkBehaviour
     }
 
     [ServerRpc] private void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
+
+    [ServerRpc]
+    public void DropItemServerRpc(int id, int count)
+    {
+        if (itemDropPrefab == null)
+        {
+            Debug.LogError("[PlayerController] itemDropPrefab is not assigned!");
+            return;
+        }
+
+        // 1. 플레이어 본체 위치에서 아이템 생성 (NetworkObjectPoolManager 사용)
+        NetworkObject netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, transform.position, Quaternion.identity);
+        
+        // 2. 데이터 설정
+        ItemController item = netObj.GetComponent<ItemController>();
+        item.itemID.Value = id;
+        item.stackCount.Value = count;
+
+        // 3. 던지는 연출 (바라보는 방향 + 위쪽)
+        float lookDir = isFlippedSync.Value ? -1f : 1f;
+        Vector2 throwForce = new Vector2(lookDir * 4f, 6f);
+        
+        // ItemController 내부에 Rigidbody2D가 있으므로 힘 전달
+        if (netObj.TryGetComponent<Rigidbody2D>(out var rb))
+        {
+            rb.linearVelocity = throwForce;
+        }
+
+        // 4. 아이템 쿨다운 활성화 (자석 기능 2초 정지)
+        item.SetDropCooldown();
+    }
 
     #endregion
 

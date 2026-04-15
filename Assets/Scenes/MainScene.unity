@@ -1889,7 +1889,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::NetworkObjectPool
   ShowTopMostFoldoutHeaderGroup: 1
   pooledPrefabs:
-  - prefab: {fileID: 0}
+  - prefab: {fileID: 2994726321107835729, guid: 64e1813cd709a2d4b935635ac744c184, type: 3}
     initialSize: 0
 --- !u!4 &303799028
 Transform:
@@ -3217,7 +3217,7 @@ Camera:
   m_Depth: -1
   m_CullingMask:
     serializedVersion: 2
-    m_Bits: 72
+    m_Bits: 200
   m_RenderingPath: -1
   m_TargetTexture: {fileID: 0}
   m_TargetDisplay: 0

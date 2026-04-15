@@ -28,6 +28,7 @@ public class ItemController : NetworkBehaviour
     private float searchTimer; // 탐색용 타이머
     private PlayerController targetPlayer;
     private bool isAttracted;
+    private bool isBeingPickedUp; // 중복 획득 방지 플래그
 
     #endregion
 
@@ -41,9 +42,21 @@ public class ItemController : NetworkBehaviour
 
         if (IsServer)
         {
-            // 처음 생성 시 또는 버려졌을 때 쿨다운 설정
-            SetDropCooldown();
-            searchTimer = Random.Range(0, searchInterval); // 여러 아이템의 탐색 시점을 분산
+            // 여러 아이템의 탐색 시점을 분산
+            searchTimer = Random.Range(0, searchInterval);
+            isBeingPickedUp = false;
+        }
+    }
+
+    public override void OnNetworkDespawn()
+    {
+        if (IsServer)
+        {
+            // 풀에 돌아갈 때 상태 초기화
+            targetPlayer = null;
+            isAttracted = false;
+            isBeingPickedUp = false;
+            cooldownTimer = 0;
         }
     }
 
@@ -166,27 +179,39 @@ public class ItemController : NetworkBehaviour
 
     private void TryPickup(PlayerController player)
     {
+        // [Fix] 쿨다운 중이거나 이미 획득 처리 중이면 리턴
+        if (cooldownTimer > 0 || isBeingPickedUp) return;
+
         if (player.Data == null || player.Data.inventory == null) return;
 
         // 인벤토리에 추가 시도 (NGO의 서버 권한으로 처리)
         int initialCount = stackCount.Value;
+        if (initialCount <= 0) return;
+
+        isBeingPickedUp = true; // 획득 프로세스 시작
+
         int remaining = player.Data.inventory.AddItem(itemID.Value, initialCount);
 
-        if (remaining == 0)
+        if (remaining <= 0)
         {
             // 전부 획득 완료
+            stackCount.Value = 0; // 데이터를 명확히 0으로 만듦
             GetComponent<NetworkObject>().Despawn();
-        }
-        else if (remaining < initialCount)
-        {
-            // 일부만 획득 (공간 부족)
-            stackCount.Value = remaining;
-            SetDropCooldown(); // 남은 거 버림 처리
         }
         else
         {
-            // 하나도 못 먹음 (인벤토리 꽉 참)
-            if (isAttracted) SetDropCooldown(); // 흡수 중이었다면 튕겨나감
+            // 일부만 획득 (공간 부족)
+            if (remaining < initialCount)
+            {
+                stackCount.Value = remaining;
+                SetDropCooldown(); // 남은 거 버림 처리
+            }
+            else
+            {
+                // 하나도 못 먹음 (인벤토리 꽉 참)
+                if (isAttracted) SetDropCooldown(); // 흡수 중이었다면 튕겨나감
+            }
+            isBeingPickedUp = false; // 다시 획득 가능하도록 해제
         }
     }
 

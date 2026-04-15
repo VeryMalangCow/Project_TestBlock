@@ -173,12 +173,24 @@ public class InventoryUI : MonoBehaviour
         List<RaycastResult> results = new List<RaycastResult>();
         raycaster.Raycast(eventData, results);
 
+        bool hitSlot = false;
         foreach (var result in results)
         {
             if (result.gameObject.TryGetComponent<InventorySlotUI>(out var slotUI))
             {
                 OnSlotClicked(slotUI.SlotIndex, buttonIndex);
+                hitSlot = true;
                 break;
+            }
+        }
+
+        // [Logic] UI 밖 공간(빈 공간) 처리
+        if (!hitSlot)
+        {
+            // 우클릭(Interact_01)이고 아이템을 들고 있다면 버리기
+            if (buttonIndex == 1 && draggingItemData != null)
+            {
+                RequestDropItem();
             }
         }
     }
@@ -187,9 +199,26 @@ public class InventoryUI : MonoBehaviour
     {
         if (isAnimating) return;
         isInventoryOpen = !isInventoryOpen;
-        if (!isInventoryOpen && draggingItemData != null) CancelDragging();
+
+        // [Logic] 인벤토리를 닫을 때 아이템을 들고 있다면 버리기
+        if (!isInventoryOpen && draggingItemData != null)
+        {
+            RequestDropItem();
+        }
+
         StopAllCoroutines();
         StartCoroutine(ToggleAnimationRoutine(isInventoryOpen));
+    }
+
+    private void RequestDropItem()
+    {
+        if (draggingItemData == null || PlayerController.Local == null) return;
+
+        // 서버에 아이템 버리기 요청
+        PlayerController.Local.DropItemServerRpc(draggingItemData.itemID, draggingItemData.stackCount);
+        
+        // 로컬 상태 초기화
+        ClearDragging();
     }
 
     private IEnumerator ToggleAnimationRoutine(bool isOpen)
@@ -454,12 +483,8 @@ public class InventoryUI : MonoBehaviour
 
     private void CancelDragging()
     {
-        if (draggingItemData != null)
-        {
-            var inventory = PlayerController.Local.Data.inventory;
-            inventory.AddItem(draggingItemData.itemID, draggingItemData.stackCount);
-        }
-        ClearDragging();
+        // 이제 인벤토리를 닫을 때 바닥에 버리므로 CancelDragging은 직접 버리기 로직으로 대체됨
+        RequestDropItem();
     }
 
     #endregion

@@ -172,12 +172,17 @@ public class NetworkObjectPoolManager : NetworkBehaviour, INetworkPrefabInstance
     {
         if (!IsServer) return null;
 
-        // [Fix] GlobalObjectIdHash -> PrefabIdHash
-        NetworkObject netObj = Instantiate(
-            prefab.GetComponent<NetworkObject>().PrefabIdHash, 
-            position, rotation);
+        // [Fix] 수동으로 Instantiate를 호출하는 대신, 
+        // 유니티 엔진의 Instantiate로 복사본을 만든 뒤 Spawn을 호출합니다.
+        // 그러면 우리가 등록한 PrefabHandler(this)가 내부적으로 Instantiate를 가로채서 풀링된 객체를 반환합니다.
+        GameObject obj = UnityEngine.Object.Instantiate(prefab, position, rotation);
+        NetworkObject netObj = obj.GetComponent<NetworkObject>();
         
-        netObj.Spawn();
+        if (netObj != null)
+        {
+            netObj.Spawn();
+        }
+        
         return netObj;
     }
 
