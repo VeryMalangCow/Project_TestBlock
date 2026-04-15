@@ -214,8 +214,11 @@ public class InventoryUI : MonoBehaviour
     {
         if (draggingItemData == null || PlayerController.Local == null) return;
 
+        // [Fix] 현재 바라보는 방향을 계산하여 RPC와 함께 전달
+        float lookDir = PlayerController.Local.IsFlipped ? -1f : 1f;
+
         // 서버에 아이템 버리기 요청
-        PlayerController.Local.DropItemServerRpc(draggingItemData.itemID, draggingItemData.stackCount);
+        PlayerController.Local.DropItemServerRpc(draggingItemData.itemID, draggingItemData.stackCount, lookDir);
         
         // 로컬 상태 초기화
         ClearDragging();

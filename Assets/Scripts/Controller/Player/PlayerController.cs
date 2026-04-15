@@ -58,9 +58,12 @@ public class PlayerController : NetworkBehaviour
 
     public static PlayerController Local { get; private set; }
 
+    // [Public Property] 바라보는 방향 노출
+    public bool IsFlipped => isFlippedSync.Value;
+
     // [Static Settings] 아이템 던지기 힘 설정
-    public static float DropThrowForce = 10f;   // 가로 던지는 힘
-    public static float DropUpwardForce = 4f;  // 세로(위쪽) 던지는 힘
+    public static float DropThrowForce = 4f;   // 가로 던지는 힘
+    public static float DropUpwardForce = 6f;  // 세로(위쪽) 던지는 힘
 
     private string debugStatus = "Initializing...";
 
@@ -533,7 +536,7 @@ public class PlayerController : NetworkBehaviour
     [ServerRpc] private void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
 
     [ServerRpc]
-    public void DropItemServerRpc(int id, int count)
+    public void DropItemServerRpc(int id, int count, float lookDir)
     {
         if (itemDropPrefab == null)
         {
@@ -541,16 +544,16 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        // 1. 플레이어 본체 위치에서 아이템 생성 (NetworkObjectPoolManager 사용)
-        NetworkObject netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, transform.position, Quaternion.identity);
+        // 1. 플레이어 본체 위치에서 바라보는 방향으로 살짝 앞에서 생성 (겹침 방지)
+        Vector3 spawnPos = transform.position + new Vector3(lookDir * 0.8f, 0.5f, 0);
+        NetworkObject netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, spawnPos, Quaternion.identity);
         
         // 2. 데이터 설정
         ItemController item = netObj.GetComponent<ItemController>();
         item.itemID.Value = id;
         item.stackCount.Value = count;
 
-        // 3. 던지는 연출 (바라보는 방향 + 위쪽)
-        float lookDir = isFlippedSync.Value ? -1f : 1f;
+        // 3. 던지는 연출 (인자로 받은 방향 사용)
         Vector2 throwForce = new Vector2(lookDir * DropThrowForce, DropUpwardForce);
         
         // ItemController 내부에 Rigidbody2D가 있으므로 힘 전달
@@ -559,8 +562,8 @@ public class PlayerController : NetworkBehaviour
             rb.linearVelocity = throwForce;
         }
 
-        // 4. 아이템 쿨다운 활성화 (자석 기능 2초 정지)
-        item.SetDropCooldown();
+        // 4. 아이템 쿨다운 활성화 (자석 기능 2초 정지, 튕기기 효과는 꺼짐)
+        item.SetDropCooldown(false);
     }
 
     #endregion

@@ -150,13 +150,16 @@ public class ItemController : NetworkBehaviour
         rb.bodyType = RigidbodyType2D.Dynamic;
     }
 
-    public void SetDropCooldown()
+    public void SetDropCooldown(bool applyBounce = false)
     {
         cooldownTimer = dropCooldownTime;
         ResetAttraction();
         
-        // 버려질 때 약간의 튀어오름 효과 (서버에서 물리 적용)
-        rb.linearVelocity = Vector2.up * 5f + new Vector2(Random.Range(-2f, 2f), 0);
+        // [Fix] 명시적으로 요청(applyBounce = true)했을 때만 랜덤하게 튕김
+        if (applyBounce)
+        {
+            rb.linearVelocity = Vector2.up * 5f + new Vector2(Random.Range(-2f, 2f), 0);
+        }
     }
 
     #endregion
@@ -204,12 +207,12 @@ public class ItemController : NetworkBehaviour
             if (remaining < initialCount)
             {
                 stackCount.Value = remaining;
-                SetDropCooldown(); // 남은 거 버림 처리
+                SetDropCooldown(true); // 튕겨나감 효과 적용
             }
             else
             {
                 // 하나도 못 먹음 (인벤토리 꽉 참)
-                if (isAttracted) SetDropCooldown(); // 흡수 중이었다면 튕겨나감
+                if (isAttracted) SetDropCooldown(true); // 튕겨나감 효과 적용
             }
             isBeingPickedUp = false; // 다시 획득 가능하도록 해제
         }
