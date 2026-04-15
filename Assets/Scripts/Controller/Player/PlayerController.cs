@@ -20,6 +20,7 @@ public class PlayerController : NetworkBehaviour
     private InputAction jumpAction;
     private InputAction dashAction;
     private InputAction interactAction;
+    private InputAction pointAction;
 
     [Header("### Move")]
     [SerializeField] private float moveSpeed = 8f;
@@ -111,12 +112,14 @@ public class PlayerController : NetworkBehaviour
             moveAction = playerMap.FindAction("Move");
             jumpAction = playerMap.FindAction("Jump");
             dashAction = playerMap.FindAction("Dash");
-            interactAction = playerMap.FindAction("Interact");
+            interactAction = playerMap.FindAction("Interact_00");
+            pointAction = playerMap.FindAction("Point");
 
             moveAction.Enable();
             jumpAction.Enable();
             dashAction.Enable();
             interactAction.Enable();
+            pointAction.Enable();
         }
     }
 
@@ -127,6 +130,7 @@ public class PlayerController : NetworkBehaviour
         jumpAction?.Disable();
         dashAction?.Disable();
         interactAction?.Disable();
+        pointAction?.Disable();
     }
 
     private void SetupPhysics()
@@ -503,14 +507,20 @@ public class PlayerController : NetworkBehaviour
     private void HandleInteraction()
     {
         if (!IsOwner || interactAction == null) return;
-        if (interactAction.WasPressedThisFrame()) UpdateBlock(selectedBlockId);
+
+        // Block interaction is currently disabled as requested.
+        // It will be replaced with an item-based placement system later.
+        if (interactAction.WasPressedThisFrame())
+        {
+            // Vector2 screenPos = pointAction.ReadValue<Vector2>();
+            // UpdateBlock(selectedBlockId, screenPos);
+        }
     }
 
-    private void UpdateBlock(int id)
+    private void UpdateBlock(int id, Vector2 screenPos)
     {
         if (MapManager.Instance == null || Camera.main == null) return;
-        Vector2 mousePos = Mouse.current.position.ReadValue();
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(mousePos.x, mousePos.y, -Camera.main.transform.position.z));
+        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
         if (Vector2.Distance(transform.position, worldPos) > interactRange) return;
         UpdateBlockServerRpc(Mathf.FloorToInt(worldPos.x), Mathf.FloorToInt(worldPos.y), id);
     }
