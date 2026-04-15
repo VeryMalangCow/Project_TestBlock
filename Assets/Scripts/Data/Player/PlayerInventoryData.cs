@@ -3,14 +3,14 @@ using System;
 [Serializable]
 public class PlayerInventoryData
 {
-    public InventorySlot[] slots;
+    public PlayerInventorySlotData[] slots;
 
     public PlayerInventoryData(int size = 50)
     {
-        slots = new InventorySlot[size];
+        slots = new PlayerInventorySlotData[size];
         for (int i = 0; i < size; i++)
         {
-            slots[i] = new InventorySlot();
+            slots[i] = new PlayerInventorySlotData();
         }
     }
 
@@ -61,7 +61,7 @@ public class PlayerInventoryData
     /// <summary>
     /// Gets the slot by index.
     /// </summary>
-    public InventorySlot GetSlot(int index)
+    public PlayerInventorySlotData GetSlot(int index)
     {
         if (index >= 0 && index < slots.Length) return slots[index];
         return null;

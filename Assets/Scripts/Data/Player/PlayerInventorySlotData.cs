@@ -1,18 +1,18 @@
 using System;
 
 [Serializable]
-public class InventorySlot
+public class PlayerInventorySlotData
 {
     public int itemID = -1;    // -1: Empty
     public int stackCount = 0;
 
-    public InventorySlot()
+    public PlayerInventorySlotData()
     {
         itemID = -1;
         stackCount = 0;
     }
 
-    public InventorySlot(int id, int count)
+    public PlayerInventorySlotData(int id, int count)
     {
         itemID = id;
         stackCount = count;

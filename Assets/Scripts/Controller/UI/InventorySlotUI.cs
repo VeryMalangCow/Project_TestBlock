@@ -16,7 +16,7 @@ public class InventorySlotUI : MonoBehaviour
         ClearSlot();
     }
 
-    public void UpdateSlot(InventorySlot slot)
+    public void UpdateSlot(PlayerInventorySlotData slot)
     {
         if (slot == null || slot.IsEmpty)
         {
