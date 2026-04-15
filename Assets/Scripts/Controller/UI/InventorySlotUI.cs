@@ -50,11 +50,17 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
         stackText.enabled = false;
     }
 
+    // 마우스 클릭 이벤트 처리
     public void OnPointerClick(PointerEventData eventData)
     {
-        if (ownerUI != null && slotIndex != -1)
+        // 오직 좌클릭(Left Click)일 때만 인벤토리 로직 실행
+        if (eventData.button == PointerEventData.InputButton.Left)
         {
-            ownerUI.OnSlotClicked(slotIndex);
+            if (ownerUI != null && slotIndex != -1)
+            {
+                ownerUI.OnSlotClicked(slotIndex);
+            }
         }
+        // 우클릭(Right Click)은 무시됨
     }
 }

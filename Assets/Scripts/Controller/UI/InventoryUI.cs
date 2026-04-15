@@ -19,13 +19,15 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private float animationDuration = 0.2f; 
     [SerializeField] private float yOffset = -50f;          
 
-    [Header("### Drag & Drop UI")]
+    [Header("### Drag & Drop UI (Ghost Slot)")]
+    [SerializeField] private GameObject ghostSlotPanel; // 배경을 포함한 슬롯 전체 오브젝트
     [SerializeField] private Image ghostIcon;       
     [SerializeField] private TextMeshProUGUI ghostStackText; 
 
     [Header("### Input")]
     [SerializeField] private InputActionAsset inputActions;
     private InputAction inventoryAction;
+    private InputAction modifierAction; 
 
     private List<InventorySlotUI> uiSlots = new List<InventorySlotUI>();
     private List<CanvasGroup> toggleCanvasGroups = new List<CanvasGroup>();
@@ -36,15 +38,22 @@ public class InventoryUI : MonoBehaviour
     private bool isInventoryOpen = false;
     private bool isAnimating = false;
 
+    // 드래그 상태 데이터
     private int draggingSlotIndex = -1;
     private PlayerInventorySlotData draggingItemData = null;
 
     private void Awake()
     {
-        if (ghostIcon != null)
+        // Ghost UI 초기화
+        if (ghostSlotPanel != null)
         {
-            ghostIcon.raycastTarget = false; 
-            ghostIcon.gameObject.SetActive(false);
+            // 드래그 슬롯이 클릭을 방해하지 않도록 설정
+            if (ghostSlotPanel.TryGetComponent<CanvasGroup>(out var cg))
+            {
+                cg.blocksRaycasts = false;
+                cg.interactable = false;
+            }
+            ghostSlotPanel.SetActive(false);
         }
 
         if (alwaysOnObjects != null)
@@ -76,12 +85,25 @@ public class InventoryUI : MonoBehaviour
         if (inputActions != null)
         {
             var playerMap = inputActions.FindActionMap("Player");
-            if (playerMap != null) inventoryAction = playerMap.FindAction("Inventory");
+            if (playerMap != null)
+            {
+                inventoryAction = playerMap.FindAction("Inventory");
+                modifierAction = playerMap.FindAction("Modifier"); 
+            }
         }
     }
 
-    private void OnEnable() => inventoryAction?.Enable();
-    private void OnDisable() => inventoryAction?.Disable();
+    private void OnEnable()
+    {
+        inventoryAction?.Enable();
+        modifierAction?.Enable();
+    }
+
+    private void OnDisable()
+    {
+        inventoryAction?.Disable();
+        modifierAction?.Disable();
+    }
 
     private void Start()
     {
@@ -104,8 +126,8 @@ public class InventoryUI : MonoBehaviour
 
     private void HandleGhostIconFollow()
     {
-        if (draggingItemData == null || ghostIcon == null) return;
-        ghostIcon.rectTransform.position = Mouse.current.position.ReadValue();
+        if (draggingItemData == null || ghostSlotPanel == null) return;
+        ghostSlotPanel.transform.position = Mouse.current.position.ReadValue();
     }
 
     public void ToggleInventory()
@@ -198,25 +220,40 @@ public class InventoryUI : MonoBehaviour
         var inventory = PlayerController.Local.Data.inventory;
         for (int i = 0; i < uiSlots.Count; i++)
         {
-            if (i == draggingSlotIndex) uiSlots[i].UpdateSlot(null);
-            else if (i < inventory.slots.Length) uiSlots[i].UpdateSlot(inventory.GetSlot(i));
+            // [수정] 드래그 중인 원본 슬롯을 더 이상 숨기지 않음
+            // 이제 인벤토리 데이터의 실제 상태(남은 수량)를 그대로 표시함
+            if (i < inventory.slots.Length)
+            {
+                uiSlots[i].UpdateSlot(inventory.GetSlot(i));
+            }
         }
     }
 
+    #region Left Click Logic
+
     public void OnSlotClicked(int index)
     {
+        if (!isInventoryOpen) return;
         if (PlayerController.Local == null || PlayerController.Local.Data == null) return;
+        
         var inventory = PlayerController.Local.Data.inventory;
         var clickedSlot = inventory.GetSlot(index);
         if (clickedSlot == null) return;
+
+        bool isModifierPressed = modifierAction != null && modifierAction.IsPressed();
 
         if (draggingItemData == null)
         {
             if (!clickedSlot.IsEmpty)
             {
+                int amountToPick = isModifierPressed ? Mathf.CeilToInt(clickedSlot.stackCount / 2.0f) : clickedSlot.stackCount;
+
                 draggingSlotIndex = index;
-                draggingItemData = new PlayerInventorySlotData(clickedSlot.itemID, clickedSlot.stackCount);
-                clickedSlot.Clear();
+                draggingItemData = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
+                
+                clickedSlot.stackCount -= amountToPick;
+                if (clickedSlot.stackCount <= 0) clickedSlot.Clear();
+
                 UpdateGhostUI();
             }
         }
@@ -232,10 +269,13 @@ public class InventoryUI : MonoBehaviour
             {
                 ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
                 int max = data != null ? data.maxStack : 999;
+                
                 int canAdd = max - clickedSlot.stackCount;
-                int addAmount = Mathf.Min(canAdd, draggingItemData.stackCount);
-                clickedSlot.stackCount += addAmount;
-                draggingItemData.stackCount -= addAmount;
+                int toAdd = Mathf.Min(canAdd, draggingItemData.stackCount);
+                
+                clickedSlot.stackCount += toAdd;
+                draggingItemData.stackCount -= toAdd;
+                
                 if (draggingItemData.stackCount <= 0) ClearDragging();
                 else UpdateGhostUI();
             }
@@ -243,14 +283,21 @@ public class InventoryUI : MonoBehaviour
             {
                 int tempID = clickedSlot.itemID;
                 int tempCount = clickedSlot.stackCount;
+                
                 clickedSlot.itemID = draggingItemData.itemID;
                 clickedSlot.stackCount = draggingItemData.stackCount;
+                
                 draggingItemData.itemID = tempID;
                 draggingItemData.stackCount = tempCount;
+                
                 UpdateGhostUI();
             }
         }
     }
+
+    #endregion
+
+    #region Helper Methods
 
     private void UpdateGhostUI()
     {
@@ -260,14 +307,15 @@ public class InventoryUI : MonoBehaviour
             return;
         }
 
-        if (ghostIcon != null)
+        if (ghostSlotPanel != null)
         {
-            ghostIcon.gameObject.SetActive(true);
+            ghostSlotPanel.SetActive(true);
             ItemData data = ItemDataManager.Instance.GetItem(draggingItemData.itemID);
             if (data != null)
             {
-                ghostIcon.sprite = data.icon;
-                if (ghostStackText != null) ghostStackText.text = draggingItemData.stackCount > 1 ? draggingItemData.stackCount.ToString() : "";
+                if (ghostIcon != null) ghostIcon.sprite = data.icon;
+                if (ghostStackText != null) 
+                    ghostStackText.text = draggingItemData.stackCount > 1 ? draggingItemData.stackCount.ToString() : "";
             }
         }
     }
@@ -276,22 +324,18 @@ public class InventoryUI : MonoBehaviour
     {
         draggingSlotIndex = -1;
         draggingItemData = null;
-        if (ghostIcon != null) ghostIcon.gameObject.SetActive(false);
+        if (ghostSlotPanel != null) ghostSlotPanel.SetActive(false);
     }
 
     private void CancelDragging()
     {
-        if (draggingItemData != null && draggingSlotIndex != -1)
+        if (draggingItemData != null)
         {
             var inventory = PlayerController.Local.Data.inventory;
-            var originalSlot = inventory.GetSlot(draggingSlotIndex);
-            if (originalSlot != null && originalSlot.IsEmpty)
-            {
-                originalSlot.itemID = draggingItemData.itemID;
-                originalSlot.stackCount = draggingItemData.stackCount;
-            }
-            else inventory.AddItem(draggingItemData.itemID, draggingItemData.stackCount);
+            inventory.AddItem(draggingItemData.itemID, draggingItemData.stackCount);
         }
         ClearDragging();
     }
+
+    #endregion
 }
