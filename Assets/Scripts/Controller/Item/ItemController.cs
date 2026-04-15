@@ -15,20 +15,20 @@ public class ItemController : NetworkBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Rigidbody2D rb;
 
-    [Header("### Physics & Movement")]
-    [SerializeField] private float searchRadius = 5f;
-    [SerializeField] private float searchInterval = 0.2f; // 탐색 주기 (초)
-    [SerializeField] private float initialSpeed = 2f;
-    [SerializeField] private float acceleration = 15f;
-    [SerializeField] private float maxSpeed = 25f;
-    [SerializeField] private float dropCooldownTime = 2f;
+    // [Static Settings] 메모리 최적화를 위한 공통 설정값
+    public static float SearchRadius = 5f;
+    public static float SearchInterval = 0.2f;
+    public static float InitialSpeed = 10f;
+    public static float Acceleration = 30f;
+    public static float MaxSpeed = 20f;
+    public static float DropCooldownTime = 2f;
 
     private float currentSpeed;
     private float cooldownTimer;
-    private float searchTimer; // 탐색용 타이머
+    private float searchTimer; 
     private PlayerController targetPlayer;
     private bool isAttracted;
-    private bool isBeingPickedUp; // 중복 획득 방지 플래그
+    private bool isBeingPickedUp; 
 
     #endregion
 
@@ -42,8 +42,8 @@ public class ItemController : NetworkBehaviour
 
         if (IsServer)
         {
-            // 여러 아이템의 탐색 시점을 분산
-            searchTimer = Random.Range(0, searchInterval);
+            // 여러 아이템의 탐색 시점을 분산 (static 값 참조)
+            searchTimer = Random.Range(0, SearchInterval);
             isBeingPickedUp = false;
         }
     }
@@ -83,7 +83,7 @@ public class ItemController : NetworkBehaviour
             if (searchTimer <= 0)
             {
                 SearchForPlayer();
-                searchTimer = searchInterval;
+                searchTimer = SearchInterval;
             }
         }
     }
@@ -94,20 +94,25 @@ public class ItemController : NetworkBehaviour
 
     private void SearchForPlayer()
     {
-        // 주변 플레이어 탐색
-        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, searchRadius);
+        // [Fix] Player 레이어만 콕 집어서 탐색 (static 값 참조)
+        int playerLayer = LayerMask.GetMask("Player");
+        Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, SearchRadius, playerLayer);
+        
         PlayerController closest = null;
         float minDistance = float.MaxValue;
 
         foreach (var hit in hitColliders)
         {
-            if (hit.CompareTag("Player") && hit.TryGetComponent<PlayerController>(out var player))
+            if (hit.attachedRigidbody != null && hit.attachedRigidbody.CompareTag("Player"))
             {
-                float dist = Vector2.Distance(transform.position, hit.transform.position);
-                if (dist < minDistance)
+                if (hit.attachedRigidbody.TryGetComponent<PlayerController>(out var player))
                 {
-                    minDistance = dist;
-                    closest = player;
+                    float dist = Vector2.Distance(transform.position, hit.transform.position);
+                    if (dist < minDistance)
+                    {
+                        minDistance = dist;
+                        closest = player;
+                    }
                 }
             }
         }
@@ -116,11 +121,12 @@ public class ItemController : NetworkBehaviour
         {
             targetPlayer = closest;
             isAttracted = true;
-            currentSpeed = initialSpeed;
+            currentSpeed = InitialSpeed;
             
-            // 흡수 시작 시 물리 엔진 영향 최소화 (사용자의 레이어 설정을 보조하기 위해)
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.linearVelocity = Vector2.zero;
+            
+            Debug.Log($"[ItemController] Started attracting to player: {closest.OwnerClientId}");
         }
     }
 
@@ -132,12 +138,12 @@ public class ItemController : NetworkBehaviour
             return;
         }
 
-        // 플레이어 방향으로 가속 이동
-        currentSpeed = Mathf.Min(currentSpeed + acceleration * Time.deltaTime, maxSpeed);
+        // 플레이어 방향으로 가속 이동 (static 값 참조)
+        currentSpeed = Mathf.Min(currentSpeed + Acceleration * Time.deltaTime, MaxSpeed);
         transform.position = Vector3.MoveTowards(transform.position, targetPlayer.transform.position, currentSpeed * Time.deltaTime);
 
         // 만약 타겟이 너무 멀어지면 (탐색 범위 1.5배 이상) 다시 탐색
-        if (Vector2.Distance(transform.position, targetPlayer.transform.position) > searchRadius * 1.5f)
+        if (Vector2.Distance(transform.position, targetPlayer.transform.position) > SearchRadius * 1.5f)
         {
             ResetAttraction();
         }
@@ -152,10 +158,9 @@ public class ItemController : NetworkBehaviour
 
     public void SetDropCooldown(bool applyBounce = false)
     {
-        cooldownTimer = dropCooldownTime;
+        cooldownTimer = DropCooldownTime;
         ResetAttraction();
         
-        // [Fix] 명시적으로 요청(applyBounce = true)했을 때만 랜덤하게 튕김
         if (applyBounce)
         {
             rb.linearVelocity = Vector2.up * 5f + new Vector2(Random.Range(-2f, 2f), 0);
@@ -170,7 +175,6 @@ public class ItemController : NetworkBehaviour
     {
         if (!IsServer) return;
 
-        // [Fix] 자식 콜라이더가 충돌해도 부모의 Rigidbody2D(본체)를 통해 플레이어 판별
         if (collision.attachedRigidbody != null && collision.attachedRigidbody.CompareTag("Player"))
         {
             if (collision.attachedRigidbody.TryGetComponent<PlayerController>(out var player))
@@ -182,39 +186,34 @@ public class ItemController : NetworkBehaviour
 
     private void TryPickup(PlayerController player)
     {
-        // [Fix] 쿨다운 중이거나 이미 획득 처리 중이면 리턴
         if (cooldownTimer > 0 || isBeingPickedUp) return;
 
         if (player.Data == null || player.Data.inventory == null) return;
 
-        // 인벤토리에 추가 시도 (NGO의 서버 권한으로 처리)
         int initialCount = stackCount.Value;
         if (initialCount <= 0) return;
 
-        isBeingPickedUp = true; // 획득 프로세스 시작
+        isBeingPickedUp = true; 
 
         int remaining = player.Data.inventory.AddItem(itemID.Value, initialCount);
 
         if (remaining <= 0)
         {
-            // 전부 획득 완료
-            stackCount.Value = 0; // 데이터를 명확히 0으로 만듦
+            stackCount.Value = 0; 
             GetComponent<NetworkObject>().Despawn();
         }
         else
         {
-            // 일부만 획득 (공간 부족)
             if (remaining < initialCount)
             {
                 stackCount.Value = remaining;
-                SetDropCooldown(true); // 튕겨나감 효과 적용
+                SetDropCooldown(true); 
             }
             else
             {
-                // 하나도 못 먹음 (인벤토리 꽉 참)
-                if (isAttracted) SetDropCooldown(true); // 튕겨나감 효과 적용
+                if (isAttracted) SetDropCooldown(true);
             }
-            isBeingPickedUp = false; // 다시 획득 가능하도록 해제
+            isBeingPickedUp = false; 
         }
     }
 
@@ -238,7 +237,7 @@ public class ItemController : NetworkBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, searchRadius);
+        Gizmos.DrawWireSphere(transform.position, SearchRadius);
     }
 
     #endregion

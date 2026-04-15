@@ -127,7 +127,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 747117304
+  GlobalObjectIdHash: 2116386269
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -165,12 +165,6 @@ MonoBehaviour:
     m_InternalValue: 0
   spriteRenderer: {fileID: 2227950188864563699}
   rb: {fileID: 5879422594194895518}
-  searchRadius: 5
-  searchInterval: 0.2
-  initialSpeed: 2
-  acceleration: 15
-  maxSpeed: 25
-  dropCooldownTime: 2
 --- !u!50 &5879422594194895518
 Rigidbody2D:
   serializedVersion: 5
