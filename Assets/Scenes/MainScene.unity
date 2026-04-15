@@ -2474,6 +2474,8 @@ MonoBehaviour:
   ghostIcon: {fileID: 1524092961}
   ghostStackText: {fileID: 1524092960}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  raycaster: {fileID: 136349098}
+  eventSystem: {fileID: 1921979487}
 --- !u!1 &422581100
 GameObject:
   m_ObjectHideFlags: 0

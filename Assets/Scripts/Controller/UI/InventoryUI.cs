@@ -428,6 +428,12 @@ public class InventoryUI : MonoBehaviour
 
         if (ghostSlotPanel != null)
         {
+            // [Fix] 활성화 직전에 위치를 마우스 좌표로 강제 동기화 (1프레임 잔상 방지)
+            if (pointAction != null)
+            {
+                ghostSlotPanel.transform.position = pointAction.ReadValue<Vector2>();
+            }
+
             ghostSlotPanel.SetActive(true);
             ItemData data = ItemDataManager.Instance.GetItem(draggingItemData.itemID);
             if (data != null)
