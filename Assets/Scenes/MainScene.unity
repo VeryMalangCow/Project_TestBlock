@@ -2445,7 +2445,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryUI
   hotbarParent: {fileID: 794487177}
   mainInventoryParent: {fileID: 1914052236}
-  inventoryPanel: {fileID: 1706851432}
+  alwaysOnObjects:
+  - {fileID: 934333590}
+  toggleObjects:
+  - {fileID: 1690759733}
+  - {fileID: 921813586}
+  - {fileID: 935522841}
+  animationDuration: 0.2
+  yOffset: -500
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
 --- !u!1 &422581100
 GameObject:
@@ -5487,13 +5494,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 921813587}
+  - component: {fileID: 921813588}
   m_Layer: 5
   m_Name: TabOn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &921813587
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5514,6 +5522,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &921813588
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 921813586}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &926397694
 GameObject:
   m_ObjectHideFlags: 0
@@ -5635,7 +5655,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &934333591
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5665,13 +5685,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 935522842}
+  - component: {fileID: 935522843}
   m_Layer: 5
   m_Name: TabOn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &935522842
 RectTransform:
   m_ObjectHideFlags: 0
@@ -5692,6 +5713,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &935522843
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 935522841}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1001 &942758245
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -10497,13 +10530,14 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1690759734}
+  - component: {fileID: 1690759735}
   m_Layer: 5
   m_Name: TabOn
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1690759734
 RectTransform:
   m_ObjectHideFlags: 0
@@ -10524,6 +10558,18 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
+--- !u!225 &1690759735
+CanvasGroup:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1690759733}
+  m_Enabled: 1
+  m_Alpha: 1
+  m_Interactable: 1
+  m_BlocksRaycasts: 1
+  m_IgnoreParentGroups: 0
 --- !u!1 &1699001840
 GameObject:
   m_ObjectHideFlags: 0
@@ -10627,8 +10673,8 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 934333591}
   - {fileID: 1690759734}
+  - {fileID: 934333591}
   m_Father: {fileID: 403551747}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
