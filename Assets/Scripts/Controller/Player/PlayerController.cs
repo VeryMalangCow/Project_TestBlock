@@ -360,7 +360,7 @@ public class PlayerController : NetworkBehaviour
         int targetFrame = 0;
         if (isDashingSync.Value)
         {
-            targetFrame = 11;
+            targetFrame = 10;
         }
         else if (!isGrounded)
         {
@@ -372,7 +372,7 @@ public class PlayerController : NetworkBehaviour
             if (currentHorizontalSpeed > 0.1f)
             {
                 walkCycleTime += Time.deltaTime * currentHorizontalSpeed * walkAnimSpeedMultiplier;
-                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8);
+                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 9);
             }
             else
             {

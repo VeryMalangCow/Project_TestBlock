@@ -9739,6 +9739,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: GhostSlot
       objectReference: {fileID: 0}
+    - target: {fileID: 6896202474442617380, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1737104871975288280, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
     - {fileID: 752852042374170458, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
