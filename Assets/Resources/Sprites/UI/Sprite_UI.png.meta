@@ -412,7 +412,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: UI_Jetback
+      name: UI_Jetbag
       rect:
         serializedVersion: 2
         x: 271
@@ -455,7 +455,7 @@ TextureImporter:
       UI_Deco_02: 20220665
       UI_Deco_03: -102472445
       UI_Helmet: -870306624
-      UI_Jetback: 1310844292
+      UI_Jetbag: 1310844292
       UI_Leggings: -1640420262
       UI_Panel_00: -1549992443
       UI_Panel_01: 564234129

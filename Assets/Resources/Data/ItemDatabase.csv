@@ -1,8 +1,10 @@
-ID,Name,Description,Type,MaxStack,IconPath,Value,Damage,Defense,UseTime
--1,None,Empty Slot,None,0,,0,0,0,0
-0,Dirt Block,A simple block of dirt,Block,999,,0,0,0,0.2
-1,Stone Block,A hard block of stone,Block,999,,0,0,0,0.2
-100,Iron Sword,A basic iron sword,Weapon,1,,50,12,0,0.5
-200,Iron Helmet,Basic iron protection,Armor,1,,30,0,4,0
-201,Iron Chestplate,Basic iron chestplate,Armor,1,,50,0,6,0
-202,Iron Leggings,Basic iron leggings,Armor,1,,40,0,3,0
+ID,Name,Description,MaxStack,Type,UseTime
+-1,None,Empty Slot,0,None,0
+0,Grassed Dirt,A simple block of grassed dirt,999,Block,0.2
+1,Dirt,A simple block of dirt,999,Block,0.2
+2,Stone,A simple block of stone,999,Block,0.2
+3,Wood,A simple block of wood,999,Block,0.2
+4,Wood Sword,A wooden sword that is not special at all,1,Weapon,2
+5,Wood Helmet,A wooden helmet that is not special at all,1,Helmet,0.2
+6,Wood Chestplate,A wooden chestplate that is not special at all,1,Chestplate,0.2
+7,Wood Leggings,A wooden leggings that is not special at all,1,Leggings,0.2

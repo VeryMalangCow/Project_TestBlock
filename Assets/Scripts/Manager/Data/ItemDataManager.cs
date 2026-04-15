@@ -33,7 +33,8 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
             if (string.IsNullOrWhiteSpace(line)) continue;
 
             string[] parts = line.Split(',');
-            if (parts.Length < 10) continue; 
+            // CSV structure: ID(0), Name(1), Description(2), MaxStack(3), ItemType(4), UseTime(5)
+            if (parts.Length < 6) continue; 
 
             try
             {
@@ -41,20 +42,12 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
                 item.id = int.Parse(parts[0]);
                 item.itemName = parts[1];
                 item.description = parts[2];
-                item.type = (ItemType)Enum.Parse(typeof(ItemType), parts[3], true);
-                item.maxStack = int.Parse(parts[4]);
-                item.iconPath = parts[5];
-                item.value = int.Parse(parts[6]);
-                item.damage = int.Parse(parts[7]);
-                item.defense = int.Parse(parts[8]);
-                item.useTime = float.Parse(parts[9]);
+                item.maxStack = int.Parse(parts[3]);
+                item.type = (ItemType)Enum.Parse(typeof(ItemType), parts[4], true);
+                item.useTime = float.Parse(parts[5]);
 
-                // Load Icon Sprite
-                // Default naming convention: Sprites/Items/Item_XXXXX (5 digits)
-                string finalIconPath = string.IsNullOrEmpty(item.iconPath) 
-                    ? $"Sprites/Items/Item_{item.id:D5}" 
-                    : item.iconPath;
-
+                // Load Icon Sprite based on ID (Default naming convention: Sprites/Items/Item_XXXXX)
+                string finalIconPath = $"Sprites/Items/Item_{item.id:D5}";
                 item.icon = Resources.Load<Sprite>(finalIconPath);
                 
                 if (item.id != -1 && item.icon == null)
@@ -73,9 +66,6 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
         Debug.Log($"[ItemDataManager] Successfully loaded {itemCache.Count} items from CSV.");
     }
 
-    /// <summary>
-    /// Gets ItemData by its ID. Returns null if not found.
-    /// </summary>
     public ItemData GetItem(int id)
     {
         if (itemCache.TryGetValue(id, out ItemData data))
