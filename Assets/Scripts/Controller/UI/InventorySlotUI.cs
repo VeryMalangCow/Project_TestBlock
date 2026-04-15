@@ -1,9 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEngine.EventSystems;
 using TMPro;
 
-public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
+public class InventorySlotUI : MonoBehaviour
 {
     [Header("### UI References")]
     [SerializeField] private Image iconImage;
@@ -11,6 +10,8 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
 
     private InventoryUI ownerUI;
     private int slotIndex = -1;
+
+    public int SlotIndex => slotIndex;
 
     public void Init(InventoryUI ui, int index)
     {
@@ -48,19 +49,5 @@ public class InventorySlotUI : MonoBehaviour, IPointerClickHandler
         iconImage.enabled = false;
         stackText.text = "";
         stackText.enabled = false;
-    }
-
-    // 마우스 클릭 이벤트 처리
-    public void OnPointerClick(PointerEventData eventData)
-    {
-        // 오직 좌클릭(Left Click)일 때만 인벤토리 로직 실행
-        if (eventData.button == PointerEventData.InputButton.Left)
-        {
-            if (ownerUI != null && slotIndex != -1)
-            {
-                ownerUI.OnSlotClicked(slotIndex);
-            }
-        }
-        // 우클릭(Right Click)은 무시됨
     }
 }

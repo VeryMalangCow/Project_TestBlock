@@ -81,7 +81,7 @@ MonoBehaviour:
   col: {fileID: 1977730540923760186}
   visuals: {fileID: 4155625903134356229}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  moveSpeed: 16
+  moveSpeed: 8
   acceleration: 300
   deceleration: 600
   jumpForce: 12

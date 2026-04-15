@@ -376,7 +376,7 @@ public class PlayerController : NetworkBehaviour
             if (currentHorizontalSpeed > 0.1f)
             {
                 walkCycleTime += Time.deltaTime * currentHorizontalSpeed * walkAnimSpeedMultiplier;
-                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 9);
+                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8);
             }
             else
             {
