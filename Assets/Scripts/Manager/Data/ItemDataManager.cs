@@ -32,12 +32,14 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
     {
         itemCache.Clear();
 
-        // 1. ScriptableObject 기반 데이터베이스 로드
-        ItemDatabase database = Resources.Load<ItemDatabase>("Data/ItemDatabase");
+        // 1. [Addressable] 기반 데이터베이스 로드
+        // 이제 Resources.Load를 쓰지 않고 주소("ItemDatabase")로 직접 불러옵니다.
+        var handle = Addressables.LoadAssetAsync<ItemDatabase>("ItemDatabase");
+        ItemDatabase database = handle.WaitForCompletion();
         
         if (database == null)
         {
-            Debug.LogError("[ItemDataManager] Failed to load ItemDatabase SO from Resources/Data/ItemDatabase.");
+            Debug.LogError("[ItemDataManager] Failed to load ItemDatabase SO via Addressables (Address: ItemDatabase).");
             return;
         }
 

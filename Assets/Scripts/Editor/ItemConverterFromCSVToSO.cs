@@ -8,18 +8,20 @@ using UnityEngine.AddressableAssets;
 
 public class ItemConverterFromCSVToSO : EditorWindow
 {
-    private const string CSV_PATH = "Assets/Resources/Data/ItemDatabase.csv";
-    private const string SO_DIR = "Assets/Resources/Data/Items";
-    private const string DATABASE_PATH = "Assets/Resources/Data/ItemDatabase.asset";
-    private const string SPRITE_DIR = "Assets/Resources/Sprites/Items";
+    private const string CSV_PATH = "Assets/Datas/ItemDatabase.csv";
+    private const string SO_DIR = "Assets/Datas/Items";
+    private const string DATABASE_PATH = "Assets/Datas/ItemDatabase.asset";
+    private const string SPRITE_DIR = "Assets/Sprites/Items";
     private const string ADDRESSABLE_GROUP_NAME = "ItemIcons";
+    private const string DATA_GROUP_NAME = "GlobalDatas";
+    private const string DATABASE_ADDRESS = "ItemDatabase";
 
     [MenuItem("Tools/Project/Converter/Item CSV to SO")]
     public static void Convert()
     {
         if (!File.Exists(CSV_PATH))
         {
-            Debug.LogError($"[Converter] CSV not found at {CSV_PATH}");
+            Debug.LogError($"[Converter] CSV not found at {CSV_PATH}. Please ensure you moved the file to {CSV_PATH}");
             return;
         }
 
@@ -27,17 +29,20 @@ public class ItemConverterFromCSVToSO : EditorWindow
         var settings = AddressableAssetSettingsDefaultObject.Settings;
         if (settings == null)
         {
-            Debug.LogError("[Converter] Addressable settings not found. Please create settings first.");
+            Debug.LogError("[Converter] Addressable settings not found.");
             return;
         }
-        var group = GetOrCreateGroup(settings, ADDRESSABLE_GROUP_NAME);
+        var iconGroup = GetOrCreateGroup(settings, ADDRESSABLE_GROUP_NAME);
+        var dataGroup = GetOrCreateGroup(settings, DATA_GROUP_NAME);
 
         // 1. 폴더 확인 및 생성
+        if (!AssetDatabase.IsValidFolder("Assets/Datas"))
+        {
+            AssetDatabase.CreateFolder("Assets", "Datas");
+        }
         if (!AssetDatabase.IsValidFolder(SO_DIR))
         {
-            string parent = Path.GetDirectoryName(SO_DIR).Replace("\\", "/");
-            string folder = Path.GetFileName(SO_DIR);
-            AssetDatabase.CreateFolder(parent, folder);
+            AssetDatabase.CreateFolder("Assets/Datas", "Items");
         }
 
         // 2. CSV 데이터 읽기
@@ -77,17 +82,14 @@ public class ItemConverterFromCSVToSO : EditorWindow
             
             itemData.useTime = useTime;
 
-            // 4. 아이콘 자동 매칭 및 Addressable 등록
+            // 4. 아이콘 자동 매칭 및 Addressable 등록 (ItemIcons 그룹)
             string spritePath = $"{SPRITE_DIR}/Item_{id:D5}.png";
             Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
             if (icon != null)
             {
-                // [Addressable 핵심] 에셋을 어드레서블로 등록하고 주소 부여
                 string guid = AssetDatabase.AssetPathToGUID(spritePath);
-                var entry = settings.CreateOrMoveEntry(guid, group);
-                entry.address = $"ItemIcon_{id:D5}"; // 명확한 주소 부여
-                
-                // SO에 Reference 저장
+                var entry = settings.CreateOrMoveEntry(guid, iconGroup);
+                entry.address = $"ItemIcon_{id:D5}";
                 itemData.iconReference = new AssetReferenceSprite(guid);
             }
 
@@ -95,7 +97,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
             createdItems.Add(itemData);
         }
 
-        // 5. 통합 데이터베이스 업데이트
+        // 5. 통합 데이터베이스 업데이트 및 Addressable 등록 (GlobalDatas 그룹)
         ItemDatabase database = AssetDatabase.LoadAssetAtPath<ItemDatabase>(DATABASE_PATH);
         if (database == null)
         {
@@ -107,11 +109,17 @@ public class ItemConverterFromCSVToSO : EditorWindow
         database.RefreshList();
         EditorUtility.SetDirty(database);
 
+        // [Addressable] 통합 데이터베이스를 GlobalDatas 그룹에 등록
+        string dbGuid = AssetDatabase.AssetPathToGUID(DATABASE_PATH);
+        var dbEntry = settings.CreateOrMoveEntry(dbGuid, dataGroup); 
+        dbEntry.address = DATABASE_ADDRESS;
+
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
 
-        Debug.Log($"[Converter] Successfully converted {createdItems.Count} items and registered to Addressables.");
+        Debug.Log($"[Converter] Successfully converted {createdItems.Count} items. Database registered in '{DATA_GROUP_NAME}' as '{DATABASE_ADDRESS}'.");
     }
+
 
     private static AddressableAssetGroup GetOrCreateGroup(AddressableAssetSettings settings, string groupName)
     {
