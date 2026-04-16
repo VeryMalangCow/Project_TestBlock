@@ -1,8 +1,6 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using UnityEngine.AddressableAssets;
-using UnityEngine.ResourceManagement.AsyncOperations;
 
 public class InventorySlotUI : MonoBehaviour
 {
@@ -12,8 +10,7 @@ public class InventorySlotUI : MonoBehaviour
 
     private InventoryUI ownerUI;
     private int slotIndex = -1;
-    private AsyncOperationHandle<Sprite> iconHandle;
-    private int currentItemID = -2; // -1이 공백이므로 -2로 초기화
+    private int currentItemID = -2;
 
     public int SlotIndex => slotIndex;
 
@@ -21,68 +18,38 @@ public class InventorySlotUI : MonoBehaviour
     {
         ownerUI = ui;
         slotIndex = index;
-        currentItemID = -2; // 초기화 시 캐시 리셋
+        currentItemID = -2;
         ClearSlot();
-    }
-
-    private void OnDestroy()
-    {
-        ReleaseIcon();
     }
 
     public void UpdateSlot(PlayerInventorySlotData slot)
     {
         int nextID = (slot == null || slot.IsEmpty) ? -1 : slot.itemID;
 
-        // 1. 아이템 ID가 이전과 같다면 아무것도 하지 않음 (이미지 로드 중복 방지)
-        if (nextID == currentItemID)
+        // 1. 수량은 항상 업데이트 (이미지는 ID가 바뀔 때만)
+        if (slot != null && !slot.IsEmpty)
         {
-            // 수량만 업데이트
-            if (slot != null && !slot.IsEmpty)
-            {
-                stackText.text = slot.stackCount > 1 ? slot.stackCount.ToString() : "";
-            }
-            return;
-        }
-
-        // 2. ID가 바뀌었으므로 상태 업데이트 및 로직 실행
-        currentItemID = nextID;
-        ReleaseIcon();
-
-        if (slot == null || slot.IsEmpty)
-        {
-            ClearSlotInternal(); // 내부용 클리어 (캐시 리셋 안 함)
-            return;
-        }
-
-        ItemData data = ItemDataManager.Instance.GetItem(slot.itemID);
-        if (data != null)
-        {
-            // [Fix] AssetReference 대신 전역 주소 문자열을 사용하여 공유 에셋 중복 로드 충돌 방지
-            string address = $"ItemIcon_{data.id:D5}";
-            iconHandle = Addressables.LoadAssetAsync<Sprite>(address);
-            
-            // 안전한 람다 캡처를 위해 현재 핸들을 로컬 변수에 저장
-            var currentHandle = iconHandle;
-            iconHandle.Completed += (handle) =>
-            {
-                // [안전 장치] 핸들이 여전히 유효하고, 로드에 성공했을 때만 실행
-                if (handle.IsValid() && handle.Status == AsyncOperationStatus.Succeeded)
-                {
-                    if (iconImage != null)
-                    {
-                        iconImage.sprite = handle.Result;
-                        iconImage.enabled = true;
-                    }
-                }
-                else
-                {
-                    if (iconImage != null) iconImage.enabled = false;
-                }
-            };
-            
             stackText.text = slot.stackCount > 1 ? slot.stackCount.ToString() : "";
             stackText.enabled = true;
+        }
+
+        if (nextID == currentItemID) return;
+
+        // 2. ID가 바뀌었으므로 이미지 즉시 업데이트
+        currentItemID = nextID;
+
+        if (nextID == -1)
+        {
+            ClearSlotInternal();
+            return;
+        }
+
+        // [중앙 캐시 호출] 이제 비동기 핸들을 직접 관리하지 않습니다.
+        Sprite icon = ItemDataManager.Instance.GetItemIcon(nextID);
+        if (icon != null)
+        {
+            iconImage.sprite = icon;
+            iconImage.enabled = true;
         }
         else
         {
@@ -92,13 +59,12 @@ public class InventorySlotUI : MonoBehaviour
 
     public void ClearSlot()
     {
-        currentItemID = -2; // 외부에서 명시적으로 지울 때는 캐시도 초기화
+        currentItemID = -2;
         ClearSlotInternal();
     }
 
     private void ClearSlotInternal()
     {
-        ReleaseIcon();
         if (iconImage != null)
         {
             iconImage.sprite = null;
@@ -108,14 +74,6 @@ public class InventorySlotUI : MonoBehaviour
         {
             stackText.text = "";
             stackText.enabled = false;
-        }
-    }
-
-    private void ReleaseIcon()
-    {
-        if (iconHandle.IsValid())
-        {
-            Addressables.Release(iconHandle);
         }
     }
 }

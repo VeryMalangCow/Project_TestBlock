@@ -478,33 +478,19 @@ public class InventoryUI : MonoBehaviour
 
         if (ghostSlotPanel != null)
         {
-            // [Fix] 활성화 직전에 위치를 마우스 좌표로 강제 동기화 (1프레임 잔상 방지)
-            if (pointAction != null)
-            {
-                ghostSlotPanel.transform.position = pointAction.ReadValue<Vector2>();
-            }
-
+            // [Fix] 위치 동기화
+            if (pointAction != null) ghostSlotPanel.transform.position = pointAction.ReadValue<Vector2>();
             ghostSlotPanel.SetActive(true);
 
-            // [Addressable] ID가 바뀐 경우에만 새 아이콘 로드
+            // [ID 캐싱] 아이템이 바뀌었을 때만 중앙 캐시에서 아이콘 가져오기
             if (draggingItemData.itemID != currentGhostItemID)
             {
                 currentGhostItemID = draggingItemData.itemID;
-                ReleaseGhostIcon();
-
-                ItemData data = ItemDataManager.Instance.GetItem(draggingItemData.itemID);
-                if (data != null)
+                Sprite icon = ItemDataManager.Instance.GetItemIcon(currentGhostItemID);
+                if (ghostIcon != null)
                 {
-                    // [Fix] AssetReference 대신 전역 주소 문자열을 사용하여 중복 호출 충돌 방지
-                    string address = $"ItemIcon_{data.id:D5}";
-                    ghostIconHandle = Addressables.LoadAssetAsync<Sprite>(address);
-                    ghostIconHandle.Completed += (handle) =>
-                    {
-                        if (handle.Status == AsyncOperationStatus.Succeeded && ghostIcon != null)
-                        {
-                            ghostIcon.sprite = handle.Result;
-                        }
-                    };
+                    ghostIcon.sprite = icon;
+                    ghostIcon.enabled = (icon != null);
                 }
             }
 
@@ -515,8 +501,7 @@ public class InventoryUI : MonoBehaviour
 
     private void ClearDragging()
     {
-        ReleaseGhostIcon();
-        currentGhostItemID = -2; // 캐시 초기화
+        currentGhostItemID = -2;
         draggingSlotIndex = -1;
         draggingItemData = null;
         if (ghostSlotPanel != null) ghostSlotPanel.SetActive(false);
