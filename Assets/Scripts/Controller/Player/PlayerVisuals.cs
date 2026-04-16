@@ -45,7 +45,7 @@ public class PlayerVisuals : MonoBehaviour
         // 1. Load Skin Parts (Always Visible)
         foreach (string part in skinParts)
         {
-            Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(part);
+            Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(part, 0);
             if (sheet == null) continue;
 
             VisualLayer target = layers.Find(l => l.name.Equals(part, System.StringComparison.OrdinalIgnoreCase));

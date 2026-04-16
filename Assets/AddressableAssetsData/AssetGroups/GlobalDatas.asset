@@ -15,6 +15,11 @@ MonoBehaviour:
   m_GroupName: GlobalDatas
   m_GUID: a329fdc44b734c44e9ee84eff6580f92
   m_SerializeEntries:
+  - m_GUID: 16399f2f209709943af9dcb31023ed73
+    m_Address: Rule_TileIndex
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   - m_GUID: d14fe3628d2fd8d41ab901e8b365d0e6
     m_Address: TilesetArray
     m_ReadOnly: 0

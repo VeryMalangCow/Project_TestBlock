@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 #region Tile Sprite
 
@@ -21,11 +23,13 @@ public class TileSpriteSet
 
         for (int i = 0; i < 256; i++) maskToRuleID[i] = 0;
 
-        // [Note] 이 부분도 나중에 어드레서블로 옮길 수 있습니다.
-        TextAsset csvData = Resources.Load<TextAsset>("Sprites/Rule_TileIndex");
+        // [Addressable] 오토타일링 규칙 데이터 로드
+        var handle = Addressables.LoadAssetAsync<TextAsset>("Rule_TileIndex");
+        TextAsset csvData = handle.WaitForCompletion();
+
         if (csvData == null)
         {
-            Debug.LogError("[ResourceManager] Rule_TileIndex.csv not found in Resources!");
+            Debug.LogError("[ResourceManager] Rule_TileIndex not found via Addressables (Address: Rule_TileIndex)");
             return;
         }
 
@@ -80,6 +84,12 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
 {
     #region Variable
 
+    [Header("### Tile")]
+    [SerializeField] private Texture2DArray tilesetArray;
+    
+    // [Cache] 캐릭터 파츠 캐시 (주소 -> 12개 스프라이트 배열)
+    private Dictionary<string, Sprite[]> characterVisualCache = new Dictionary<string, Sprite[]>();
+
     #endregion
 
     #region MonoBehaviour
@@ -90,6 +100,12 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
         Init();
     }
 
+    private void OnDestroy()
+    {
+        // 시스템 종료 시 캐릭터 비주얼 캐시 정리 (참조 해제는 Addressables 시스템이 관리)
+        characterVisualCache.Clear();
+    }
+
     #endregion
 
     #region Init
@@ -97,6 +113,16 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     public void Init()
     {
         TileSpriteSet.InitializeMapping();
+        
+        // 1. [Addressable] TilesetArray 로드
+        if (tilesetArray == null)
+        {
+            var handle = Addressables.LoadAssetAsync<Texture2DArray>("TilesetArray");
+            tilesetArray = handle.WaitForCompletion();
+
+            if (tilesetArray == null)
+                Debug.LogError("[ResourceManager] Failed to load TilesetArray via Addressables.");
+        }
     }
 
     #endregion
@@ -105,52 +131,90 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
 
     public int GetTileKindCount(int tileId)
     {
-        return 3;
+        return 3; // 현재 규칙상 3개 고정
     }
 
     #endregion
 
-    #region Armor Sprite
+    #region Character Visual Access (Addressable & Cache)
 
-    public Sprite[] GetBodyPartSprites(string partName, int id = -1)
+    /// <summary>
+    /// 캐릭터 몸체 파츠(Head, Arm 등)를 즉시 로드하거나 캐시에서 가져옵니다.
+    /// </summary>
+    public Sprite[] GetBodyPartSprites(string partName, int id)
     {
-        string path = $"Sprites/Bodies/{partName}";
-        if (id != -1) path += $"_{id:D3}";
-        
-        Sprite[] sprites = Resources.LoadAll<Sprite>(path);
-        if (sprites == null || sprites.Length == 0) return null;
-
-        Sprite[] result = new Sprite[12];
-        foreach (var s in sprites)
-        {
-            string[] parts = s.name.Split('_');
-            if (parts.Length >= 2 && int.TryParse(parts[parts.Length - 1], out int idx))
-            {
-                if (idx >= 0 && idx < 12) result[idx] = s;
-            }
-        }
-        return result;
+        // [Fix] 경로 문자열(Eye/Eye)이 들어와도 마지막 이름(Eye)만 추출하여 주소 생성
+        string cleanName = partName.Contains('/') ? partName.Substring(partName.LastIndexOf('/') + 1) : partName;
+        string address = $"Body_{cleanName}_{id:D3}";
+        return GetOrLoadCharacterSprites(address);
     }
 
+    /// <summary>
+    /// 갑옷 파츠를 즉시 로드하거나 캐시에서 가져옵니다. (ID 기반)
+    /// </summary>
     public Sprite[] GetArmorSprites(string category, int id)
     {
-        string filePrefix = category.Equals("Clothes", StringComparison.OrdinalIgnoreCase) ? "Cloth" : 
-                           (category.EndsWith("s") ? category.Substring(0, category.Length - 1) : category);
+        string cleanName = category.Contains('/') ? category.Substring(category.LastIndexOf('/') + 1) : category;
+        string address = $"Armor_{cleanName}_{id:D3}";
+        return GetOrLoadCharacterSprites(address);
+    }
 
-        string path = $"Sprites/Armors/{category}/{filePrefix}_{id:D4}";
-        Sprite[] sprites = Resources.LoadAll<Sprite>(path);
-        if (sprites == null || sprites.Length == 0) return null;
-        
-        Sprite[] result = new Sprite[12];
-        foreach (var s in sprites)
+    /// <summary>
+    /// 갑옷 파츠를 즉시 로드하거나 캐시에서 가져옵니다. (Base 등 문자열 기반)
+    /// </summary>
+    public Sprite[] GetArmorSprites(string category, string idOrBase)
+    {
+        string cleanName = category.Contains('/') ? category.Substring(category.LastIndexOf('/') + 1) : category;
+        string address = $"Armor_{cleanName}_{idOrBase}";
+        return GetOrLoadCharacterSprites(address);
+    }
+
+    /// <summary>
+    /// 실제 어드레서블 로딩 및 스프라이트 정렬 로직 (중앙 집중)
+    /// </summary>
+    private Sprite[] GetOrLoadCharacterSprites(string address)
+    {
+        // 1. 캐시 확인
+        if (characterVisualCache.TryGetValue(address, out Sprite[] cached))
         {
-            string[] parts = s.name.Split('_');
-            if (parts.Length >= 2 && int.TryParse(parts[parts.Length - 1], out int idx))
-            {
-                if (idx >= 0 && idx < 12) result[idx] = s;
-            }
+            return cached;
         }
-        return result;
+
+        // 2. 동기식 어드레서블 로드 (슬라이스된 스프라이트 전체)
+        try
+        {
+            var handle = Addressables.LoadAssetAsync<IList<Sprite>>(address);
+            IList<Sprite> spriteList = handle.WaitForCompletion();
+
+            if (spriteList == null || spriteList.Count == 0)
+            {
+                Debug.LogWarning($"[ResourceManager] No sprites found at address: {address}");
+                return null;
+            }
+
+            // 3. 이름 규칙에 따라 12개 배열로 정렬 (예: ..._0, ..._1)
+            Sprite[] sorted = new Sprite[12];
+            foreach (var s in spriteList)
+            {
+                string[] parts = s.name.Split('_');
+                if (parts.Length >= 2 && int.TryParse(parts[parts.Length - 1], out int idx))
+                {
+                    if (idx >= 0 && idx < 12)
+                    {
+                        sorted[idx] = s;
+                    }
+                }
+            }
+
+            // 4. 캐시에 저장 후 반환
+            characterVisualCache[address] = sorted;
+            return sorted;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[ResourceManager] Error loading character visual {address}: {e.Message}");
+            return null;
+        }
     }
 
     #endregion
