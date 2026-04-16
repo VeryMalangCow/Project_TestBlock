@@ -79,6 +79,8 @@ All instructions and decisions recorded in the `GEMINI.md` file take precedence 
 ### Layers
 - **0: Default** (Standard)
 - **6: Ground** (Chunk meshes, world colliders, floor tiles)
+- **7: Player** (Character body and collision)
+- **8: Item** (Dropped items in the world)
 
 ### Tags
 - **Player** (Standard)
@@ -114,6 +116,7 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 ### Global Systems (Persistent)
 - **GameManager**: Central authority for global game state, session management, and high-level logic.
 - **ResourceManager**: Handles asset lifecycle, sprite caching, `Texture2DArray` references, and 8-direction rule mapping.
+- **NetworkObjectPoolManager**: High-performance multiplayer pooling using `INetworkPrefabInstanceHandler` to minimize Instantiate/Destroy overhead.
 
 ### Scene Systems (Volatile)
 - **MapManager**: Data container for the active world. Manages `MapData`, `ChunkData`, and `BlockData` structures.
@@ -177,6 +180,25 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [x] **Player Sync**: Client-Authoritative Transform for snappy movement. (2026-04-01)
   - [x] **Visual Sync**: Armor synchronization via NetworkVariable events. (2026-04-01)
   - [x] **Map Streaming**: On-demand chunk synchronization from Host to Client. (2026-04-01)
+  - [x] **Multiplayer Object Pooling**: `NetworkObjectPoolManager` for efficient resource management. (2026-04-15)
+
+- [ ] **Major Goal 3: Inventory & Item System**
+  - [x] **Advanced Interaction System**: Integrated `InputSystem_Actions` for complex UI behavior (Left/Right click, Shift-modifier). (2026-04-15)
+  - [x] **Item Dropping & Pickup**: Server-authoritative item system with acceleration-based attraction. (2026-04-15)
+  - [ ] Item Data Structure (ScriptableObject) & Database.
+  - [ ] Block Looting: Dropped items when blocks are destroyed.
+  - [ ] Basic Inventory UI (Grid system) and Hotbar interaction.
+  - [ ] **Individual Player Inventory**: Separate state for each networked user.
+  - [ ] **Player Data Save/Load system**: Persist player position, health, and inventory state.
+
+- [ ] **Major Goal 4: Advanced Player Physics & Movement**
+  - [x] Smooth Horizontal Movement (Completed)
+  - [x] Box-based Ground Detection & Jump (Completed)
+  - [x] **Terraria-style Terrain Following**: Step-up and Slope handling. (2026-04-06)
+  - [x] **Animation Correction**: Idle(0), Walk(1-8), Jump(9), Dash(10). (2026-04-15)
+  - [x] **Physics Optimization**: Implemented Layer Overrides and Throttled Search Logic. (2026-04-15)
+  - [ ] **Player Dash**: Fast horizontal burst using sprite index 10.
+  - [ ] Coyote Time & Jump Buffering for better platforming feel.
 
 ----------
 
@@ -195,22 +217,9 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 - **Verification:** Any `ServerRpc` that modifies the world MUST include distance and permission checks on the server side to prevent cheating or invalid operations.
 
 ### 4. Performance & GC
-- **No Search in Update:** Never use `FindObjectsByType` or `GetComponent` in `Update/FixedUpdate`. Use a Registry pattern or cached references.
-- **Allocation:** Avoid `new` keyword inside network sync loops (like `UpdateSlidingWindow`) to prevent GC spikes. reuse collections with `.Clear()`.
-
-- [ ] **Major Goal 3: Inventory & Item System**
-  - [ ] Item Data Structure (ScriptableObject) & Database.
-  - [ ] Block Looting: Dropped items when blocks are destroyed.
-  - [ ] Basic Inventory UI (Grid system) and Hotbar interaction.
-  - [ ] **Individual Player Inventory**: Separate state for each networked user.
-  - [ ] **Player Data Save/Load system**: Persist player position, health, and inventory state.
-
-- [ ] **Major Goal 4: Advanced Player Physics & Movement**
-  - [x] Smooth Horizontal Movement (Completed)
-  - [x] Box-based Ground Detection & Jump (Completed)
-  - [x] **Terraria-style Terrain Following**: Step-up and Slope handling. (2026-04-06)
-  - [ ] **Player Dash**: Fast horizontal burst using sprite index 11.
-  - [ ] Coyote Time & Jump Buffering for better platforming feel.
+- **Object Pooling**: Mandatory for items and projectiles via `NetworkObjectPoolManager`.
+- **Collider Layer Overrides**: Use `includeLayers` and `excludeLayers` to surgically isolate physics interactions (Map vs Player/Item only).
+- **Throttling**: CPU-intensive tasks like `OverlapCircle` must use a `searchInterval` (e.g., 0.2s) instead of running every frame.
 
 ----------
 
@@ -222,18 +231,9 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [ ] Confirm if the Client can join using the code without firewall issues.
   - [ ] Ensure player movement and world data (chunks) are synchronized.
 
-### 2. Performance & Latency QA
-- **Goal:** Monitor network stability under the Unity Relay environment.
-- **Checklist:**
-  - [ ] Check for movement jitter or "rubber-banding" on the client side.
-  - [ ] Optimize `NetworkVariable` update frequency if necessary.
+### 2. Item Database & Mining
+- **Goal:** Implement the logic to drop specific items when blocks are mined.
+- **Detail:** Connect `MapManager.SetBlock` to `ItemController` spawning.
 
-### 3. Environment Restoration
-- **Goal:** Confirm the game works with standard security settings.
-- **Checklist:**
-  - [ ] Re-enable Windows Defender Firewall on all PCs.
-  - [ ] Set Network Profile back to **Public** and verify Relay still bypasses it.
-
-### 4. Gameplay: Player Dash
-- **Goal:** Implement the horizontal burst movement (Dash).
-- **Detail:** Use sprite index 11 for the dash animation and implement a synchronized cooldown.
+### 3. Inventory Delta Optimization
+- **Goal:** Optimize inventory synchronization by sending only changed slots instead of the entire array.

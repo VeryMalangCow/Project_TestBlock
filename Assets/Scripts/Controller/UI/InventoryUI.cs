@@ -4,6 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
+using UnityEngine.AddressableAssets;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using TMPro;
 
 public class InventoryUI : MonoBehaviour
@@ -49,6 +51,8 @@ public class InventoryUI : MonoBehaviour
     // 드래그 상태 데이터
     private int draggingSlotIndex = -1;
     private PlayerInventorySlotData draggingItemData = null;
+    private AsyncOperationHandle<Sprite> ghostIconHandle;
+    private int currentGhostItemID = -2; // -1이 공백이므로 -2로 초기화
 
     private void Awake()
     {
@@ -146,14 +150,15 @@ public class InventoryUI : MonoBehaviour
         // 고스트 아이콘 위치 업데이트
         HandleGhostIconFollow();
 
-        // UI 상호작용 감지 (Input System 방식)
+        // UI 상호작용 및 갱신 (인벤토리가 열려 있을 때만)
         if (isInventoryOpen)
         {
             if (interact00Action != null && interact00Action.WasPressedThisFrame()) HandleInputInteraction(0);
             else if (interact01Action != null && interact01Action.WasPressedThisFrame()) HandleInputInteraction(1);
+            
+            // 열려 있을 때만 데이터 갱신
+            RefreshUI();
         }
-
-        RefreshUI();
     }
 
     private void HandleGhostIconFollow()
@@ -448,6 +453,19 @@ public class InventoryUI : MonoBehaviour
 
     #endregion
 
+    private void OnDestroy()
+    {
+        ReleaseGhostIcon();
+    }
+
+    private void ReleaseGhostIcon()
+    {
+        if (ghostIconHandle.IsValid())
+        {
+            Addressables.Release(ghostIconHandle);
+        }
+    }
+
     #region Helper Methods
 
     private void UpdateGhostUI()
@@ -467,18 +485,38 @@ public class InventoryUI : MonoBehaviour
             }
 
             ghostSlotPanel.SetActive(true);
-            ItemData data = ItemDataManager.Instance.GetItem(draggingItemData.itemID);
-            if (data != null)
+
+            // [Addressable] ID가 바뀐 경우에만 새 아이콘 로드
+            if (draggingItemData.itemID != currentGhostItemID)
             {
-                if (ghostIcon != null) ghostIcon.sprite = data.icon;
-                if (ghostStackText != null) 
-                    ghostStackText.text = draggingItemData.stackCount > 1 ? draggingItemData.stackCount.ToString() : "";
+                currentGhostItemID = draggingItemData.itemID;
+                ReleaseGhostIcon();
+
+                ItemData data = ItemDataManager.Instance.GetItem(draggingItemData.itemID);
+                if (data != null)
+                {
+                    // [Fix] AssetReference 대신 전역 주소 문자열을 사용하여 중복 호출 충돌 방지
+                    string address = $"ItemIcon_{data.id:D5}";
+                    ghostIconHandle = Addressables.LoadAssetAsync<Sprite>(address);
+                    ghostIconHandle.Completed += (handle) =>
+                    {
+                        if (handle.Status == AsyncOperationStatus.Succeeded && ghostIcon != null)
+                        {
+                            ghostIcon.sprite = handle.Result;
+                        }
+                    };
+                }
             }
+
+            if (ghostStackText != null) 
+                ghostStackText.text = draggingItemData.stackCount > 1 ? draggingItemData.stackCount.ToString() : "";
         }
     }
 
     private void ClearDragging()
     {
+        ReleaseGhostIcon();
+        currentGhostItemID = -2; // 캐시 초기화
         draggingSlotIndex = -1;
         draggingItemData = null;
         if (ghostSlotPanel != null) ghostSlotPanel.SetActive(false);

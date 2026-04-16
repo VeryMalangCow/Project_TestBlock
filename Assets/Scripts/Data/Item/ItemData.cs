@@ -1,5 +1,5 @@
-using System;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
 
 public enum ItemType
 {
@@ -9,19 +9,25 @@ public enum ItemType
     Helmet,
     Chestplate,
     Leggings,
-    Boots,
-    Jetbag,
-    Accessory
+    Tool,
+    Consumable
 }
 
-[Serializable]
-public class ItemData
+[CreateAssetMenu(fileName = "NewItemData", menuName = "Project_BlockTest/ItemData")]
+public class ItemData : ScriptableObject
 {
+    [Header("### Basic Info")]
     public int id;
     public string itemName;
+    [TextArea(3, 10)]
     public string description;
-    public int maxStack;
+
+    [Header("### Gameplay")]
+    public int maxStack = 999;
     public ItemType type;
     public float useTime;
-    public Sprite icon;
+
+    [Header("### Visuals (Addressables)")]
+    public AssetReferenceSprite iconReference;
+    public AssetReference worldPrefabReference;
 }

@@ -10,6 +10,13 @@ public class ItemController : NetworkBehaviour
     [Header("### Item Data")]
     public NetworkVariable<int> itemID = new NetworkVariable<int>(-1);
     public NetworkVariable<int> stackCount = new NetworkVariable<int>(0);
+    
+    // [Network Sync] 수동 위치 동기화용 변수
+    private NetworkVariable<Vector2> netPosition = new NetworkVariable<Vector2>(
+        Vector2.zero, 
+        NetworkVariableReadPermission.Everyone, 
+        NetworkVariableWritePermission.Server
+    );
 
     [Header("### References")]
     [SerializeField] private SpriteRenderer spriteRenderer;
@@ -22,6 +29,7 @@ public class ItemController : NetworkBehaviour
     public static float Acceleration = 30f;
     public static float MaxSpeed = 20f;
     public static float DropCooldownTime = 2f;
+    public static float PositionThreshold = 0.05f; // 이 값보다 많이 움직여야 네트워크 업데이트
 
     private float currentSpeed;
     private float cooldownTimer;
@@ -34,6 +42,8 @@ public class ItemController : NetworkBehaviour
 
     #region Lifecycle
 
+    private UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle<Sprite> iconHandle;
+
     public override void OnNetworkSpawn()
     {
         // 서버/클라이언트 공통: 아이템 ID가 결정되면 스프라이트 업데이트
@@ -45,11 +55,19 @@ public class ItemController : NetworkBehaviour
             // 여러 아이템의 탐색 시점을 분산 (static 값 참조)
             searchTimer = Random.Range(0, SearchInterval);
             isBeingPickedUp = false;
+            netPosition.Value = transform.position;
+        }
+        else
+        {
+            // 클라이언트는 서버의 현재 위치에서 시작
+            transform.position = netPosition.Value;
         }
     }
 
     public override void OnNetworkDespawn()
     {
+        ReleaseIcon();
+
         if (IsServer)
         {
             // 풀에 돌아갈 때 상태 초기화
@@ -60,31 +78,70 @@ public class ItemController : NetworkBehaviour
         }
     }
 
+    public override void OnDestroy()
+    {
+        base.OnDestroy(); // 부모(NetworkBehaviour)의 정리 로직 실행
+        ReleaseIcon();
+    }
+
+    private void ReleaseIcon()
+    {
+        if (iconHandle.IsValid())
+        {
+            UnityEngine.AddressableAssets.Addressables.Release(iconHandle);
+        }
+    }
+
     private void Update()
+    {
+        if (IsServer)
+        {
+            // 서버는 물리 연산 결과로 netPosition 업데이트 (FixedUpdate에서 수행)
+        }
+        else
+        {
+            // 클라이언트: 서버 위치로 부드럽게 보간 (Interpolation)
+            transform.position = Vector3.Lerp(transform.position, netPosition.Value, Time.deltaTime * 15f);
+        }
+    }
+
+    private void FixedUpdate()
     {
         if (!IsServer) return;
 
         // 1. 버림/생성 초기 쿨다운 체크
         if (cooldownTimer > 0)
         {
-            cooldownTimer -= Time.deltaTime;
+            cooldownTimer -= Time.fixedDeltaTime;
+            SyncPositionToServer();
             return;
         }
 
-        // 2. 이미 흡수 중인 경우: 매 프레임 부드럽게 이동
+        // 2. 이미 흡수 중인 경우
         if (isAttracted)
         {
             HandleAttraction();
         }
         else
         {
-            // 3. 탐색 중인 경우: 설정된 주기마다 효율적으로 확인
-            searchTimer -= Time.deltaTime;
+            // 3. 탐색 중인 경우
+            searchTimer -= Time.fixedDeltaTime;
             if (searchTimer <= 0)
             {
                 SearchForPlayer();
                 searchTimer = SearchInterval;
             }
+        }
+
+        // 4. 위치 동기화
+        SyncPositionToServer();
+    }
+
+    private void SyncPositionToServer()
+    {
+        if (Vector2.Distance(netPosition.Value, transform.position) > PositionThreshold)
+        {
+            netPosition.Value = transform.position;
         }
     }
 
@@ -94,7 +151,6 @@ public class ItemController : NetworkBehaviour
 
     private void SearchForPlayer()
     {
-        // [Fix] Player 레이어만 콕 집어서 탐색 (static 값 참조)
         int playerLayer = LayerMask.GetMask("Player");
         Collider2D[] hitColliders = Physics2D.OverlapCircleAll(transform.position, SearchRadius, playerLayer);
         
@@ -125,8 +181,6 @@ public class ItemController : NetworkBehaviour
             
             rb.bodyType = RigidbodyType2D.Kinematic;
             rb.linearVelocity = Vector2.zero;
-            
-            Debug.Log($"[ItemController] Started attracting to player: {closest.OwnerClientId}");
         }
     }
 
@@ -138,11 +192,10 @@ public class ItemController : NetworkBehaviour
             return;
         }
 
-        // 플레이어 방향으로 가속 이동 (static 값 참조)
-        currentSpeed = Mathf.Min(currentSpeed + Acceleration * Time.deltaTime, MaxSpeed);
-        transform.position = Vector3.MoveTowards(transform.position, targetPlayer.transform.position, currentSpeed * Time.deltaTime);
+        currentSpeed = Mathf.Min(currentSpeed + Acceleration * Time.fixedDeltaTime, MaxSpeed);
+        Vector2 nextPos = Vector2.MoveTowards(rb.position, targetPlayer.transform.position, currentSpeed * Time.fixedDeltaTime);
+        rb.MovePosition(nextPos);
 
-        // 만약 타겟이 너무 멀어지면 (탐색 범위 1.5배 이상) 다시 탐색
         if (Vector2.Distance(transform.position, targetPlayer.transform.position) > SearchRadius * 1.5f)
         {
             ResetAttraction();
@@ -223,10 +276,21 @@ public class ItemController : NetworkBehaviour
 
     private void UpdateVisual(int id)
     {
+        ReleaseIcon();
+
         ItemData data = ItemDataManager.Instance.GetItem(id);
         if (data != null && spriteRenderer != null)
         {
-            spriteRenderer.sprite = data.icon;
+            // [Fix] AssetReference 대신 전역 주소 문자열을 사용하여 충돌 방지
+            string address = $"ItemIcon_{data.id:D5}";
+            iconHandle = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Sprite>(address);
+            iconHandle.Completed += (handle) =>
+            {
+                if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
+                {
+                    spriteRenderer.sprite = handle.Result;
+                }
+            };
         }
     }
 
