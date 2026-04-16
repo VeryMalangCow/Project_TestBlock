@@ -103,19 +103,27 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 - **Bitmask Logic (256 combinations):**
   - **Orthogonal (Exist):** Check if neighbors at 2, 4, 6, 8 are active.
   - **Diagonal (Missing):** Check if neighbors at 1, 3, 7, 9 are *missing*, but only if their two adjacent orthogonal neighbors exist.
-- **Rule Mapping:** 256 combinations are mapped to 47 unique RuleIDs via `Rule_TileIndex.csv`.
+- **Rule Mapping:** 256 combinations are mapped to 47 unique RuleIDs via `Rule_TileIndex.CSV` (Now loaded via Addressables).
+
+### Addressables & ScriptableObject System
+- **Data Management:** All item data is managed via `ItemData` SO and `ItemDatabase` SO.
+- **Zero-Latency Visuals:** Implemented a central cache in `ItemDataManager` and `ResourceManager` using `WaitForCompletion()` to eliminate Addressable's 1-frame delay.
+- **Resource Optimization:** Minimized `Resources` folder usage (only `UnityPlayerAccountSettings` remains) to optimize build size and initial loading time.
+- **Character Visuals:** Dynamically loaded sliced sprites for bodies and armors via Addressables with automatic name-based sorting (12 frames).
 
 ### Texture2DArray Rendering
 - **Structure:** Each tile ID occupies **141 layers** (47 Rules * 3 Random Variations).
 - **Indexing Formula:** `Index = (TileID * 141) + (RuleID * 3) + VariationIdx`.
 - **Optimization:** `MeshManager` caches neighbor states in a local 18x18 array per chunk to minimize dictionary lookups.
+- **Loading:** `TilesetArray.asset` is managed via Addressables for memory efficiency.
 
 ----------
 
 ## 9. Role List (Systems)
 ### Global Systems (Persistent)
 - **GameManager**: Central authority for global game state, session management, and high-level logic.
-- **ResourceManager**: Handles asset lifecycle, sprite caching, `Texture2DArray` references, and 8-direction rule mapping.
+- **ResourceManager**: Manages Addressable character visuals, tileset arrays, and auto-tiling rules with a high-performance cache.
+- **ItemDataManager**: Handles ScriptableObject-based item databases and provides instant sprite access via Addressable sync-loading.
 - **NetworkObjectPoolManager**: High-performance multiplayer pooling using `INetworkPrefabInstanceHandler` to minimize Instantiate/Destroy overhead.
 
 ### Scene Systems (Volatile)
@@ -125,79 +133,47 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 ----------
 
 ## 10. Editor Tools
+### Converter Tools
+#### Item CSV to SO
+- **Path:** `Tools > Project > Converter > Item CSV to SO`
+- **Features:** Converts `ItemDatabase.csv` to `ItemData` SOs, auto-registers to Addressables, and links icons.
+
+#### Character Visuals to Addressable
+- **Path:** `Tools > Project > Converter > Character Visuals to Addressable`
+- **Features:** Automatically scans `Bodies` and `Armors` folders, assigns standardized addresses (e.g., `Body_Head_000`), and manages Addressable groups.
+
+### Texture2D Baker
+#### Tile Texture2DArray
+- **Path:** `Tools > Project > Texture2D Baker > Tile Texture2DArray`
+- **Features:** Bakes sliced tile sprites into a `Texture2DArray` (16x16 resolution) and auto-registers it to Addressables as 'TilesetArray'.
+
 ### Sprite Processor
 #### Tile
 - **Path:** `Tools > Project > Sprite Processor > Tile`
 - **Features:** Enforces `TileSpriteRule` (16x16 Grid, Max Size 256), **Smart Slicing** (skips empty regions), and Pivot (8, 8).
 
-#### Platform
-- **Path:** `Tools > Project > Sprite Processor > Platform`
-- **Features:** Processes platform sprites with 8x8 Grid, Max Size 64, and Pivot (4, 4).
-
-#### Torch
-- **Path:** `Tools > Project > Sprite Processor > Torch`
-- **Features:** Processes torch sprites with 9x9 Grid, Max Size 32, and Pivot (4.5, 4.5).
-
-#### Tree
-- **Path:** `Tools > Project > Sprite Processor > Tree`
-- **Features:** Processes tree sprites with 34x82 Grid, Max Size 128, and Pivot (17, 5).
-
-#### Armor
-- **Path:** `Tools > Project > Sprite Processor > Armor`
-- **Features:** Processes armor sprites with 16x16 Grid, Max Size 128, and Pivot (8, 8).
-
-### Texture2D Baker
-#### Tile Texture2DArray
-- **Path:** `Tools > Project > Texture2D Baker > Tile Texture2DArray`
-- **Features:** Bakes sliced tile sprites into a `Texture2DArray` (16x16 resolution).
-- **Logic:** Each TileID occupies **141 layers** (47 Rules * 3 Variations).
-- **Baking:** Uses **Numeric Sorting** based on sprite name suffixes (e.g., `_000`, `_001`).
-
 ----------
 
 ## 11. Progress Tracking
 - [x] Initial `GEMINI.md` creation and project metadata documentation (2026-03-24)
-- [x] Foundation: World Interaction & Visuals
-  - [x] Mesh-based Chunk Rendering with Sliding Window & Object Pooling (2026-03-27)
-  - [x] Terraria-style Paper Doll Visual System (2026-03-30)
-  - [x] Basic Block Placement & Destruction (2026-03-30)
-  - [x] **Advanced 8-direction Autotiling (47 Rules)** (2026-03-31)
-  - [x] **Texture2DArray Optimization (141 Layers system)** (2026-03-31)
-
-### 1. Procedural World Generation Rules
-- **Spawn Protection (Safe Zone):**
-  - **Empty Area:** A 6x6 block area centered on the Spawn Point must be empty (no blocks) to prevent player suffocation and for future portal placement.
-  - **Flat Floor:** Exactly 6 blocks directly beneath the 6x6 empty area must be solid and flat to provide a stable landing.
-- **Terrain Baseline:**
-  - The Spawn Point's Y-coordinate minus 1 (the floor) serves as the **Average Height (Baseline)** for the Perlin Noise generation.
-  - The terrain height at the Spawn Point's X-coordinate must align with this baseline to ensure the spawn area feels integrated into the world.
-
-- [x] **Major Goal 2: Multiplayer Core (NGO & Relay)**
-  - [x] NGO Package integration and NetworkManager setup. (2026-04-01)
-  - [x] **Unity Relay Integration**: Bypassing firewalls and Public IPs. (2026-04-02)
-  - [x] **Join Code System**: 6-digit code-based connection (Terraria style). (2026-04-02)
-  - [x] **Unity 6 Compatibility**: Fixed namespace conflicts (Allocation class collision). (2026-04-02)
-  - [x] **Player Sync**: Client-Authoritative Transform for snappy movement. (2026-04-01)
-  - [x] **Visual Sync**: Armor synchronization via NetworkVariable events. (2026-04-01)
-  - [x] **Map Streaming**: On-demand chunk synchronization from Host to Client. (2026-04-01)
-  - [x] **Multiplayer Object Pooling**: `NetworkObjectPoolManager` for efficient resource management. (2026-04-15)
+- [x] Foundation: World Interaction & Visuals (2026-03-31)
+- [x] **Major Goal 2: Multiplayer Core (NGO & Relay)** (2026-04-02)
 
 - [ ] **Major Goal 3: Inventory & Item System**
-  - [x] **Advanced Interaction System**: Integrated `InputSystem_Actions` for complex UI behavior (Left/Right click, Shift-modifier). (2026-04-15)
-  - [x] **Item Dropping & Pickup**: Server-authoritative item system with acceleration-based attraction. (2026-04-15)
-  - [ ] Item Data Structure (ScriptableObject) & Database.
+  - [x] **Advanced Interaction System**: Integrated `InputSystem_Actions` for complex UI behavior. (2026-04-15)
+  - [x] **Item Dropping & Pickup**: Server-authoritative item system. (2026-04-15)
+  - [x] **SO & Addressable Database**: Complete transition from CSV to SO/Addressables. (2026-04-16)
+  - [x] **Instant UI Feedback**: Synchronous Addressable loading with central caching. (2026-04-16)
   - [ ] Block Looting: Dropped items when blocks are destroyed.
   - [ ] Basic Inventory UI (Grid system) and Hotbar interaction.
   - [ ] **Individual Player Inventory**: Separate state for each networked user.
-  - [ ] **Player Data Save/Load system**: Persist player position, health, and inventory state.
+  - [ ] **Inventory Delta Optimization**: Optimize sync by sending only changed slots.
 
 - [ ] **Major Goal 4: Advanced Player Physics & Movement**
-  - [x] Smooth Horizontal Movement (Completed)
-  - [x] Box-based Ground Detection & Jump (Completed)
+  - [x] Smooth Horizontal Movement & Ground Detection.
   - [x] **Terraria-style Terrain Following**: Step-up and Slope handling. (2026-04-06)
-  - [x] **Animation Correction**: Idle(0), Walk(1-8), Jump(9), Dash(10). (2026-04-15)
-  - [x] **Physics Optimization**: Implemented Layer Overrides and Throttled Search Logic. (2026-04-15)
-  - [ ] **Player Dash**: Fast horizontal burst using sprite index 10.
+  - [x] **Physics Stabilization**: FixedUpdate-based server physics for items. (2026-04-16)
+  - [x] **Addressable Character Visuals**: High-performance body/armor loading with caching. (2026-04-16)
   - [ ] Coyote Time & Jump Buffering for better platforming feel.
 
 ----------
