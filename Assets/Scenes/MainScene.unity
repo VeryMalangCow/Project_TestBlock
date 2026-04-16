@@ -6622,7 +6622,7 @@ PrefabInstance:
     m_RemovedGameObjects: []
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: 3743516283863154747, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
-      insertIndex: -1
+      insertIndex: 0
       addedObject: {fileID: 1326686276}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
@@ -11530,7 +11530,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4dcdf8cffc8cdcb4da2fb154634a6076, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResourceManager
-  tilesetArray: {fileID: 0}
 --- !u!1 &1765689898
 GameObject:
   m_ObjectHideFlags: 0

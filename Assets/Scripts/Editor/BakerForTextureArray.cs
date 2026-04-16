@@ -1,13 +1,17 @@
 using UnityEngine;
 using UnityEditor;
+using UnityEditor.AddressableAssets;
+using UnityEditor.AddressableAssets.Settings;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
 
 public class BakerForTextureArray : EditorWindow
 {
-    private string spritePath = "Assets/Resources/Sprites/Tiles";
-    private string outputPath = "Assets/Resources/Text2DArray/TilesetArray.asset";
+    private string spritePath = "Assets/Sprites/Tiles";
+    private string outputPath = "Assets/Datas/Tileset/TilesetArray.asset";
+    private const string ADDRESSABLE_GROUP_NAME = "GlobalDatas";
+    private const string ASSET_ADDRESS = "TilesetArray";
 
     [MenuItem("Tools/Project/Texture2D Baker/Tile Texture2DArray")]
     public static void ShowWindow()
@@ -29,11 +33,19 @@ public class BakerForTextureArray : EditorWindow
 
     private void Bake()
     {
+        // 0. Addressable Settings 확인
+        var settings = AddressableAssetSettingsDefaultObject.Settings;
+        if (settings == null)
+        {
+            Debug.LogError("[Baker] Addressable settings not found.");
+            return;
+        }
+
         // 1. Find all textures matching Tile_ID format
-        string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { spritePath });
+        string[] textureGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { spritePath });
         SortedDictionary<int, string> tileTextures = new SortedDictionary<int, string>();
 
-        foreach (var guid in guids)
+        foreach (var guid in textureGuids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
             string name = Path.GetFileNameWithoutExtension(path);
@@ -50,18 +62,11 @@ public class BakerForTextureArray : EditorWindow
         }
 
         // 2. Determine dimensions and total layers
-        // Each tile has 47 rules * 3 variations = 141 sprites
         int rulesCount = 47;
         int variations = 3;
         int spritesPerTile = rulesCount * variations;
         int maxTileId = tileTextures.Keys.Max();
         int totalLayers = (maxTileId + 1) * spritesPerTile;
-
-        // Use the first texture to get dimensions
-        string firstPath = tileTextures.Values.First();
-        TextureImporter firstImporter = AssetImporter.GetAtPath(firstPath) as TextureImporter;
-        firstImporter.GetSourceTextureWidthAndHeight(out int width, out int height);
-        // We expect individual sprites to be 16x16 as per rule
         int spriteSize = 16;
         
         Debug.Log($"Baking TextureArray: MaxTileID={maxTileId}, SpritesPerTile={spritesPerTile}, TotalLayers={totalLayers}");
@@ -71,12 +76,11 @@ public class BakerForTextureArray : EditorWindow
         texArray.wrapMode = TextureWrapMode.Clamp;
 
         // 3. Fill pixels
-        foreach (var entry in tileTextures)
+        foreach (var dictEntry in tileTextures)
         {
-            int tileId = entry.Key;
-            string path = entry.Value;
+            int tileId = dictEntry.Key;
+            string path = dictEntry.Value;
             
-            // Load all sprites from this texture, sorted numerically by their suffix (e.g., _000, _001)
             Sprite[] sprites = AssetDatabase.LoadAllAssetsAtPath(path)
                 .OfType<Sprite>()
                 .OrderBy(s => {
@@ -86,15 +90,9 @@ public class BakerForTextureArray : EditorWindow
                 })
                 .ToArray();
             
-            if (sprites.Length < spritesPerTile)
-            {
-                Debug.LogWarning($"Tile_{tileId:D4} at {path} has only {sprites.Length} sprites, expected {spritesPerTile}. Filling remaining with empty.");
-            }
-
             for (int i = 0; i < spritesPerTile; i++)
             {
                 int layerIdx = (tileId * spritesPerTile) + i;
-                
                 if (i < sprites.Length)
                 {
                     Sprite s = sprites[i];
@@ -105,7 +103,6 @@ public class BakerForTextureArray : EditorWindow
                 }
                 else
                 {
-                    // Empty pixels for missing sprites
                     texArray.SetPixels(new Color[spriteSize * spriteSize], layerIdx);
                 }
             }
@@ -119,8 +116,18 @@ public class BakerForTextureArray : EditorWindow
         
         AssetDatabase.CreateAsset(texArray, outputPath);
         AssetDatabase.SaveAssets();
+
+        // 5. [Addressable] 자동으로 등록 (이름 충돌 방지를 위해 assetGuid, addressableEntry 사용)
+        string assetGuid = AssetDatabase.AssetPathToGUID(outputPath);
+        var group = settings.FindGroup(ADDRESSABLE_GROUP_NAME);
+        if (group == null) group = settings.CreateGroup(ADDRESSABLE_GROUP_NAME, false, false, true, null);
         
-        Debug.Log($"Successfully baked {totalLayers} layers to {outputPath}");
-        Debug.Log($"Formula: Index = (TileID * 141) + (RuleID * 3) + VariationIdx");
+        var addressableEntry = settings.CreateOrMoveEntry(assetGuid, group);
+        addressableEntry.address = ASSET_ADDRESS;
+        
+        AssetDatabase.SaveAssets();
+        AssetDatabase.Refresh();
+        
+        Debug.Log($"Successfully baked to {outputPath} and registered to Addressables as '{ASSET_ADDRESS}'");
     }
 }

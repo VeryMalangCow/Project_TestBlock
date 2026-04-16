@@ -40,21 +40,20 @@ public class SpriteProcessor : Editor
     public static void ProcessSpritesForTree()
         => ProcessTileTexture("Trees", "Tree", new Texture2DElement(256, false, new Vector2Int(57, 150), new Vector2(28.5f, 9)));
 
+
     [MenuItem("Tools/Project/Sprite Processor/Body")]
     public static void ProcessSpritesForBody()
-    {
-        ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16));
-    }
+        => ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16));
+    
 
     [MenuItem("Tools/Project/Sprite Processor/Armor")]
     public static void ProcessSpritesForArmor()
-    {
-        ProcessTileTexture("Armors", "Armor", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16));
-    }
+        => ProcessTileTexture("Armors", "Armor", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16));
+    
 
     private static void ProcessTileTexture(string fileName, string debugName, Texture2DElement texture2DElement)
     {
-        string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Resources/Sprites/" + fileName });
+        string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Sprites/" + fileName });
         int count = 0;
 
         foreach (string guid in guids)

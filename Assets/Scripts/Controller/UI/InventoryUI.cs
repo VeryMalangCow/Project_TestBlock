@@ -150,15 +150,16 @@ public class InventoryUI : MonoBehaviour
         // 고스트 아이콘 위치 업데이트
         HandleGhostIconFollow();
 
-        // UI 상호작용 및 갱신 (인벤토리가 열려 있을 때만)
+        // UI 상호작용 (인벤토리가 열려 있을 때만)
         if (isInventoryOpen)
         {
             if (interact00Action != null && interact00Action.WasPressedThisFrame()) HandleInputInteraction(0);
             else if (interact01Action != null && interact01Action.WasPressedThisFrame()) HandleInputInteraction(1);
-            
-            // 열려 있을 때만 데이터 갱신
-            RefreshUI();
         }
+
+        // [Fix] 데이터 갱신: 닫혀 있을 때는 핫바(0~9)만, 열려 있을 때는 전체 슬롯을 갱신
+        int refreshCount = isInventoryOpen ? uiSlots.Count : HOTBAR_COUNT;
+        RefreshUI(refreshCount);
     }
 
     private void HandleGhostIconFollow()
@@ -303,12 +304,14 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    public void RefreshUI()
+    public void RefreshUI(int count = -1)
     {
         if (PlayerController.Local == null || PlayerController.Local.Data == null || !isInitialized) return;
 
         var inventory = PlayerController.Local.Data.inventory;
-        for (int i = 0; i < uiSlots.Count; i++)
+        int loopCount = (count == -1) ? uiSlots.Count : Mathf.Min(count, uiSlots.Count);
+
+        for (int i = 0; i < loopCount; i++)
         {
             if (i < inventory.slots.Length)
             {
@@ -316,6 +319,7 @@ public class InventoryUI : MonoBehaviour
             }
         }
     }
+
 
     #region Interaction Logic
 
