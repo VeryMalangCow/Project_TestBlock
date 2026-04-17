@@ -9,23 +9,22 @@ using System.IO;
 public class BakerForTextureArray : EditorWindow
 {
     private string spritePath = "Assets/Sprites/Tiles";
-    private string outputPath = "Assets/Datas/Tileset/TilesetArray.asset";
-    private const string ADDRESSABLE_GROUP_NAME = "GlobalDatas";
-    private const string ASSET_ADDRESS = "TilesetArray";
+    private string outputFolder = "Assets/Datas/Tileset/Individual";
+    private const string ADDRESSABLE_GROUP_NAME = "TileAtlases";
 
-    [MenuItem("Tools/Project/Texture2D Baker/Tile Texture2DArray")]
+    [MenuItem("Tools/Project/Texture2D Baker/Tile Atlas Baker")]
     public static void ShowWindow()
     {
-        GetWindow<BakerForTextureArray>("Tileset Baker");
+        GetWindow<BakerForTextureArray>("Tile Atlas Baker");
     }
 
     private void OnGUI()
     {
-        GUILayout.Label("Tileset Texture2DArray Baker (47 Rules x 3 Variations)", EditorStyles.boldLabel);
+        GUILayout.Label("Individual Tile Atlas Baker (128x128 per Variation)", EditorStyles.boldLabel);
         spritePath = EditorGUILayout.TextField("Sprite Path", spritePath);
-        outputPath = EditorGUILayout.TextField("Output Path", outputPath);
+        outputFolder = EditorGUILayout.TextField("Output Folder", outputFolder);
 
-        if (GUILayout.Button("Bake TextureArray"))
+        if (GUILayout.Button("Bake Individual Atlases"))
         {
             Bake();
         }
@@ -40,6 +39,8 @@ public class BakerForTextureArray : EditorWindow
             Debug.LogError("[Baker] Addressable settings not found.");
             return;
         }
+
+        if (!Directory.Exists(outputFolder)) Directory.CreateDirectory(outputFolder);
 
         // 1. Find all textures matching Tile_ID format
         string[] textureGuids = AssetDatabase.FindAssets("t:Texture2D", new[] { spritePath });
@@ -61,21 +62,15 @@ public class BakerForTextureArray : EditorWindow
             return;
         }
 
-        // 2. Determine dimensions and total layers
         int rulesCount = 47;
         int variations = 3;
-        int spritesPerTile = rulesCount * variations;
-        int maxTileId = tileTextures.Keys.Max();
-        int totalLayers = (maxTileId + 1) * spritesPerTile;
+        int atlasSize = 128;
         int spriteSize = 16;
-        
-        Debug.Log($"Baking TextureArray: MaxTileID={maxTileId}, SpritesPerTile={spritesPerTile}, TotalLayers={totalLayers}");
+        int gridCount = 8; // 8x8 grid in 128x128 atlas
 
-        Texture2DArray texArray = new Texture2DArray(spriteSize, spriteSize, totalLayers, TextureFormat.RGBA32, false);
-        texArray.filterMode = FilterMode.Point;
-        texArray.wrapMode = TextureWrapMode.Clamp;
+        var group = settings.FindGroup(ADDRESSABLE_GROUP_NAME);
+        if (group == null) group = settings.CreateGroup(ADDRESSABLE_GROUP_NAME, false, false, true, null);
 
-        // 3. Fill pixels
         foreach (var dictEntry in tileTextures)
         {
             int tileId = dictEntry.Key;
@@ -89,45 +84,75 @@ public class BakerForTextureArray : EditorWindow
                     return 999;
                 })
                 .ToArray();
-            
-            for (int i = 0; i < spritesPerTile; i++)
+
+            for (int v = 0; v < variations; v++)
             {
-                int layerIdx = (tileId * spritesPerTile) + i;
-                if (i < sprites.Length)
+                Texture2D atlas = new Texture2D(atlasSize, atlasSize, TextureFormat.RGBA32, false);
+                atlas.filterMode = FilterMode.Point;
+                
+                // Fill with transparent
+                Color[] clearPixels = new Color[atlasSize * atlasSize];
+                atlas.SetPixels(clearPixels);
+
+                for (int r = 0; r < rulesCount; r++)
                 {
-                    Sprite s = sprites[i];
-                    Texture2D sourceTex = s.texture;
-                    Rect r = s.rect;
-                    Color[] pixels = sourceTex.GetPixels((int)r.x, (int)r.y, (int)r.width, (int)r.height);
-                    texArray.SetPixels(pixels, layerIdx);
+                    int spriteIdx = (r * variations) + v;
+                    if (spriteIdx < sprites.Length)
+                    {
+                        Sprite s = sprites[spriteIdx];
+                        Rect rect = s.rect;
+                        Color[] pixels = s.texture.GetPixels((int)rect.x, (int)rect.y, (int)rect.width, (int)rect.height);
+                        
+                        // Calculate grid position (Row starts from bottom in Unity Get/SetPixels)
+                        int gridX = r % gridCount;
+                        int gridY = (gridCount - 1) - (r / gridCount);
+                        
+                        atlas.SetPixels(gridX * spriteSize, gridY * spriteSize, spriteSize, spriteSize, pixels);
+                    }
                 }
-                else
+                atlas.Apply();
+
+                // Save
+                string fileName = $"TileAtlas_{tileId:D4}_{v}.png";
+                string fullPath = Path.Combine(outputFolder, fileName);
+                byte[] bytes = atlas.EncodeToPNG();
+                File.WriteAllBytes(fullPath, bytes);
+                AssetDatabase.ImportAsset(fullPath);
+
+                // Set Texture Settings
+                TextureImporter importer = AssetImporter.GetAtPath(fullPath) as TextureImporter;
+                if (importer != null)
                 {
-                    texArray.SetPixels(new Color[spriteSize * spriteSize], layerIdx);
+                    importer.textureType = TextureImporterType.Default;
+                    importer.maxTextureSize = 128; // Match actual atlas size
+                    importer.filterMode = FilterMode.Point;
+                    importer.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.sRGBTexture = true;
+                    importer.alphaIsTransparency = true;
+                    importer.mipmapEnabled = false;
+                    importer.isReadable = true; // Required for CopyTexture in some scenarios
+                    
+                    // Optimization: Set platform specific settings to be sure
+                    TextureImporterPlatformSettings platformSettings = new TextureImporterPlatformSettings();
+                    platformSettings.maxTextureSize = 128;
+                    platformSettings.format = TextureImporterFormat.RGBA32;
+                    platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.SetPlatformTextureSettings(platformSettings);
+
+                    EditorUtility.SetDirty(importer);
+                    importer.SaveAndReimport();
                 }
+
+                // Register Addressable
+                string assetGuid = AssetDatabase.AssetPathToGUID(fullPath);
+                string address = $"TileAtlas_{tileId:D4}_{v}";
+                var entry = settings.CreateOrMoveEntry(assetGuid, group);
+                entry.address = address;
             }
         }
 
-        texArray.Apply();
-
-        // 4. Save Asset
-        string dir = Path.GetDirectoryName(outputPath);
-        if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-        
-        AssetDatabase.CreateAsset(texArray, outputPath);
-        AssetDatabase.SaveAssets();
-
-        // 5. [Addressable] 자동으로 등록 (이름 충돌 방지를 위해 assetGuid, addressableEntry 사용)
-        string assetGuid = AssetDatabase.AssetPathToGUID(outputPath);
-        var group = settings.FindGroup(ADDRESSABLE_GROUP_NAME);
-        if (group == null) group = settings.CreateGroup(ADDRESSABLE_GROUP_NAME, false, false, true, null);
-        
-        var addressableEntry = settings.CreateOrMoveEntry(assetGuid, group);
-        addressableEntry.address = ASSET_ADDRESS;
-        
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        
-        Debug.Log($"Successfully baked to {outputPath} and registered to Addressables as '{ASSET_ADDRESS}'");
+        Debug.Log($"Successfully baked individual atlases to {outputFolder} and registered to Addressables.");
     }
 }

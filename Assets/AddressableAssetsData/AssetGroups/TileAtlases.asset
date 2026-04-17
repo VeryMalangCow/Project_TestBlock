@@ -1,0 +1,83 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: TileAtlases
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: TileAtlases
+  m_GUID: 9011f9b5fbdbc9544ae12090b5a65294
+  m_SerializeEntries:
+  - m_GUID: 2d50444ac5a076748aa9c113e14cfc08
+    m_Address: TileAtlas_0003_2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 2f61b87fb3edef14e9286fcdaca4171f
+    m_Address: TileAtlas_0000_0
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 4ea5070e51c59a94cb6478f6df972dd4
+    m_Address: TileAtlas_0002_0
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 7ca7b278a2d36a645bebd5c8586cb100
+    m_Address: TileAtlas_0000_2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 863555713b6d8714f823c38ee1356b77
+    m_Address: TileAtlas_0003_1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 868a5f220886aa54b9ef4cb2aebcc062
+    m_Address: TileAtlas_0001_0
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 96d4d1258d9c3a34b8168e3953539930
+    m_Address: TileAtlas_0000_1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cc761ad79534ce6498cea9acb0dcb9b8
+    m_Address: TileAtlas_0002_2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: cdaa13e5632a16140beaf590d2e929a3
+    m_Address: TileAtlas_0001_1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: f81d15102114f39478160c847bb08dfe
+    m_Address: TileAtlas_0002_1
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fa46b704c3effbe4fb9306ca6758c2dd
+    m_Address: TileAtlas_0003_0
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: fb6b64ad77b50ea448fada2fe904b79a
+    m_Address: TileAtlas_0001_2
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 93248ff7ece636b438fe1742e9aa36fa, type: 2}
+  m_SchemaSet:
+    m_Schemas:
+    - {fileID: 11400000, guid: 2bf8bcb4aa7e43f42899f0f9c1cb485b, type: 2}
+    - {fileID: 11400000, guid: 334f95208a7165d4ebb76baf32f25e5c, type: 2}

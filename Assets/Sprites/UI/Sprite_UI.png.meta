@@ -433,6 +433,28 @@ TextureImporter:
       indices: 
       edges: []
       weights: []
+    - serializedVersion: 2
+      name: UI_Select
+      rect:
+        serializedVersion: 2
+        x: 108
+        y: 28
+        width: 24
+        height: 24
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 12, y: 11, z: 12, w: 13}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b3e62e5f8fed4c847a946cc1a9158eb2
+      internalID: 1531219542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
     outline: []
     customData: 
     physicsShape: []
@@ -459,6 +481,7 @@ TextureImporter:
       UI_Leggings: -1640420262
       UI_Panel_00: -1549992443
       UI_Panel_01: 564234129
+      UI_Select: 1531219542
       UI_Slot_00: 7810555872850217448
       UI_Slot_01: -1970593529
   mipmapLimitGroupName: 

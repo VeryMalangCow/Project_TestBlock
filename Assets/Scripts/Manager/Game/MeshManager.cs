@@ -360,11 +360,12 @@ public class MeshManager : Singleton<MeshManager>
     {
         [ReadOnly] public NativeArray<BlockData> blocks; 
         [ReadOnly] public NativeArray<int> ruleMapping;
+        [ReadOnly] public NativeHashMap<int, int> tileToSlotMap;
         public int worldOffsetX;
         public int worldOffsetY;
         public NativeList<float3> vertices;
         public NativeList<int> triangles;
-        public NativeList<float3> uvs;
+        public NativeList<float4> uvs; // Changed to float4 (x, y, slot, rule)
 
         public void Execute()
         {
@@ -396,7 +397,10 @@ public class MeshManager : Singleton<MeshManager>
 
                     int ruleId = ruleMapping[bitmask & 0xFF];
                     int variation = block.kindId % 3;
-                    float arrayIdx = (block.id * 141) + (ruleId * 3) + variation;
+                    
+                    // Slot Lookup
+                    int key = (block.id << 2) | variation;
+                    if (!tileToSlotMap.TryGetValue(key, out int slotIdx)) slotIdx = 0;
 
                     int vIndex = vertices.Length;
                     float wx = worldOffsetX + x; float wy = worldOffsetY + y;
@@ -406,8 +410,10 @@ public class MeshManager : Singleton<MeshManager>
                     vertices.Add(new float3(wx + 1, wy + 1, 0));
                     triangles.Add(vIndex + 0); triangles.Add(vIndex + 2); triangles.Add(vIndex + 3);
                     triangles.Add(vIndex + 0); triangles.Add(vIndex + 3); triangles.Add(vIndex + 1);
-                    uvs.Add(new float3(0, 0, arrayIdx)); uvs.Add(new float3(1, 0, arrayIdx));
-                    uvs.Add(new float3(0, 1, arrayIdx)); uvs.Add(new float3(1, 1, arrayIdx));
+                    
+                    // UV: x, y, slotIdx, ruleId
+                    uvs.Add(new float4(0, 0, slotIdx, ruleId)); uvs.Add(new float4(1, 0, slotIdx, ruleId));
+                    uvs.Add(new float4(0, 1, slotIdx, ruleId)); uvs.Add(new float4(1, 1, slotIdx, ruleId));
                 }
             }
         }
@@ -430,7 +436,8 @@ public class MeshManager : Singleton<MeshManager>
         }
 
         int sizeWithPadding = ChunkData.Size + 2;
-        NativeArray<BlockData> blockData = new NativeArray<BlockData>(sizeWithPadding * sizeWithPadding, Allocator.TempJob);
+        NativeArray<BlockData> blockDataArr = new NativeArray<BlockData>(sizeWithPadding * sizeWithPadding, Allocator.TempJob);
+        NativeHashMap<int, int> tileToSlotMap = new NativeHashMap<int, int>(16, Allocator.TempJob);
 
         for (int y = -1; y <= ChunkData.Size; y++)
         {
@@ -444,15 +451,40 @@ public class MeshManager : Singleton<MeshManager>
                 else if (ty >= ChunkData.Size) { ty -= ChunkData.Size; ncy = 2; }
 
                 ChunkData targetChunk = neighborChunks[ncx, ncy];
-                blockData[jobIdx] = (targetChunk != null) ? targetChunk.blocks[ChunkData.GetIndex(tx, ty)] : default;
+                if (targetChunk != null)
+                {
+                    BlockData block = targetChunk.blocks[ChunkData.GetIndex(tx, ty)];
+                    blockDataArr[jobIdx] = block;
+                    
+                    if (block.isActive)
+                    {
+                        int variation = block.kindId % 3;
+                        int key = (block.id << 2) | variation;
+                        if (!tileToSlotMap.ContainsKey(key))
+                        {
+                            int slot = TileCacheManager.Instance.GetSlot(block.id, variation);
+                            tileToSlotMap.Add(key, slot);
+                        }
+                    }
+                }
             }
         }
 
         NativeList<float3> vertices = new NativeList<float3>(256, Allocator.TempJob);
         NativeList<int> triangles = new NativeList<int>(512, Allocator.TempJob);
-        NativeList<float3> uvs = new NativeList<float3>(256, Allocator.TempJob);
+        NativeList<float4> uvs = new NativeList<float4>(256, Allocator.TempJob);
 
-        ChunkMeshJob job = new ChunkMeshJob { blocks = blockData, ruleMapping = ruleMappingArray, worldOffsetX = cx * ChunkData.Size, worldOffsetY = cy * ChunkData.Size, vertices = vertices, triangles = triangles, uvs = uvs };
+        ChunkMeshJob job = new ChunkMeshJob 
+        { 
+            blocks = blockDataArr, 
+            ruleMapping = ruleMappingArray, 
+            tileToSlotMap = tileToSlotMap,
+            worldOffsetX = cx * ChunkData.Size, 
+            worldOffsetY = cy * ChunkData.Size, 
+            vertices = vertices, 
+            triangles = triangles, 
+            uvs = uvs 
+        };
         job.Schedule().Complete(); 
 
         Mesh mesh = targetFilter.sharedMesh;
@@ -467,7 +499,14 @@ public class MeshManager : Singleton<MeshManager>
             mesh.RecalculateBounds();
         }
 
-        blockData.Dispose(); vertices.Dispose(); triangles.Dispose(); uvs.Dispose();
+        // Update Material with runtime cache array
+        MeshRenderer mr = targetFilter.GetComponent<MeshRenderer>();
+        if (mr != null)
+        {
+            mr.sharedMaterial.SetTexture("_MainTex", TileCacheManager.Instance.GetCacheArray());
+        }
+
+        blockDataArr.Dispose(); tileToSlotMap.Dispose(); vertices.Dispose(); triangles.Dispose(); uvs.Dispose();
     }
 
     #endregion

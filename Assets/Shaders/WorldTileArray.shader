@@ -31,7 +31,7 @@ Shader "Project/World/TileArray"
             struct Attributes
             {
                 float4 positionOS : POSITION;
-                float3 uv : TEXCOORD0; 
+                float4 uv : TEXCOORD0; 
                 float4 color : COLOR;
             };
 
@@ -39,7 +39,8 @@ Shader "Project/World/TileArray"
             {
                 float4 positionCS : SV_POSITION;
                 float2 uv : TEXCOORD0;
-                nointerpolation float layer : TEXCOORD1;
+                nointerpolation float slotIdx : TEXCOORD1;
+                nointerpolation float ruleId : TEXCOORD4;
                 float2 lightUV : TEXCOORD3;
                 float4 color : COLOR;
             };
@@ -69,7 +70,8 @@ Shader "Project/World/TileArray"
                 output.positionCS = vertexInput.positionCS;
                 
                 output.uv = input.uv.xy;
-                output.layer = input.uv.z;
+                output.slotIdx = input.uv.z;
+                output.ruleId = input.uv.w;
                 output.color = input.color;
                 
                 // Calculate Light UV from World Position
@@ -81,15 +83,21 @@ Shader "Project/World/TileArray"
 
             float4 frag (Varyings input) : SV_Target
             {
-                // 1. Sample Tile Array
-                float4 col = SAMPLE_TEXTURE2D_ARRAY(_MainTex, sampler_MainTex, input.uv, input.layer);
-                if(col.a < 0.01) discard;
+                // 1. Calculate Atlas UV (8x8 Grid)
+                float col = floor(input.ruleId % 8.0);
+                float row = 7.0 - floor(input.ruleId / 8.0);
+                
+                float2 atlasUV = (input.uv + float2(col, row)) / 8.0;
 
-                // 2. Sample World Light Map (Linear/Bilinear)
+                // 2. Sample Tile Array
+                float4 texCol = SAMPLE_TEXTURE2D_ARRAY(_MainTex, sampler_MainTex, atlasUV, input.slotIdx);
+                if(texCol.a < 0.01) discard;
+
+                // 3. Sample World Light Map (Linear/Bilinear)
                 float4 light = SAMPLE_TEXTURE2D(_WorldLightMap, sampler_WorldLightMap, input.lightUV);
 
-                // 3. Combine
-                return col * float4(light.rrr, 1.0) * input.color;
+                // 4. Combine
+                return texCol * float4(light.rrr, 1.0) * input.color;
             }
             ENDHLSL
         }
