@@ -84,9 +84,6 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
 {
     #region Variable
 
-    [Header("### Tile")]
-    [SerializeField] private Texture2DArray tilesetArray;
-    
     // [Cache] 캐릭터 파츠 캐시 (주소 -> 12개 스프라이트 배열)
     private Dictionary<string, Sprite[]> characterVisualCache = new Dictionary<string, Sprite[]>();
 
@@ -113,16 +110,6 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     public void Init()
     {
         TileSpriteSet.InitializeMapping();
-        
-        // 1. [Addressable] TilesetArray 로드
-        if (tilesetArray == null)
-        {
-            var handle = Addressables.LoadAssetAsync<Texture2DArray>("TilesetArray");
-            tilesetArray = handle.WaitForCompletion();
-
-            if (tilesetArray == null)
-                Debug.LogError("[ResourceManager] Failed to load TilesetArray via Addressables.");
-        }
     }
 
     #endregion

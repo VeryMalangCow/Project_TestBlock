@@ -9,7 +9,7 @@ public class TileCacheManager : PermanentSingleton<TileCacheManager>
     private const int ATLAS_SIZE = 128;
     
     [Header("# Cache Settings")]
-    [SerializeField] private Texture2DArray cacheArray;
+    [HideInInspector] [SerializeField] private Texture2DArray cacheArray;
     
     // Key: (TileID << 2) | Variation
     private Dictionary<int, int> tileToSlot = new Dictionary<int, int>();
