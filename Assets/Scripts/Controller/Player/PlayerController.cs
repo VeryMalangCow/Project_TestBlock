@@ -1,6 +1,6 @@
 using System.Collections;
 using Unity.Netcode;
-using Unity.Netcode.Components;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
@@ -240,7 +240,20 @@ public class PlayerController : NetworkBehaviour
         {
             debugStatus = "Requesting Spawn...";
             RequestSpawnServerRpc();
-            yield return new WaitForSeconds(0.5f);
+            
+            // Wait until position is set via ConfirmSpawnClientRpc
+            while (debugStatus == "Requesting Spawn...") yield return null;
+
+            // [Optimization] Set MeshManager target early to start building chunks around spawn point
+            if (MeshManager.Instance != null) MeshManager.Instance.SetTarget(transform);
+
+            // [Safety] Wait for physical chunks (mesh + collider) to be built at spawn position
+            debugStatus = "Building Terrain...";
+            float terrainWaitStartTime = Time.time;
+            while (!MapManager.Instance.IsTerrainReadyAt(rb.position) && Time.time - terrainWaitStartTime < 5f)
+            {
+                yield return new WaitForSeconds(0.1f);
+            }
 
             playerData = new PlayerData();
             if (IsServer)
@@ -371,17 +384,30 @@ public class PlayerController : NetworkBehaviour
 
     #region Interaction & ServerRpc
 
+    private bool IsPointerOverUI()
+    {
+        if (EventSystem.current == null) return false;
+        
+        PointerEventData eventData = new PointerEventData(EventSystem.current);
+        eventData.position = pointAction.ReadValue<Vector2>();
+        
+        List<RaycastResult> results = new List<RaycastResult>();
+        EventSystem.current.RaycastAll(eventData, results);
+        
+        return results.Count > 0;
+    }
+
     private void OnInteract00Performed(InputAction.CallbackContext ctx)
     {
         if (!IsOwner) return;
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        if (IsPointerOverUI()) return; // [Fix] 수동 레이캐스트로 UI 체크
         interaction.UseItem(0, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
     }
 
     private void OnInteract01Performed(InputAction.CallbackContext ctx)
     {
         if (!IsOwner) return;
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        if (IsPointerOverUI()) return; // [Fix] 수동 레이캐스트로 UI 체크
         interaction.UseItem(1, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
     }
 
