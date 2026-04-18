@@ -61,9 +61,10 @@ public class PlayerVisuals : MonoBehaviour
             }
         }
 
-        // 2. Load Static Parts (Eye, Pupil - Always Visible)
+        // 2. Load Static Parts (Eye, Pupil, Hair - Always Visible)
         SetStaticPart("Eye", "Eye", 0);
         SetStaticPart("Pupil", "Pupil", 0);
+        SetHair(0); // [Fix] 초기화 시 머리카락 로드 누락 수정
     }
 
     private void SetStaticPart(string layerName, string resourcePath, int id)
