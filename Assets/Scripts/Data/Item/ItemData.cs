@@ -9,6 +9,8 @@ public enum ItemType
     Helmet,
     Chestplate,
     Leggings,
+    Boots,
+    Jetbag,
     Tool,
     Consumable
 }

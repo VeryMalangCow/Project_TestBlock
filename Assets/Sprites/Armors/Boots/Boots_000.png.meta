@@ -1,40 +1,58 @@
 fileFormatVersion: 2
-guid: 8f3c8f16cd7ccb4489e7958363d56a5c
+guid: 2d51b19948c2ab945bbf62695d216b6f
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8576792100475451086
-    second: ChestplateArmFront_000_0
+      213: -4079455471817646004
+    second: Boots_000_0
   - first:
-      213: 8049861557856053019
-    second: ChestplateArmFront_000_1
+      213: -4648477721676383687
+    second: Boots_000_1
   - first:
-      213: 8584085535148187561
-    second: ChestplateArmFront_000_2
+      213: -1246824086091363924
+    second: Boots_000_2
   - first:
-      213: 518840057387516115
-    second: ChestplateArmFront_000_3
+      213: 9135334533542408317
+    second: Boots_000_3
   - first:
-      213: 6180565687935162329
-    second: ChestplateArmFront_000_4
+      213: -4945630873506655940
+    second: Boots_000_4
   - first:
-      213: -8225389677593597874
-    second: ChestplateArmFront_000_5
+      213: 2422965948043349828
+    second: Boots_000_5
   - first:
-      213: -725784763874898787
-    second: ChestplateArmFront_000_6
+      213: 1396858121736271926
+    second: Boots_000_6
   - first:
-      213: -5320830209840493984
-    second: ChestplateArmFront_000_7
+      213: 3455127447251093014
+    second: Boots_000_7
   - first:
-      213: -2885539571220239394
-    second: ChestplateArmFront_000_8
+      213: 8712599267277938457
+    second: Boots_000_8
   - first:
-      213: 2972614933868015002
-    second: ChestplateArmFront_000_9
+      213: 6926660900429314869
+    second: Boots_000_9
   - first:
-      213: 5711677068759896693
-    second: ChestplateArmFront_000_10
+      213: 8916106802170549626
+    second: Boots_000_10
+  - first:
+      213: -4369928365189012827
+    second: Boots_000_11
+  - first:
+      213: 3325697058619177665
+    second: Boots_000_12
+  - first:
+      213: 2288397749785156804
+    second: Boots_000_13
+  - first:
+      213: -8227628480735548994
+    second: Boots_000_14
+  - first:
+      213: 7763287643989233114
+    second: Boots_000_15
+  - first:
+      213: -6512347805035195193
+    second: Boots_000_16
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -156,7 +174,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ChestplateArmFront_000_000
+      name: Boots_000_000
       rect:
         serializedVersion: 2
         x: 0
@@ -171,14 +189,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: bcfaf15657286444e9710b7ff8c63143
-      internalID: -2136803645
+      spriteID: a36b1940963f5e240abb9af7e72cc90a
+      internalID: 614295326
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_001
+      name: Boots_000_001
       rect:
         serializedVersion: 2
         x: 46
@@ -193,14 +211,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 826c4abbb4dca8540b33b9bd402ef563
-      internalID: -400054058
+      spriteID: 9fda7cd70aa9d054583f751dbacce2b8
+      internalID: 214072762
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_002
+      name: Boots_000_002
       rect:
         serializedVersion: 2
         x: 92
@@ -215,14 +233,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b69c9c40cf14e2942a836184c1a78f62
-      internalID: 1304661749
+      spriteID: c7e81810c2b54fa459b56b771053dcba
+      internalID: 198329136
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_003
+      name: Boots_000_003
       rect:
         serializedVersion: 2
         x: 138
@@ -237,14 +255,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3a01f0c465276714b9820693ffd36df8
-      internalID: -817612231
+      spriteID: 1a6b0ab8b0b2c4b4ca817314062252a9
+      internalID: -581942056
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_004
+      name: Boots_000_004
       rect:
         serializedVersion: 2
         x: 184
@@ -259,14 +277,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9ed0668a4e8d1014790380b920aa7431
-      internalID: 206642197
+      spriteID: 3e1f731cdc2d59944893fbad5e3dd281
+      internalID: -920214359
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_005
+      name: Boots_000_005
       rect:
         serializedVersion: 2
         x: 0
@@ -281,14 +299,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: dd8229cda8ee008488e6de5038817683
-      internalID: 1097687275
+      spriteID: b988041a947b76c4282ec94380650178
+      internalID: -1243179735
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_006
+      name: Boots_000_006
       rect:
         serializedVersion: 2
         x: 46
@@ -303,14 +321,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 881d91abb81b300438876e20b7c179ff
-      internalID: 902265489
+      spriteID: 6a07e738d77c76949995559309a8baa0
+      internalID: 1682744190
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_007
+      name: Boots_000_007
       rect:
         serializedVersion: 2
         x: 92
@@ -325,14 +343,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 11d7e227de31d93469b022230c71f911
-      internalID: 140137618
+      spriteID: 8bb5e9f22013b05439a5cdc270331685
+      internalID: -1401942892
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_008
+      name: Boots_000_008
       rect:
         serializedVersion: 2
         x: 138
@@ -347,14 +365,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 30b86a97fc3f24e4b884506a09f7ae8a
-      internalID: -113728070
+      spriteID: d5f0bb2ceb619fd4f833befb7927718c
+      internalID: 1243346691
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_009
+      name: Boots_000_009
       rect:
         serializedVersion: 2
         x: 184
@@ -369,14 +387,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1015ae1abde99c14ca078fe2a076eaa7
-      internalID: -926389454
+      spriteID: cfcc226337ddf4c4697872beb3e76c68
+      internalID: 820438424
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_010
+      name: Boots_000_010
       rect:
         serializedVersion: 2
         x: 0
@@ -391,8 +409,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 17768253a15d59b47a63a8e6c4f3941f
-      internalID: 1190647138
+      spriteID: 2077ec843c7cd4e4c8aae6208bbfc091
+      internalID: 457975868
       vertices: []
       indices: 
       edges: []
@@ -401,7 +419,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: e63180a7d2cb726499031dd4599180f2
+    spriteID: a7ed52be52388544dbbf6d79e7becf91
     internalID: 0
     vertices: []
     indices: 
@@ -411,28 +429,34 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ChestplateArmFront_000_0: 8576792100475451086
-      ChestplateArmFront_000_000: -2136803645
-      ChestplateArmFront_000_001: -400054058
-      ChestplateArmFront_000_002: 1304661749
-      ChestplateArmFront_000_003: -817612231
-      ChestplateArmFront_000_004: 206642197
-      ChestplateArmFront_000_005: 1097687275
-      ChestplateArmFront_000_006: 902265489
-      ChestplateArmFront_000_007: 140137618
-      ChestplateArmFront_000_008: -113728070
-      ChestplateArmFront_000_009: -926389454
-      ChestplateArmFront_000_010: 1190647138
-      ChestplateArmFront_000_1: 8049861557856053019
-      ChestplateArmFront_000_10: 5711677068759896693
-      ChestplateArmFront_000_2: 8584085535148187561
-      ChestplateArmFront_000_3: 518840057387516115
-      ChestplateArmFront_000_4: 6180565687935162329
-      ChestplateArmFront_000_5: -8225389677593597874
-      ChestplateArmFront_000_6: -725784763874898787
-      ChestplateArmFront_000_7: -5320830209840493984
-      ChestplateArmFront_000_8: -2885539571220239394
-      ChestplateArmFront_000_9: 2972614933868015002
+      Boots_000_0: -4079455471817646004
+      Boots_000_000: 614295326
+      Boots_000_001: 214072762
+      Boots_000_002: 198329136
+      Boots_000_003: -581942056
+      Boots_000_004: -920214359
+      Boots_000_005: -1243179735
+      Boots_000_006: 1682744190
+      Boots_000_007: -1401942892
+      Boots_000_008: 1243346691
+      Boots_000_009: 820438424
+      Boots_000_010: 457975868
+      Boots_000_1: -4648477721676383687
+      Boots_000_10: 8916106802170549626
+      Boots_000_11: -4369928365189012827
+      Boots_000_12: 3325697058619177665
+      Boots_000_13: 2288397749785156804
+      Boots_000_14: -8227628480735548994
+      Boots_000_15: 7763287643989233114
+      Boots_000_16: -6512347805035195193
+      Boots_000_2: -1246824086091363924
+      Boots_000_3: 9135334533542408317
+      Boots_000_4: -4945630873506655940
+      Boots_000_5: 2422965948043349828
+      Boots_000_6: 1396858121736271926
+      Boots_000_7: 3455127447251093014
+      Boots_000_8: 8712599267277938457
+      Boots_000_9: 6926660900429314869
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

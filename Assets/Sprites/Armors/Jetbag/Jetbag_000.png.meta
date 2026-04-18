@@ -1,40 +1,10 @@
 fileFormatVersion: 2
-guid: 8f3c8f16cd7ccb4489e7958363d56a5c
+guid: 97acc4923bd9eff47876e3f2f49a5f96
 TextureImporter:
   internalIDToNameTable:
   - first:
-      213: 8576792100475451086
-    second: ChestplateArmFront_000_0
-  - first:
-      213: 8049861557856053019
-    second: ChestplateArmFront_000_1
-  - first:
-      213: 8584085535148187561
-    second: ChestplateArmFront_000_2
-  - first:
-      213: 518840057387516115
-    second: ChestplateArmFront_000_3
-  - first:
-      213: 6180565687935162329
-    second: ChestplateArmFront_000_4
-  - first:
-      213: -8225389677593597874
-    second: ChestplateArmFront_000_5
-  - first:
-      213: -725784763874898787
-    second: ChestplateArmFront_000_6
-  - first:
-      213: -5320830209840493984
-    second: ChestplateArmFront_000_7
-  - first:
-      213: -2885539571220239394
-    second: ChestplateArmFront_000_8
-  - first:
-      213: 2972614933868015002
-    second: ChestplateArmFront_000_9
-  - first:
-      213: 5711677068759896693
-    second: ChestplateArmFront_000_10
+      213: 7635113787641558753
+    second: Jetbag_000_0
   externalObjects: {}
   serializedVersion: 13
   mipmaps:
@@ -156,7 +126,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: ChestplateArmFront_000_000
+      name: Jetbag_000_000
       rect:
         serializedVersion: 2
         x: 0
@@ -171,14 +141,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: bcfaf15657286444e9710b7ff8c63143
-      internalID: -2136803645
+      spriteID: bfb13ed111834254e848eb211caad96a
+      internalID: -1371638983
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_001
+      name: Jetbag_000_001
       rect:
         serializedVersion: 2
         x: 46
@@ -193,14 +163,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 826c4abbb4dca8540b33b9bd402ef563
-      internalID: -400054058
+      spriteID: 1de6e14f98668274890b814178f4173c
+      internalID: 714684395
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_002
+      name: Jetbag_000_002
       rect:
         serializedVersion: 2
         x: 92
@@ -215,14 +185,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b69c9c40cf14e2942a836184c1a78f62
-      internalID: 1304661749
+      spriteID: 8f36d3ab510041245b7cae19f0d50e10
+      internalID: 1268623459
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_003
+      name: Jetbag_000_003
       rect:
         serializedVersion: 2
         x: 138
@@ -237,14 +207,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3a01f0c465276714b9820693ffd36df8
-      internalID: -817612231
+      spriteID: 486ba396da63c7d46adda24626c2d67f
+      internalID: -116518683
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_004
+      name: Jetbag_000_004
       rect:
         serializedVersion: 2
         x: 184
@@ -259,14 +229,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9ed0668a4e8d1014790380b920aa7431
-      internalID: 206642197
+      spriteID: ceb43ef63feccac4bbd31f6f17ac5fd0
+      internalID: 237397737
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_005
+      name: Jetbag_000_005
       rect:
         serializedVersion: 2
         x: 0
@@ -281,14 +251,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: dd8229cda8ee008488e6de5038817683
-      internalID: 1097687275
+      spriteID: 9bffffac970255f4e81a0b25375a9514
+      internalID: 1700478857
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_006
+      name: Jetbag_000_006
       rect:
         serializedVersion: 2
         x: 46
@@ -303,14 +273,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 881d91abb81b300438876e20b7c179ff
-      internalID: 902265489
+      spriteID: be8bbd64a56080a48a785a5efbe97b21
+      internalID: 561939194
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_007
+      name: Jetbag_000_007
       rect:
         serializedVersion: 2
         x: 92
@@ -325,14 +295,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 11d7e227de31d93469b022230c71f911
-      internalID: 140137618
+      spriteID: 963f3ee9a6b94ac4fa11de888c15b285
+      internalID: 1635244324
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_008
+      name: Jetbag_000_008
       rect:
         serializedVersion: 2
         x: 138
@@ -347,14 +317,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 30b86a97fc3f24e4b884506a09f7ae8a
-      internalID: -113728070
+      spriteID: ff227b4db6a846d4bb1a2abf37e8ec6c
+      internalID: -1680093612
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_009
+      name: Jetbag_000_009
       rect:
         serializedVersion: 2
         x: 184
@@ -369,14 +339,14 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 1015ae1abde99c14ca078fe2a076eaa7
-      internalID: -926389454
+      spriteID: d4e7c239e7b1329429fff5885c144aff
+      internalID: 1989906336
       vertices: []
       indices: 
       edges: []
       weights: []
     - serializedVersion: 2
-      name: ChestplateArmFront_000_010
+      name: Jetbag_000_010
       rect:
         serializedVersion: 2
         x: 0
@@ -391,8 +361,8 @@ TextureImporter:
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 17768253a15d59b47a63a8e6c4f3941f
-      internalID: 1190647138
+      spriteID: d6a159b2fc867d04ca716b3da2713e75
+      internalID: 875266832
       vertices: []
       indices: 
       edges: []
@@ -401,7 +371,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: e63180a7d2cb726499031dd4599180f2
+    spriteID: a053c32c64b1bc142971c3a4c26feff1
     internalID: 0
     vertices: []
     indices: 
@@ -411,28 +381,18 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      ChestplateArmFront_000_0: 8576792100475451086
-      ChestplateArmFront_000_000: -2136803645
-      ChestplateArmFront_000_001: -400054058
-      ChestplateArmFront_000_002: 1304661749
-      ChestplateArmFront_000_003: -817612231
-      ChestplateArmFront_000_004: 206642197
-      ChestplateArmFront_000_005: 1097687275
-      ChestplateArmFront_000_006: 902265489
-      ChestplateArmFront_000_007: 140137618
-      ChestplateArmFront_000_008: -113728070
-      ChestplateArmFront_000_009: -926389454
-      ChestplateArmFront_000_010: 1190647138
-      ChestplateArmFront_000_1: 8049861557856053019
-      ChestplateArmFront_000_10: 5711677068759896693
-      ChestplateArmFront_000_2: 8584085535148187561
-      ChestplateArmFront_000_3: 518840057387516115
-      ChestplateArmFront_000_4: 6180565687935162329
-      ChestplateArmFront_000_5: -8225389677593597874
-      ChestplateArmFront_000_6: -725784763874898787
-      ChestplateArmFront_000_7: -5320830209840493984
-      ChestplateArmFront_000_8: -2885539571220239394
-      ChestplateArmFront_000_9: 2972614933868015002
+      Jetbag_000_0: 7635113787641558753
+      Jetbag_000_000: -1371638983
+      Jetbag_000_001: 714684395
+      Jetbag_000_002: 1268623459
+      Jetbag_000_003: -116518683
+      Jetbag_000_004: 237397737
+      Jetbag_000_005: 1700478857
+      Jetbag_000_006: 561939194
+      Jetbag_000_007: 1635244324
+      Jetbag_000_008: -1680093612
+      Jetbag_000_009: 1989906336
+      Jetbag_000_010: 875266832
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
