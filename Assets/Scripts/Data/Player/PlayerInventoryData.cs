@@ -10,7 +10,7 @@ public class PlayerInventoryData
         slots = new PlayerInventorySlotData[size];
         for (int i = 0; i < size; i++)
         {
-            slots[i] = new PlayerInventorySlotData();
+            slots[i] = new PlayerInventorySlotData(-1, 0);
         }
     }
 
@@ -28,12 +28,12 @@ public class PlayerInventoryData
         // 1. Try to stack with existing items (if stackable)
         if (itemData.maxStack > 1)
         {
-            foreach (var slot in slots)
+            for (int i = 0; i < slots.Length; i++)
             {
-                if (slot.itemID == id && slot.stackCount < itemData.maxStack)
+                if (slots[i].itemID == id && slots[i].stackCount < itemData.maxStack)
                 {
-                    int addCount = Math.Min(remaining, itemData.maxStack - slot.stackCount);
-                    slot.stackCount += addCount;
+                    int addCount = Math.Min(remaining, itemData.maxStack - slots[i].stackCount);
+                    slots[i].stackCount += addCount;
                     remaining -= addCount;
 
                     if (remaining <= 0) return 0;
@@ -59,12 +59,20 @@ public class PlayerInventoryData
     }
 
     /// <summary>
-    /// Gets the slot by index.
+    /// Gets the slot by index. (Returns a copy as it's a struct)
     /// </summary>
     public PlayerInventorySlotData GetSlot(int index)
     {
         if (index >= 0 && index < slots.Length) return slots[index];
-        return null;
+        return new PlayerInventorySlotData(-1, 0);
+    }
+
+    /// <summary>
+    /// Updates a slot by index.
+    /// </summary>
+    public void SetSlot(int index, PlayerInventorySlotData data)
+    {
+        if (index >= 0 && index < slots.Length) slots[index] = data;
     }
 
     /// <summary>

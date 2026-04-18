@@ -24,10 +24,10 @@ public class InventorySlotUI : MonoBehaviour
 
     public void UpdateSlot(PlayerInventorySlotData slot)
     {
-        int nextID = (slot == null || slot.IsEmpty) ? -1 : slot.itemID;
+        int nextID = slot.IsEmpty ? -1 : slot.itemID;
 
-        // 1. 수량은 항상 업데이트 (이미지는 ID가 바뀔 때만)
-        if (slot != null && !slot.IsEmpty)
+        // 1. 수량은 항상 업데이트
+        if (!slot.IsEmpty)
         {
             stackText.text = slot.stackCount > 1 ? slot.stackCount.ToString() : "";
             stackText.enabled = true;

@@ -43,9 +43,10 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private float stepCheckDistance = 0.1f;
 
     [Header("### Interaction")]
-    [SerializeField] private int selectedBlockId = 0;
     [SerializeField] private float interactRange = 6f;
     [SerializeField] private GameObject itemDropPrefab;
+    private int selectedHotbarIndex = 0;
+    public int SelectedHotbarIndex => selectedHotbarIndex;
 
     private Vector2 moveInput;
     private bool isGrounded;
@@ -66,6 +67,10 @@ public class PlayerController : NetworkBehaviour
     public static float DropUpwardForce = 6f;  // 세로(위쪽) 던지는 힘
 
     private string debugStatus = "Initializing...";
+
+    private InputAction interact01Action;
+    private InputAction scrollAction;
+    private InputAction[] hotbarActions;
 
     #endregion
 
@@ -95,6 +100,9 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> hairStyleSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    // 5. Inventory Delta Sync
+    private NetworkList<PlayerInventorySlotData> inventorySlotsSync;
+
     #endregion
 
     #region Awake & Setup
@@ -104,6 +112,12 @@ public class PlayerController : NetworkBehaviour
         InitializeInput();
         SetupPhysics();
         EnsureEventSystem();
+        
+        // Initialize NetworkList (Must be done in Awake or Declaration)
+        inventorySlotsSync = new NetworkList<PlayerInventorySlotData>(
+            null, 
+            NetworkVariableReadPermission.Everyone, 
+            NetworkVariableWritePermission.Server);
     }
 
     private void InitializeInput()
@@ -121,13 +135,32 @@ public class PlayerController : NetworkBehaviour
             jumpAction = playerMap.FindAction("Jump");
             dashAction = playerMap.FindAction("Dash");
             interactAction = playerMap.FindAction("Interact_00");
+            interact01Action = playerMap.FindAction("Interact_01");
+            scrollAction = playerMap.FindAction("ScrollWheel");
             pointAction = playerMap.FindAction("Point");
 
-            moveAction.Enable();
-            jumpAction.Enable();
-            dashAction.Enable();
-            interactAction.Enable();
-            pointAction.Enable();
+            moveAction?.Enable();
+            jumpAction?.Enable();
+            dashAction?.Enable();
+            interactAction?.Enable();
+            interact01Action?.Enable();
+            scrollAction?.Enable();
+            pointAction?.Enable();
+
+            // Hotbar Actions Initialization (Event-driven)
+            hotbarActions = new InputAction[10];
+            for (int i = 0; i < 10; i++)
+            {
+                int index = i; // Closure check
+                string actionName = $"Hotbar{(i == 9 ? 0 : i + 1)}";
+                var action = playerMap.FindAction(actionName);
+                if (action != null)
+                {
+                    action.performed += _ => { if (IsOwner) selectedHotbarIndex = index; };
+                    action.Enable();
+                    hotbarActions[i] = action;
+                }
+            }
         }
     }
 
@@ -138,7 +171,17 @@ public class PlayerController : NetworkBehaviour
         jumpAction?.Disable();
         dashAction?.Disable();
         interactAction?.Disable();
+        interact01Action?.Disable();
+        scrollAction?.Disable();
         pointAction?.Disable();
+
+        if (hotbarActions != null)
+        {
+            foreach (var action in hotbarActions)
+            {
+                action?.Disable();
+            }
+        }
     }
 
     private void SetupPhysics()
@@ -174,6 +217,9 @@ public class PlayerController : NetworkBehaviour
     {
         if (IsOwner) Local = this;
 
+        // Inventory Delta Sync Event
+        inventorySlotsSync.OnListChanged += OnInventoryListChanged;
+
         helmetIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Heads", newVal); };
         chestplateIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Clothes", newVal); };
         leggingsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Leggings", newVal); };
@@ -186,6 +232,15 @@ public class PlayerController : NetworkBehaviour
         hairStyleSync.OnValueChanged += (oldVal, newVal) => { visuals.SetHair(newVal); };
 
         StartCoroutine(InitPlayerCo());
+    }
+
+    private void OnInventoryListChanged(NetworkListEvent<PlayerInventorySlotData> changeEvent)
+    {
+        // [Delta Sync] 리스트의 특정 인덱스가 변하면 로컬 데이터에 즉시 반영
+        if (playerData != null && playerData.inventory != null)
+        {
+            playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
+        }
     }
 
     private IEnumerator InitPlayerCo()
@@ -214,14 +269,26 @@ public class PlayerController : NetworkBehaviour
 
             playerData = new PlayerData();
 
-            // [Test] 초기 아이템 지급 (ID 0~5)
-            for (int i = 0; i <= 5; i++)
+            // [Server] 인벤토리 동기화 리스트 초기화 (50슬롯)
+            if (IsServer)
             {
-                ItemData item = ItemDataManager.Instance.GetItem(i);
-                if (item != null)
+                inventorySlotsSync.Clear();
+                for (int i = 0; i < 50; i++) inventorySlotsSync.Add(new PlayerInventorySlotData(-1, 0));
+            }
+
+            // [Test] 초기 아이템 지급 (ID 0~5)
+            // 서버 권한으로 아이템을 추가하고 네트워크 리스트에 동기화
+            if (IsServer)
+            {
+                for (int i = 0; i <= 5; i++)
                 {
-                    playerData.inventory.AddItem(i, item.maxStack);
+                    ItemData item = ItemDataManager.Instance.GetItem(i);
+                    if (item != null)
+                    {
+                        playerData.inventory.AddItem(i, item.maxStack);
+                    }
                 }
+                SyncInventoryToNetwork();
             }
 
             UpdateAppearance(playerData.visual);
@@ -285,6 +352,29 @@ public class PlayerController : NetworkBehaviour
         enabled = true;
     }
 
+    /// <summary>
+    /// [Server-Only] 현재 로컬 인벤토리 데이터를 NetworkList에 덮어씌워 클라이언트에 전파합니다.
+    /// </summary>
+    public void SyncInventoryToNetwork()
+    {
+        if (!IsServer || playerData == null) return;
+
+        for (int i = 0; i < inventorySlotsSync.Count; i++)
+        {
+            var localSlot = playerData.inventory.GetSlot(i);
+            if (!inventorySlotsSync[i].Equals(localSlot))
+            {
+                inventorySlotsSync[i] = localSlot;
+            }
+        }
+    }
+
+    [ServerRpc]
+    public void RequestSyncInventoryServerRpc()
+    {
+        SyncInventoryToNetwork();
+    }
+
     [ServerRpc]
     private void RequestSpawnServerRpc()
     {
@@ -323,6 +413,7 @@ public class PlayerController : NetworkBehaviour
         }
 
         HandleOwnerInput();
+        HandleHotbarSelection();
         HandleInteraction();
         UpdateTimers();
         UpdateVisuals();
@@ -483,6 +574,22 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
+    private void HandleHotbarSelection()
+    {
+        if (!IsOwner) return;
+
+        // 1. Scroll Wheel
+        if (scrollAction != null)
+        {
+            float scroll = scrollAction.ReadValue<Vector2>().y;
+            if (Mathf.Abs(scroll) > 0.1f)
+            {
+                if (scroll > 0) selectedHotbarIndex = (selectedHotbarIndex - 1 + 10) % 10;
+                else selectedHotbarIndex = (selectedHotbarIndex + 1) % 10;
+            }
+        }
+    }
+
     [ServerRpc] private void TriggerDashServerRpc(float direction) { isDashingSync.Value = true; dashDirectionSync.Value = direction; }
     [ServerRpc] private void EndDashServerRpc() { isDashingSync.Value = false; }
 
@@ -514,14 +621,26 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleInteraction()
     {
-        if (!IsOwner || interactAction == null) return;
+        if (!IsOwner || interactAction == null || interact01Action == null) return;
 
-        // Block interaction is currently disabled as requested.
-        // It will be replaced with an item-based placement system later.
-        if (interactAction.WasPressedThisFrame())
+        // UI가 열려있거나 클릭 중이라면 상호작용 방지
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+
+        if (interactAction.WasPressedThisFrame()) UseItem(0);
+        else if (interact01Action.WasPressedThisFrame()) UseItem(1);
+    }
+
+    private void UseItem(int buttonIndex)
+    {
+        if (playerData == null || playerData.inventory == null) return;
+        PlayerInventorySlotData selectedSlot = playerData.inventory.GetSlot(selectedHotbarIndex);
+        if (selectedSlot.IsEmpty) return;
+
+        // [Logic] Item interaction framework (Block placement as test)
+        if (selectedSlot.itemID >= 0)
         {
-            // Vector2 screenPos = pointAction.ReadValue<Vector2>();
-            // UpdateBlock(selectedBlockId, screenPos);
+            Vector2 screenPos = pointAction.ReadValue<Vector2>();
+            UpdateBlock(selectedSlot.itemID, screenPos);
         }
     }
 

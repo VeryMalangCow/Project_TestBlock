@@ -2544,6 +2544,8 @@ MonoBehaviour:
   - {fileID: 935522841}
   animationDuration: 0.2
   yOffset: -500
+  selectionIndicator: {fileID: 2032796910}
+  selectionSmoothSpeed: 15
   ghostSlotPanel: {fileID: 1524092958}
   ghostIcon: {fileID: 1524092961}
   ghostStackText: {fileID: 1524092960}
@@ -11612,7 +11614,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4dcdf8cffc8cdcb4da2fb154634a6076, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ResourceManager
-  tilesetArray: {fileID: 0}
 --- !u!1 &1765689898
 GameObject:
   m_ObjectHideFlags: 0
