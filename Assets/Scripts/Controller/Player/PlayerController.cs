@@ -62,6 +62,8 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<int> helmetIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> chestplateIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> leggingsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> bootsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> jetbagIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> skinColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> eyeColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -206,9 +208,12 @@ public class PlayerController : NetworkBehaviour
         if (IsOwner) Local = this;
         inventorySlotsSync.OnListChanged += OnInventoryListChanged;
 
-        helmetIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Heads", newVal);
-        chestplateIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Clothes", newVal);
+        helmetIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Helmet", newVal);
+        chestplateIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Chestplate", newVal);
         leggingsIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Leggings", newVal);
+        bootsIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Boots", newVal);
+        jetbagIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Jetbag", newVal);
+
         skinColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetSkinColor(newVal);
         eyeColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetEyeColor(newVal);
         hairColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetHairColor(newVal);
@@ -240,22 +245,60 @@ public class PlayerController : NetworkBehaviour
             playerData = new PlayerData();
             if (IsServer)
             {
+                // [Robust] 인벤토리 초기화 및 아이템 지급 로직 개선
                 inventorySlotsSync.Clear();
                 for (int i = 0; i < 50; i++) inventorySlotsSync.Add(new PlayerInventorySlotData(-1, 0));
-                for (int i = 0; i <= 5; i++)
+                
+                // 데이터베이스 로딩 대기 강화
+                int retryCount = 0;
+                while (ItemDataManager.Instance.GetItem(9) == null && retryCount < 10)
+                {
+                    yield return new WaitForSeconds(0.1f);
+                    retryCount++;
+                }
+
+                // 로컬 데이터에 아이템 추가
+                for (int i = 0; i <= 9; i++)
                 {
                     ItemData item = ItemDataManager.Instance.GetItem(i);
-                    if (item != null) playerData.inventory.AddItem(i, item.maxStack);
+                    if (item != null) 
+                    {
+                        playerData.inventory.AddItem(i, item.maxStack);
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[PlayerController] Item ID {i} still not found in Database after retries.");
+                    }
                 }
-                SyncInventoryToNetwork();
+                
+                // 네트워크 리스트에 강제 덮어쓰기 (동기화 보장)
+                for (int i = 0; i < inventorySlotsSync.Count; i++)
+                {
+                    inventorySlotsSync[i] = playerData.inventory.GetSlot(i);
+                }
             }
             UpdateAppearance(playerData.visual);
             UpdateEquipment(playerData.equipment);
         }
 
+        if (visuals != null)
+        {
+            visuals.gameObject.SetActive(true);
+            visuals.Init();
+            
+            visuals.SetSkinColor(skinColorSync.Value);
+            visuals.SetEyeColor(eyeColorSync.Value);
+            visuals.SetHairColor(hairColorSync.Value);
+            visuals.SetHair(hairStyleSync.Value);
+            visuals.SetArmor("Helmet", helmetIdSync.Value);
+            visuals.SetArmor("Chestplate", chestplateIdSync.Value);
+            visuals.SetArmor("Leggings", leggingsIdSync.Value);
+            visuals.SetArmor("Boots", bootsIdSync.Value);
+            visuals.SetArmor("Jetbag", jetbagIdSync.Value);
+        }
+
         debugStatus = "READY";
         if (rb != null) { rb.bodyType = RigidbodyType2D.Dynamic; rb.simulated = true; rb.gravityScale = 3f; }
-        if (visuals != null) { visuals.gameObject.SetActive(true); visuals.Init(); }
         if (IsOwner && Camera.main != null) Camera.main.GetComponent<CameraController>()?.SetTarget(transform);
     }
 
@@ -370,6 +413,8 @@ public class PlayerController : NetworkBehaviour
         helmetIdSync.Value = e.helmetIndex;
         chestplateIdSync.Value = e.chestplateIndex;
         leggingsIdSync.Value = e.leggingsIndex;
+        bootsIdSync.Value = e.bootsIndex;
+        jetbagIdSync.Value = e.jetbagIndex;
     }
 
     private void EnsureEventSystem() { if (Object.FindAnyObjectByType<EventSystem>() == null) { new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule)); } }

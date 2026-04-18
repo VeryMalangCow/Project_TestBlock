@@ -64,7 +64,11 @@ public class PlayerVisuals : MonoBehaviour
         // 2. Load Static Parts (Eye, Pupil, Hair - Always Visible)
         SetStaticPart("Eye", "Eye", 0);
         SetStaticPart("Pupil", "Pupil", 0);
-        SetHair(0); // [Fix] 초기화 시 머리카락 로드 누락 수정
+        SetHair(0); 
+
+        // 3. Load Initial Equipment Bases (Clothes, Leggings)
+        SetArmor("Clothes", -1);
+        SetArmor("Leggings", -1);
     }
 
     private void SetStaticPart(string layerName, string resourcePath, int id)
@@ -114,36 +118,70 @@ public class PlayerVisuals : MonoBehaviour
         if (target != null && target.renderer != null) target.renderer.color = color;
     }
 
-    public void SetArmor(string category, int id)
+    public void SetArmor(string category, int typeID)
     {
-        // Standardize layer name mapping
-        string layerName = category;
-        if (category.Equals("Clothes", System.StringComparison.OrdinalIgnoreCase)) layerName = "Chestplate";
-        else if (category.Equals("Heads", System.StringComparison.OrdinalIgnoreCase)) layerName = "Helmet";
-        else if (category.EndsWith("s", System.StringComparison.OrdinalIgnoreCase)) layerName = category.Substring(0, category.Length - 1);
-        
-        VisualLayer target = layers.Find(l => l.name.Equals(layerName, System.StringComparison.OrdinalIgnoreCase));
-        if (target == null) return;
+        // Chestplate is special: 3 parts (Body, ArmFront, ArmBack)
+        if (category.Equals("Clothes", System.StringComparison.OrdinalIgnoreCase) || 
+            category.Equals("Chestplate", System.StringComparison.OrdinalIgnoreCase))
+        {
+            SetChestplate(typeID);
+            return;
+        }
 
-        if (id == -1)
-        {
-            target.currentSheet = null;
-            if (target.renderer != null) target.renderer.sprite = null;
-        }
-        else
-        {
-            Sprite[] sheet = ResourceManager.Instance.GetArmorSprites(category, id);
-            if (sheet != null)
-            {
-                target.currentSheet = sheet;
-                target.SetSprite(0);
-            }
-        }
+        // Regular equipment mapping
+        string layerName = category;
+        
+        // [Fix] 명칭 변환 예외 처리 (Heads -> Helmet) 및 복수형 유지
+        if (category.Equals("Heads", System.StringComparison.OrdinalIgnoreCase)) 
+            layerName = "Helmet";
+        else if (category.Equals("Jetbag", System.StringComparison.OrdinalIgnoreCase))
+            layerName = "Jetbag";
+        else if (category.Equals("Boots", System.StringComparison.OrdinalIgnoreCase))
+            layerName = "Boots";
+        else if (category.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase))
+            layerName = "Leggings";
+        
+        ApplyArmorToLayer(layerName, category, typeID);
 
         if (layerName.Equals("Helmet", System.StringComparison.OrdinalIgnoreCase))
         {
             UpdateHairVisibility();
         }
+    }
+
+    private void SetChestplate(int typeID)
+    {
+        // 3-part set loading
+        ApplyArmorToLayer("Chestplate", "Chestplate", typeID);
+        ApplyArmorToLayer("ChestplateArmFront", "ChestplateArmFront", typeID);
+        ApplyArmorToLayer("ChestplateArmBack", "ChestplateArmBack", typeID);
+    }
+
+    private void ApplyArmorToLayer(string layerName, string category, int typeID)
+    {
+        VisualLayer target = layers.Find(l => l.name.Equals(layerName, System.StringComparison.OrdinalIgnoreCase));
+        if (target == null) return;
+
+        Sprite[] sheet = null;
+        if (typeID == -1)
+        {
+            // [Fix] Base 이미지가 존재하는 파츠만 로딩 시도 (Chestplate, Leggings 관련)
+            bool hasBase = category.Contains("Chestplate") || category.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase);
+            
+            if (hasBase)
+            {
+                sheet = ResourceManager.Instance.GetArmorSprites(category, "Base");
+            }
+            // Base가 없는 파츠(Helmet, Boots 등)는 sheet가 null인 상태로 유지되어 스프라이트가 비워짐
+        }
+        else
+        {
+            sheet = ResourceManager.Instance.GetArmorSprites(category, typeID);
+        }
+
+        target.currentSheet = sheet;
+        if (sheet == null && target.renderer != null) target.renderer.sprite = null;
+        else target.SetSprite(Mathf.Max(0, currentFrameIndex));
     }
 
     private void UpdateHairVisibility()
@@ -153,7 +191,6 @@ public class PlayerVisuals : MonoBehaviour
 
         if (hairLayer != null && hairLayer.renderer != null)
         {
-            // Hide hair if helmet is equipped (id != -1)
             bool hasHelmet = helmetLayer != null && helmetLayer.currentSheet != null;
             hairLayer.renderer.enabled = !hasHelmet;
         }
@@ -163,10 +200,6 @@ public class PlayerVisuals : MonoBehaviour
 
     #region Animation & Sync
 
-    /// <summary>
-    /// 속도와 상태 정보를 바탕으로 로컬 환경에서 애니메이션 프레임을 계산하여 재생합니다.
-    /// 네트워크 변수를 쓰지 않고 각 클라이언트에서 개별적으로 연산하므로 트래픽이 절약됩니다.
-    /// </summary>
     public void UpdateVisuals(float horizontalVelocity, bool isGrounded, bool isDashing)
     {
         int targetFrame = 0;

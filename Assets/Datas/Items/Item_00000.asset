@@ -16,6 +16,7 @@ MonoBehaviour:
   itemName: Grassed Dirt
   description: A simple block of grassed dirt
   maxStack: 999
+  typeID: 0
   type: 1
   useTime: 0.2
   iconReference:

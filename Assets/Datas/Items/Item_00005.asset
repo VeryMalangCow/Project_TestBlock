@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: Wood Helmet
   description: A wooden helmet that is not special at all
   maxStack: 1
-  type: 3
+  typeID: 0
+  type: 2
   useTime: 0.2
   iconReference:
     m_AssetGUID: acd6fa93a1bef9a4eba562aa84cc3d6d

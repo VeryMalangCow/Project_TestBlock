@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: Wood Sword
   description: A wooden sword that is not special at all
   maxStack: 1
-  type: 2
+  typeID: 0
+  type: 7
   useTime: 2
   iconReference:
     m_AssetGUID: 36d6b41acfdfda74c80d41c1535e7782

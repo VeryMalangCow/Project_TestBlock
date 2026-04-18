@@ -16,6 +16,7 @@ MonoBehaviour:
   itemName: Stone
   description: A simple block of stone
   maxStack: 999
+  typeID: 2
   type: 1
   useTime: 0.2
   iconReference:

@@ -112,4 +112,14 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
     }
 
     public List<ItemData> GetAllItems() => itemCache.Values.ToList();
+
+    /// <summary>
+    /// 특정 타입과 TypeID를 가진 첫 번째 아이템의 ID를 반환합니다.
+    /// </summary>
+    public int FindItemIDByType(ItemType type, int typeID)
+    {
+        if (typeID < 0) return -1;
+        var item = itemCache.Values.FirstOrDefault(i => i.type == type && i.typeID == typeID);
+        return item != null ? item.id : -1;
+    }
 }

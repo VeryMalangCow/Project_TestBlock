@@ -10,14 +10,17 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
-  m_Name: CharacterVisuals
+  m_Name: CharacterBoots
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
-  m_GroupName: CharacterVisuals
-  m_GUID: 4e2991538db19ee4c8c64fa2153e91fd
-  m_SerializeEntries: []
+  m_GroupName: CharacterBoots
+  m_GUID: 4f43f533fe8f07d4d9d92b2088c81285
+  m_SerializeEntries:
+  - m_GUID: 2d51b19948c2ab945bbf62695d216b6f
+    m_Address: Armor_Boots_000
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 93248ff7ece636b438fe1742e9aa36fa, type: 2}
   m_SchemaSet:
-    m_Schemas:
-    - {fileID: 11400000, guid: 71e81a00542cfe343948df437275912d, type: 2}
-    - {fileID: 11400000, guid: 47f2f6ed6b7a23d48b0b45c4a34617d6, type: 2}
+    m_Schemas: []

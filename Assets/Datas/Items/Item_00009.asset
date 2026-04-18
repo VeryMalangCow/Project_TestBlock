@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: Test Jetbag
   description: Test jetbag
   maxStack: 1
-  type: 7
+  typeID: 0
+  type: 6
   useTime: 0.2
   iconReference:
     m_AssetGUID: 32dd47f0194d7a6498772eba544aea29

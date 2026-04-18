@@ -1562,6 +1562,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -1970593529, guid: 5c1dc9a07e37ee745977a5effbbddc34, type: 3}
+    - target: {fileID: 1737104871975288280, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+      propertyPath: targetType
+      value: 5
+      objectReference: {fileID: 0}
     - target: {fileID: 3458033805833715602, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -2020,6 +2024,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -1970593529, guid: 5c1dc9a07e37ee745977a5effbbddc34, type: 3}
+    - target: {fileID: 1737104871975288280, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+      propertyPath: targetType
+      value: 3
+      objectReference: {fileID: 0}
     - target: {fileID: 3458033805833715602, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -2552,6 +2560,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventoryUI
   hotbarParent: {fileID: 794487177}
   mainInventoryParent: {fileID: 1914052236}
+  equipmentParent: {fileID: 1361003098}
   alwaysOnObjects:
   - {fileID: 934333590}
   toggleObjects:
@@ -5615,7 +5624,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &921813587
 RectTransform:
   m_ObjectHideFlags: 0
@@ -6594,6 +6603,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -1970593529, guid: 5c1dc9a07e37ee745977a5effbbddc34, type: 3}
+    - target: {fileID: 1737104871975288280, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+      propertyPath: targetType
+      value: 4
+      objectReference: {fileID: 0}
     - target: {fileID: 3458033805833715602, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -8398,6 +8411,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -1970593529, guid: 5c1dc9a07e37ee745977a5effbbddc34, type: 3}
+    - target: {fileID: 1737104871975288280, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+      propertyPath: targetType
+      value: 2
+      objectReference: {fileID: 0}
     - target: {fileID: 3458033805833715602, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
       propertyPath: m_IsActive
       value: 0
@@ -10582,6 +10599,10 @@ PrefabInstance:
       propertyPath: m_Sprite
       value: 
       objectReference: {fileID: -1970593529, guid: 5c1dc9a07e37ee745977a5effbbddc34, type: 3}
+    - target: {fileID: 1737104871975288280, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+      propertyPath: targetType
+      value: 6
+      objectReference: {fileID: 0}
     - target: {fileID: 3458033805833715602, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
       propertyPath: m_IsActive
       value: 0

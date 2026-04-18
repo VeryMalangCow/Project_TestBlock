@@ -130,8 +130,8 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     /// </summary>
     public Sprite[] GetBodyPartSprites(string partName, int id)
     {
-        // [Fix] 경로 문자열(Eye/Eye)이 들어와도 마지막 이름(Eye)만 추출하여 주소 생성
         string cleanName = partName.Contains('/') ? partName.Substring(partName.LastIndexOf('/') + 1) : partName;
+        // [Simplified] Body_Head_000
         string address = $"Body_{cleanName}_{id:D3}";
         return GetOrLoadCharacterSprites(address);
     }
@@ -142,6 +142,7 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     public Sprite[] GetArmorSprites(string category, int id)
     {
         string cleanName = category.Contains('/') ? category.Substring(category.LastIndexOf('/') + 1) : category;
+        // [Simplified] Armor_Chestplate_000
         string address = $"Armor_{cleanName}_{id:D3}";
         return GetOrLoadCharacterSprites(address);
     }
@@ -152,6 +153,7 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
     public Sprite[] GetArmorSprites(string category, string idOrBase)
     {
         string cleanName = category.Contains('/') ? category.Substring(category.LastIndexOf('/') + 1) : category;
+        // [Simplified] Armor_Chestplate_Base
         string address = $"Armor_{cleanName}_{idOrBase}";
         return GetOrLoadCharacterSprites(address);
     }
@@ -170,12 +172,12 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
         // 2. 동기식 어드레서블 로드 (슬라이스된 스프라이트 전체)
         try
         {
+            // [Fix] 키가 존재하지 않을 경우를 대비하여 핸들 상태를 먼저 확인하는 것은 어려우므로 Try-Catch로 보호
             var handle = Addressables.LoadAssetAsync<IList<Sprite>>(address);
             IList<Sprite> spriteList = handle.WaitForCompletion();
 
             if (spriteList == null || spriteList.Count == 0)
             {
-                Debug.LogWarning($"[ResourceManager] No sprites found at address: {address}");
                 return null;
             }
 
@@ -186,20 +188,22 @@ public class ResourceManager : PermanentSingleton<ResourceManager>
                 string[] parts = s.name.Split('_');
                 if (parts.Length >= 2 && int.TryParse(parts[parts.Length - 1], out int idx))
                 {
-                    if (idx >= 0 && idx < 12)
-                    {
-                        sorted[idx] = s;
-                    }
+                    if (idx >= 0 && idx < 12) sorted[idx] = s;
                 }
             }
 
-            // 4. 캐시에 저장 후 반환
             characterVisualCache[address] = sorted;
             return sorted;
         }
+        catch (UnityEngine.AddressableAssets.InvalidKeyException)
+        {
+            // [Debug] 찾지 못한 주소를 명확히 출력
+            Debug.LogWarning($"[ResourceManager] InvalidKeyException: Key '{address}' not found in Addressables.");
+            return null;
+        }
         catch (Exception e)
         {
-            Debug.LogError($"[ResourceManager] Error loading character visual {address}: {e.Message}");
+            Debug.LogError($"[ResourceManager] Failed to load character visual '{address}': {e.Message}");
             return null;
         }
     }

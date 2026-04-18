@@ -13,9 +13,20 @@ public class ItemDatabase : ScriptableObject
 
     public void RefreshList()
     {
-        // 에디터 툴에서 목록을 갱신하기 위한 메서드
 #if UNITY_EDITOR
+        items.Clear();
+        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:ItemData", new[] { "Assets/Datas/Items" });
+        foreach (string guid in guids)
+        {
+            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+            ItemData data = UnityEditor.AssetDatabase.LoadAssetAtPath<ItemData>(path);
+            if (data != null)
+            {
+                items.Add(data);
+            }
+        }
         UnityEditor.EditorUtility.SetDirty(this);
+        Debug.Log($"[ItemDatabase] Updated list with {items.Count} items.");
 #endif
     }
 }

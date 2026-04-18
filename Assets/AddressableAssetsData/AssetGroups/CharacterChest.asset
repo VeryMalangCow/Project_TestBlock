@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb281ee3bf0b054c82ac2347e9e782c, type: 3}
+  m_Name: CharacterChest
+  m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
+  m_GroupName: CharacterChest
+  m_GUID: 4c16d0009dd37a8418de9921f3c32d9c
+  m_SerializeEntries:
+  - m_GUID: 6b42ae8623ea68040ab64032e69b4a2a
+    m_Address: Armor_Chestplate_000
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 737a2352df67cc04eb088acad6b65c46
+    m_Address: Armor_ChestplateArmBack_000
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 8f3c8f16cd7ccb4489e7958363d56a5c
+    m_Address: Armor_ChestplateArmFront_000
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 9156290fffa5a2647b36aecb61041fac
+    m_Address: Armor_Chestplate_Base
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: 94517f2bead83cf4e9fc5cb675bf2b4b
+    m_Address: Armor_ChestplateArmBack_Base
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  - m_GUID: e3f5c59af43c1c3409c776e2f92465aa
+    m_Address: Armor_ChestplateArmFront_Base
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
+  m_ReadOnly: 0
+  m_Settings: {fileID: 11400000, guid: 93248ff7ece636b438fe1742e9aa36fa, type: 2}
+  m_SchemaSet:
+    m_Schemas: []

@@ -8,11 +8,15 @@ public class InventorySlotUI : MonoBehaviour
     [SerializeField] private Image iconImage;
     [SerializeField] private TextMeshProUGUI stackText;
 
+    [Header("### Config")]
+    [SerializeField] private ItemType targetType = ItemType.None; // None means any item
+
     private InventoryUI ownerUI;
     private int slotIndex = -1;
     private int currentItemID = -2;
 
     public int SlotIndex => slotIndex;
+    public ItemType TargetType => targetType;
 
     public void Init(InventoryUI ui, int index)
     {

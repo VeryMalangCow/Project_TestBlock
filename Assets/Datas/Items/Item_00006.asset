@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: Wood Chestplate
   description: A wooden chestplate that is not special at all
   maxStack: 1
-  type: 4
+  typeID: 0
+  type: 3
   useTime: 0.2
   iconReference:
     m_AssetGUID: 5e16bb3f12633ca458a19da4d94e5277

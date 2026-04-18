@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: Wood Boots
   description: A wooden boots that is not special at all
   maxStack: 1
-  type: 6
+  typeID: 0
+  type: 5
   useTime: 0.2
   iconReference:
     m_AssetGUID: 5742ab3874f566549b4fee5e2e539a9e

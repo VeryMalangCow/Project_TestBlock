@@ -5,12 +5,12 @@ public enum ItemType
 {
     None,
     Block,
-    Sword,
     Helmet,
     Chestplate,
     Leggings,
     Boots,
     Jetbag,
+    Sword,
     Tool,
     Consumable
 }
@@ -26,6 +26,7 @@ public class ItemData : ScriptableObject
 
     [Header("### Gameplay")]
     public int maxStack = 999;
+    public int typeID = -1; // [Added] For visual resource mapping
     public ItemType type;
     public float useTime;
 

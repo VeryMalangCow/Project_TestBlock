@@ -16,7 +16,8 @@ MonoBehaviour:
   itemName: Wood Leggings
   description: A wooden leggings that is not special at all
   maxStack: 1
-  type: 5
+  typeID: 0
+  type: 4
   useTime: 0.2
   iconReference:
     m_AssetGUID: 33cbc13760472bf44b24e68a91198256

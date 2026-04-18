@@ -16,6 +16,7 @@ MonoBehaviour:
   itemName: Wood
   description: A simple block of wood
   maxStack: 999
+  typeID: 3
   type: 1
   useTime: 0.2
   iconReference:
