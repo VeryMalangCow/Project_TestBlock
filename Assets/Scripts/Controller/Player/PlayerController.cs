@@ -156,19 +156,29 @@ public class PlayerController : NetworkBehaviour
     public override void OnDestroy()
     {
         base.OnDestroy();
-        if (jumpAction != null) jumpAction.performed -= OnJumpPerformed;
-        if (dashAction != null) dashAction.performed -= OnDashPerformed;
-        if (scrollAction != null) scrollAction.performed -= OnScrollPerformed;
-        
-        moveAction?.Disable();
-        jumpAction?.Disable();
-        dashAction?.Disable();
-        interactAction?.Disable();
-        interact01Action?.Disable();
-        scrollAction?.Disable();
-        pointAction?.Disable();
 
-        if (hotbarActions != null) foreach (var action in hotbarActions) action?.Disable();
+        // [Fix] 오직 로컬 플레이어 객체가 파괴될 때만 입력 시스템을 정리합니다.
+        // 클라이언트(Proxy) 객체가 파괴될 때 공유 에셋인 InputActions를 꺼버리는 것을 방지합니다.
+        if (IsOwner)
+        {
+            if (Local == this) Local = null;
+
+            if (jumpAction != null) jumpAction.performed -= OnJumpPerformed;
+            if (dashAction != null) dashAction.performed -= OnDashPerformed;
+            if (scrollAction != null) scrollAction.performed -= OnScrollPerformed;
+            if (interactAction != null) interactAction.performed -= OnInteract00Performed;
+            if (interact01Action != null) interact01Action.performed -= OnInteract01Performed;
+            
+            moveAction?.Disable();
+            jumpAction?.Disable();
+            dashAction?.Disable();
+            interactAction?.Disable();
+            interact01Action?.Disable();
+            scrollAction?.Disable();
+            pointAction?.Disable();
+
+            if (hotbarActions != null) foreach (var action in hotbarActions) action?.Disable();
+        }
     }
 
     #endregion
