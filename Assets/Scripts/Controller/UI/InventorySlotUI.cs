@@ -5,20 +5,20 @@ using TMPro;
 public class InventorySlotUI : MonoBehaviour
 {
     [Header("### UI References")]
-    [SerializeField] private Image iconImage;
-    [SerializeField] private TextMeshProUGUI stackText;
+    [SerializeField] protected Image iconImage;
+    [SerializeField] protected TextMeshProUGUI stackText;
 
     [Header("### Config")]
-    [SerializeField] private ItemType targetType = ItemType.None; // None means any item
+    [SerializeField] protected ItemType targetType = ItemType.None; // None means any item
 
-    private InventoryUI ownerUI;
-    private int slotIndex = -1;
-    private int currentItemID = -2;
+    protected InventoryUI ownerUI;
+    protected int slotIndex = -1;
+    protected int currentItemID = -2;
 
     public int SlotIndex => slotIndex;
     public ItemType TargetType => targetType;
 
-    public void Init(InventoryUI ui, int index)
+    public virtual void Init(InventoryUI ui, int index)
     {
         ownerUI = ui;
         slotIndex = index;
@@ -26,7 +26,7 @@ public class InventorySlotUI : MonoBehaviour
         ClearSlot();
     }
 
-    public void UpdateSlot(PlayerInventorySlotData slot)
+    public virtual void UpdateSlot(PlayerInventorySlotData slot)
     {
         int nextID = slot.IsEmpty ? -1 : slot.itemID;
 
@@ -48,7 +48,7 @@ public class InventorySlotUI : MonoBehaviour
             return;
         }
 
-        // [중앙 캐시 호출] 이제 비동기 핸들을 직접 관리하지 않습니다.
+        // [중앙 캐시 호출]
         Sprite icon = ItemDataManager.Instance.GetItemIcon(nextID);
         if (icon != null)
         {
@@ -67,7 +67,7 @@ public class InventorySlotUI : MonoBehaviour
         ClearSlotInternal();
     }
 
-    private void ClearSlotInternal()
+    protected virtual void ClearSlotInternal()
     {
         if (iconImage != null)
         {
