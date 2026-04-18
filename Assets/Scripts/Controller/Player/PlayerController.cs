@@ -57,8 +57,8 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<Vector2> moveInputSync = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isFlippedSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isGroundedSync = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<bool> isDashingSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
-    private NetworkVariable<float> dashDirectionSync = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<bool> isDashingSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<float> dashDirectionSync = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> jumpCountSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int lastProcessedJumpCount;
 
@@ -187,7 +187,11 @@ public class PlayerController : NetworkBehaviour
         if (!isDashingSync.Value && movement.DashCooldownTimer <= 0)
         {
             float dir = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (isFlippedSync.Value ? -1f : 1f);
-            TriggerDashServerRpc(dir);
+            
+            // [Fix] Owner updates variables directly for instant physical response
+            dashDirectionSync.Value = dir;
+            isDashingSync.Value = true;
+            
             movement.StartDash(dir);
         }
     }
@@ -426,9 +430,7 @@ public class PlayerController : NetworkBehaviour
     [ServerRpc]
     public void DropItemServerRpc(int id, int count, float lookDir) => interaction.HandleDropItem(id, count, lookDir);
 
-    [ServerRpc] private void TriggerDashServerRpc(float direction) { isDashingSync.Value = true; dashDirectionSync.Value = direction; }
-    public void EndDash() { if (IsServer) isDashingSync.Value = false; else EndDashServerRpc(); }
-    [ServerRpc] private void EndDashServerRpc() { isDashingSync.Value = false; }
+    public void EndDash() { if (IsOwner) isDashingSync.Value = false; }
 
     #endregion
 

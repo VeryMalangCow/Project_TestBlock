@@ -49,17 +49,20 @@ public class PlayerMovement : MonoBehaviour
     public void Tick()
     {
         if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
-        if (controller.IsDashing)
-        {
-            dashTimeLeft -= Time.deltaTime;
-            if (dashTimeLeft <= 0) controller.EndDash();
-        }
+        // [Moved] Dash duration timer moved to FixedTick for physics consistency
     }
 
     public void FixedTick(Vector2 moveInput)
     {
-        // [Multiplayer Fix] Only the owner should apply direct velocity changes to avoid conflict with NetworkTransform
+        // [Multiplayer Fix] Only the owner should apply direct velocity changes
         if (!controller.IsOwner) return;
+
+        // [New] Dash Duration Timer (Physics-based)
+        if (controller.IsDashing)
+        {
+            dashTimeLeft -= Time.fixedDeltaTime;
+            if (dashTimeLeft <= 0) controller.EndDash();
+        }
 
         OptimizedCheckGrounded();
 
