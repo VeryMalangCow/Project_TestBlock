@@ -50,9 +50,6 @@ public class PlayerController : NetworkBehaviour
 
     private Vector2 moveInput;
     private bool isGrounded;
-    private float walkCycleTime;
-    [Header("### Visuals")]
-    [SerializeField] private float walkAnimSpeedMultiplier = 2.5f;
 
     private PlayerData playerData;
     public PlayerData Data => playerData;
@@ -79,7 +76,7 @@ public class PlayerController : NetworkBehaviour
     // 1. Movement Sync
     private NetworkVariable<Vector2> moveInputSync = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isFlippedSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> currentFrameSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<bool> isGroundedSync = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
     // 2. State Sync
     private NetworkVariable<bool> isDashingSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -445,7 +442,8 @@ private void Update()
         if (visuals != null)
         {
             visuals.SetFlip(isFlippedSync.Value);
-            visuals.SyncAnimation(currentFrameSync.Value);
+            // [Optimization] Non-owners calculate animation frames locally based on synced velocity and state
+            visuals.UpdateVisuals(rb.linearVelocity.x, isGroundedSync.Value, isDashingSync.Value);
         }
         return;
     }
@@ -456,123 +454,98 @@ private void Update()
 }
 
 private void FixedUpdate()
+{
+    if (debugStatus != "READY") return;
+
+    if (IsOwner)
     {
-        if (debugStatus != "READY") return;
+        CheckGrounded();
 
-        if (IsOwner)
+        if (jumpCountSync.Value > lastProcessedJumpCount)
         {
-            CheckGrounded();
-
-            if (jumpCountSync.Value > lastProcessedJumpCount)
-            {
-                if (isGrounded) ApplyJumpPhysics();
-                lastProcessedJumpCount = jumpCountSync.Value;
-            }
-
-            if (isDashingSync.Value)
-            {
-                HandleDash();
-                HandleStepClimb(Vector2.zero);
-            }
-            else
-            {
-                HandleHorizontalMovement(moveInput);
-                HandleStepClimb(moveInput);
-            }
-        }
-    }
-
-    #endregion
-
-    #region Visuals & Physics Logic
-
-    private void UpdateVisuals()
-    {
-        if (visuals == null) return;
-
-        if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
-        {
-            isFlippedSync.Value = moveInput.x < 0;
-            visuals.SetFlip(isFlippedSync.Value);
+            if (isGrounded) ApplyJumpPhysics();
+            lastProcessedJumpCount = jumpCountSync.Value;
         }
 
-        int targetFrame = 0;
         if (isDashingSync.Value)
         {
-            targetFrame = 10;
-        }
-        else if (!isGrounded)
-        {
-            targetFrame = 9;
+            HandleDash();
+            HandleStepClimb(Vector2.zero);
         }
         else
         {
-            float currentHorizontalSpeed = Mathf.Abs(rb.linearVelocity.x);
-            if (currentHorizontalSpeed > 0.1f)
-            {
-                walkCycleTime += Time.deltaTime * currentHorizontalSpeed * walkAnimSpeedMultiplier;
-                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8);
-            }
-            else
-            {
-                targetFrame = 0;
-                walkCycleTime = 0;
-            }
+            HandleHorizontalMovement(moveInput);
+            HandleStepClimb(moveInput);
         }
+    }
+}
 
-        if (currentFrameSync.Value != targetFrame)
+#endregion
+
+#region Visuals & Physics Logic
+
+private void UpdateVisuals()
+{
+    if (visuals == null) return;
+
+    if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
+    {
+        isFlippedSync.Value = moveInput.x < 0;
+        visuals.SetFlip(isFlippedSync.Value);
+    }
+
+    // [Separation] Delegate animation frame calculation to PlayerVisuals
+    visuals.UpdateVisuals(rb.linearVelocity.x, isGrounded, isDashingSync.Value);
+}
+
+private void UpdateTimers()
+{
+    if (IsOwner)
+    {
+        if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
+        if (isDashingSync.Value)
         {
-            currentFrameSync.Value = targetFrame;
-        }
-        visuals.SyncAnimation(targetFrame);
-    }
-
-    private void UpdateTimers()
-    {
-        if (IsOwner)
-        {
-            if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
-            if (isDashingSync.Value)
-            {
-                dashTimeLeft -= Time.deltaTime;
-                if (dashTimeLeft <= 0) EndDashServerRpc();
-            }
+            dashTimeLeft -= Time.deltaTime;
+            if (dashTimeLeft <= 0) EndDashServerRpc();
         }
     }
+}
 
-    private void HandleDash()
+private void HandleDash()
+{
+    rb.gravityScale = 0;
+    rb.linearVelocity = new Vector2(dashDirectionSync.Value * dashSpeed, 0);
+}
+
+private void HandleStepClimb(Vector2 input)
+{
+    float dir = isDashingSync.Value ? dashDirectionSync.Value : (input.x != 0 ? Mathf.Sign(input.x) : 0);
+    if (dir == 0) return;
+
+    Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y + 0.1f);
+    Vector2 direction = new Vector2(dir, 0);
+    float distance = (col.size.x / 2f) + stepCheckDistance;
+
+    RaycastHit2D hitLower = Physics2D.Raycast(origin, direction, distance, groundLayer);
+    if (hitLower.collider != null)
     {
-        rb.gravityScale = 0;
-        rb.linearVelocity = new Vector2(dashDirectionSync.Value * dashSpeed, 0);
+        Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
+        RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
+        if (hitUpper.collider == null) rb.position += new Vector2(0, 0.25f);
     }
+}
 
-    private void HandleStepClimb(Vector2 input)
-    {
-        float dir = isDashingSync.Value ? dashDirectionSync.Value : (input.x != 0 ? Mathf.Sign(input.x) : 0);
-        if (dir == 0) return;
+private void CheckGrounded()
+{
+    if (col == null) return;
+    float boxWidth = col.bounds.size.x * 0.85f;
+    float boxHeight = groundCheckRadius;
+    Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
+    isGrounded = Physics2D.OverlapBox(boxCenter, new Vector2(boxWidth, boxHeight), 0f, groundLayer);
 
-        Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y + 0.1f);
-        Vector2 direction = new Vector2(dir, 0);
-        float distance = (col.size.x / 2f) + stepCheckDistance;
-
-        RaycastHit2D hitLower = Physics2D.Raycast(origin, direction, distance, groundLayer);
-        if (hitLower.collider != null)
-        {
-            Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
-            RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
-            if (hitUpper.collider == null) rb.position += new Vector2(0, 0.25f);
-        }
-    }
-
-    private void CheckGrounded()
-    {
-        if (col == null) return;
-        float boxWidth = col.bounds.size.x * 0.85f;
-        float boxHeight = groundCheckRadius;
-        Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
-        isGrounded = Physics2D.OverlapBox(boxCenter, new Vector2(boxWidth, boxHeight), 0f, groundLayer);
-    }
-
+    // Sync grounded state to other clients for local animation calculation
+    if (isGroundedSync.Value != isGrounded) isGroundedSync.Value = isGrounded;
+}
     private void HandleHorizontalMovement(Vector2 input)
     {
         rb.gravityScale = 3f;

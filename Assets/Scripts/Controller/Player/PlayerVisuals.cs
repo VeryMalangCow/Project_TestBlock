@@ -24,6 +24,11 @@ public class PlayerVisuals : MonoBehaviour
     [Header("### Layers")]
     [SerializeField] private List<VisualLayer> layers = new List<VisualLayer>();
 
+    [Header("### Animation Settings")]
+    [SerializeField] private float walkAnimSpeedMultiplier = 2.5f;
+    private float walkCycleTime;
+    private int currentFrameIndex = -1;
+
     #endregion
 
     #region Init
@@ -155,7 +160,45 @@ public class PlayerVisuals : MonoBehaviour
 
     #endregion
 
-    #region Sync
+    #region Animation & Sync
+
+    /// <summary>
+    /// 속도와 상태 정보를 바탕으로 로컬 환경에서 애니메이션 프레임을 계산하여 재생합니다.
+    /// 네트워크 변수를 쓰지 않고 각 클라이언트에서 개별적으로 연산하므로 트래픽이 절약됩니다.
+    /// </summary>
+    public void UpdateVisuals(float horizontalVelocity, bool isGrounded, bool isDashing)
+    {
+        int targetFrame = 0;
+
+        if (isDashing)
+        {
+            targetFrame = 10;
+        }
+        else if (!isGrounded)
+        {
+            targetFrame = 9;
+        }
+        else
+        {
+            float absVelocityX = Mathf.Abs(horizontalVelocity);
+            if (absVelocityX > 0.1f)
+            {
+                walkCycleTime += Time.deltaTime * absVelocityX * walkAnimSpeedMultiplier;
+                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8);
+            }
+            else
+            {
+                targetFrame = 0;
+                walkCycleTime = 0;
+            }
+        }
+
+        if (currentFrameIndex != targetFrame)
+        {
+            currentFrameIndex = targetFrame;
+            SyncAnimation(currentFrameIndex);
+        }
+    }
 
     public void SyncAnimation(int frameIndex)
     {
