@@ -128,6 +128,8 @@ public class PlayerController : NetworkBehaviour
             jumpAction.performed += OnJumpPerformed;
             dashAction.performed += OnDashPerformed;
             scrollAction.performed += OnScrollPerformed;
+            interactAction.performed += OnInteract00Performed;
+            interact01Action.performed += OnInteract01Performed;
 
             hotbarActions = new InputAction[10];
             for (int i = 0; i < 10; i++)
@@ -290,7 +292,6 @@ public class PlayerController : NetworkBehaviour
         moveInputSync.Value = moveInput;
         movement.Tick();
         
-        HandleInteraction();
         UpdateVisuals();
     }
 
@@ -327,12 +328,18 @@ public class PlayerController : NetworkBehaviour
 
     #region Interaction & ServerRpc
 
-    private void HandleInteraction()
+    private void OnInteract00Performed(InputAction.CallbackContext ctx)
     {
+        if (!IsOwner) return;
         if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-        
-        if (interactAction.WasPressedThisFrame()) interaction.UseItem(0, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
-        else if (interact01Action.WasPressedThisFrame()) interaction.UseItem(1, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
+        interaction.UseItem(0, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
+    }
+
+    private void OnInteract01Performed(InputAction.CallbackContext ctx)
+    {
+        if (!IsOwner) return;
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        interaction.UseItem(1, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
     }
 
     [ServerRpc] public void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
