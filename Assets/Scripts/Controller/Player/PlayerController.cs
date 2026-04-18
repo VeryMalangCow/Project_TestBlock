@@ -147,6 +147,11 @@ public class PlayerController : NetworkBehaviour
             scrollAction?.Enable();
             pointAction?.Enable();
 
+            // Event-driven Input Handling
+            jumpAction.performed += OnJumpPerformed;
+            dashAction.performed += OnDashPerformed;
+            scrollAction.performed += OnScrollPerformed;
+
             // Hotbar Actions Initialization (Event-driven)
             hotbarActions = new InputAction[10];
             for (int i = 0; i < 10; i++)
@@ -167,6 +172,11 @@ public class PlayerController : NetworkBehaviour
     public override void OnDestroy()
     {
         base.OnDestroy();
+        
+        if (jumpAction != null) jumpAction.performed -= OnJumpPerformed;
+        if (dashAction != null) dashAction.performed -= OnDashPerformed;
+        if (scrollAction != null) scrollAction.performed -= OnScrollPerformed;
+
         moveAction?.Disable();
         jumpAction?.Disable();
         dashAction?.Disable();
@@ -181,6 +191,35 @@ public class PlayerController : NetworkBehaviour
             {
                 action?.Disable();
             }
+        }
+    }
+
+    private void OnJumpPerformed(InputAction.CallbackContext ctx)
+    {
+        if (!IsOwner || debugStatus != "READY") return;
+        if (isGrounded && !isDashingSync.Value) jumpCountSync.Value++;
+    }
+
+    private void OnDashPerformed(InputAction.CallbackContext ctx)
+    {
+        if (!IsOwner || debugStatus != "READY") return;
+        if (!isDashingSync.Value && dashCooldownTimer <= 0)
+        {
+            float dir = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (isFlippedSync.Value ? -1f : 1f);
+            TriggerDashServerRpc(dir);
+            dashTimeLeft = dashDuration;
+            dashCooldownTimer = dashCooldown;
+        }
+    }
+
+    private void OnScrollPerformed(InputAction.CallbackContext ctx)
+    {
+        if (!IsOwner) return;
+        float scroll = ctx.ReadValue<Vector2>().y;
+        if (Mathf.Abs(scroll) > 0.1f)
+        {
+            if (scroll > 0) selectedHotbarIndex = (selectedHotbarIndex - 1 + 10) % 10;
+            else selectedHotbarIndex = (selectedHotbarIndex + 1) % 10;
         }
     }
 
@@ -399,27 +438,24 @@ public class PlayerController : NetworkBehaviour
     #endregion
 
     #region Update Loops
-
-    private void Update()
+private void Update()
+{
+    if (!IsOwner)
     {
-        if (!IsOwner)
+        if (visuals != null)
         {
-            if (visuals != null)
-            {
-                visuals.SetFlip(isFlippedSync.Value);
-                visuals.SyncAnimation(currentFrameSync.Value);
-            }
-            return;
+            visuals.SetFlip(isFlippedSync.Value);
+            visuals.SyncAnimation(currentFrameSync.Value);
         }
-
-        HandleOwnerInput();
-        HandleHotbarSelection();
-        HandleInteraction();
-        UpdateTimers();
-        UpdateVisuals();
+        return;
     }
 
-    private void FixedUpdate()
+    HandleOwnerInput();
+    UpdateTimers();
+    UpdateVisuals();
+}
+
+private void FixedUpdate()
     {
         if (debugStatus != "READY") return;
 
@@ -562,32 +598,6 @@ public class PlayerController : NetworkBehaviour
         if (!IsOwner || moveAction == null) return;
         moveInput = moveAction.ReadValue<Vector2>();
         moveInputSync.Value = moveInput; 
-
-        if (jumpAction.WasPressedThisFrame() && isGrounded && !isDashingSync.Value) jumpCountSync.Value++;
-
-        if (dashAction.WasPressedThisFrame() && !isDashingSync.Value && dashCooldownTimer <= 0)
-        {
-            float dir = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (isFlippedSync.Value ? -1f : 1f);
-            TriggerDashServerRpc(dir);
-            dashTimeLeft = dashDuration;
-            dashCooldownTimer = dashCooldown;
-        }
-    }
-
-    private void HandleHotbarSelection()
-    {
-        if (!IsOwner) return;
-
-        // 1. Scroll Wheel
-        if (scrollAction != null)
-        {
-            float scroll = scrollAction.ReadValue<Vector2>().y;
-            if (Mathf.Abs(scroll) > 0.1f)
-            {
-                if (scroll > 0) selectedHotbarIndex = (selectedHotbarIndex - 1 + 10) % 10;
-                else selectedHotbarIndex = (selectedHotbarIndex + 1) % 10;
-            }
-        }
     }
 
     [ServerRpc] private void TriggerDashServerRpc(float direction) { isDashingSync.Value = true; dashDirectionSync.Value = direction; }
@@ -621,13 +631,7 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleInteraction()
     {
-        if (!IsOwner || interactAction == null || interact01Action == null) return;
-
-        // UI가 열려있거나 클릭 중이라면 상호작용 방지
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
-
-        if (interactAction.WasPressedThisFrame()) UseItem(0);
-        else if (interact01Action.WasPressedThisFrame()) UseItem(1);
+        // Continuous interaction logic if needed in the future
     }
 
     private void UseItem(int buttonIndex)

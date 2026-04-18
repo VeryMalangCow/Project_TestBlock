@@ -39,6 +39,7 @@ public class InventoryUI : MonoBehaviour
     private InputAction interact00Action;
     private InputAction interact01Action;
     private InputAction pointAction;
+    private InputAction[] hotbarActions;
 
     [Header("### UI Interaction")]
     [SerializeField] private GraphicRaycaster raycaster;
@@ -52,6 +53,7 @@ public class InventoryUI : MonoBehaviour
     private const int HOTBAR_COUNT = 10; 
     private bool isInventoryOpen = false;
     private bool isAnimating = false;
+    private bool shouldSnapSelection = false;
 
     // 드래그 상태 데이터
     private int draggingSlotIndex = -1;
@@ -102,6 +104,11 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
+        InitializeInputActions();
+    }
+
+    private void InitializeInputActions()
+    {
         if (inputActions != null)
         {
             var playerMap = inputActions.FindActionMap("Player");
@@ -112,27 +119,90 @@ public class InventoryUI : MonoBehaviour
                 interact00Action = playerMap.FindAction("Interact_00");
                 interact01Action = playerMap.FindAction("Interact_01");
                 pointAction = playerMap.FindAction("Point");
+
+                // Hotbar actions for snapping logic
+                hotbarActions = new InputAction[10];
+                for (int i = 0; i < 10; i++)
+                {
+                    string actionName = $"Hotbar{(i == 9 ? 0 : i + 1)}";
+                    hotbarActions[i] = playerMap.FindAction(actionName);
+                }
             }
         }
     }
 
     private void OnEnable()
     {
-        inventoryAction?.Enable();
+        if (inventoryAction != null)
+        {
+            inventoryAction.performed += OnInventoryToggle;
+            inventoryAction.Enable();
+        }
+        if (interact00Action != null)
+        {
+            interact00Action.performed += OnInteract00Performed;
+            interact00Action.Enable();
+        }
+        if (interact01Action != null)
+        {
+            interact01Action.performed += OnInteract01Performed;
+            interact01Action.Enable();
+        }
+
+        if (hotbarActions != null)
+        {
+            foreach (var action in hotbarActions)
+            {
+                if (action != null)
+                {
+                    action.performed += OnHotbarKeyPressed;
+                    action.Enable();
+                }
+            }
+        }
+
         modifierAction?.Enable();
-        interact00Action?.Enable();
-        interact01Action?.Enable();
         pointAction?.Enable();
     }
 
     private void OnDisable()
     {
-        inventoryAction?.Disable();
+        if (inventoryAction != null)
+        {
+            inventoryAction.performed -= OnInventoryToggle;
+            inventoryAction.Disable();
+        }
+        if (interact00Action != null)
+        {
+            interact00Action.performed -= OnInteract00Performed;
+            interact00Action.Disable();
+        }
+        if (interact01Action != null)
+        {
+            interact01Action.performed -= OnInteract01Performed;
+            interact01Action.Disable();
+        }
+
+        if (hotbarActions != null)
+        {
+            foreach (var action in hotbarActions)
+            {
+                if (action != null)
+                {
+                    action.performed -= OnHotbarKeyPressed;
+                    action.Disable();
+                }
+            }
+        }
+
         modifierAction?.Disable();
-        interact00Action?.Disable();
-        interact01Action?.Disable();
         pointAction?.Disable();
     }
+
+    private void OnInventoryToggle(InputAction.CallbackContext ctx) => ToggleInventory();
+    private void OnInteract00Performed(InputAction.CallbackContext ctx) { if (isInventoryOpen) HandleInputInteraction(0); }
+    private void OnInteract01Performed(InputAction.CallbackContext ctx) { if (isInventoryOpen) HandleInputInteraction(1); }
+    private void OnHotbarKeyPressed(InputAction.CallbackContext ctx) => shouldSnapSelection = true;
 
     private void Start()
     {
@@ -149,23 +219,13 @@ public class InventoryUI : MonoBehaviour
     {
         if (!isInitialized) return;
         
-        // 인벤토리 토글
-        if (inventoryAction != null && inventoryAction.WasPressedThisFrame()) ToggleInventory();
-        
-        // 고스트 아이콘 위치 업데이트
+        // 고스트 아이콘 위치 업데이트 (연속적인 데이터이므로 Update 유지)
         HandleGhostIconFollow();
 
-        // 핫바 선택 인디케이터 업데이트
+        // 핫바 선택 인디케이터 업데이트 (보간 애니메이션이므로 Update 유지)
         UpdateSelectionIndicator();
 
-        // UI 상호작용 (인벤토리가 열려 있을 때만)
-        if (isInventoryOpen)
-        {
-            if (interact00Action != null && interact00Action.WasPressedThisFrame()) HandleInputInteraction(0);
-            else if (interact01Action != null && interact01Action.WasPressedThisFrame()) HandleInputInteraction(1);
-        }
-
-        // [Fix] 데이터 갱신: 닫혀 있을 때는 핫바(0~9)만, 열려 있을 때는 전체 슬롯을 갱신
+        // [Fix] 데이터 갱신
         int refreshCount = isInventoryOpen ? uiSlots.Count : HOTBAR_COUNT;
         RefreshUI(refreshCount);
     }
@@ -185,27 +245,16 @@ public class InventoryUI : MonoBehaviour
         {
             Vector2 targetPos = targetSlotRect.anchoredPosition;
 
-            // [Logic] 키보드 입력을 감지하기 위해 현재 프레임에 숫자 키가 눌렸는지 확인
-            bool isNumberKeyPressed = false;
-            for (int i = 0; i < 10; i++)
+            if (shouldSnapSelection)
             {
-                Key k = (i == 9) ? Key.Digit0 : (Key)((int)Key.Digit1 + i);
-                if (Keyboard.current[k].wasPressedThisFrame)
-                {
-                    isNumberKeyPressed = true;
-                    break;
-                }
-            }
-
-            if (isNumberKeyPressed)
-            {
-                // 키보드 입력 시 즉시 위치 고정 (Snap)
+                // 키보드 이벤트가 발생했을 때만 즉시 위치 고정 (Snap)
                 selectionIndicator.anchoredPosition = targetPos;
-                indicatorVelocity = Vector2.zero; // 물리 속도 초기화
+                indicatorVelocity = Vector2.zero;
+                shouldSnapSelection = false; // 플래그 해제
             }
             else
             {
-                // 휠 입력 등 평상시에는 부드럽게 이동
+                // 평상시(휠 등)에는 부드럽게 이동
                 selectionIndicator.anchoredPosition = Vector2.SmoothDamp(
                     selectionIndicator.anchoredPosition, 
                     targetPos, 
