@@ -45,6 +45,10 @@ public class PlayerController : NetworkBehaviour
     private PlayerData playerData;
     private string debugStatus = "Initializing...";
 
+    // [New] Animation Proxy Data
+    private Vector3 lastPosition;
+    private float proxySpeedX;
+
     #endregion
 
     #region Network Sync Variables
@@ -337,13 +341,19 @@ public class PlayerController : NetworkBehaviour
     {
         if (!IsOwner)
         {
+            // [Optimization] Calculate proxy speed based on position change (since linearVelocity doesn't sync by default)
+            float deltaX = transform.position.x - lastPosition.x;
+            proxySpeedX = deltaX / Time.deltaTime;
+            lastPosition = transform.position;
+
             visuals?.SetFlip(isFlippedSync.Value);
-            // 타 클라이언트에서도 속도와 동기화된 상태값을 바탕으로 로컬 애니메이션 재생
-            visuals?.UpdateVisuals(rb.linearVelocity.x, isGroundedSync.Value, isDashingSync.Value);
+            // Use calculated proxySpeedX for animation
+            visuals?.UpdateVisuals(proxySpeedX, isGroundedSync.Value, isDashingSync.Value);
             return;
         }
 
         // Owner Input & Timers
+        lastPosition = transform.position; // Keep track for consistency
         moveInput = moveAction.ReadValue<Vector2>();
         moveInputSync.Value = moveInput;
         movement.Tick();

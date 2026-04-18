@@ -276,21 +276,34 @@ public class ItemController : NetworkBehaviour
 
     private void UpdateVisual(int id)
     {
-        ReleaseIcon();
+        if (id < 0 || spriteRenderer == null) return;
 
-        ItemData data = ItemDataManager.Instance.GetItem(id);
-        if (data != null && spriteRenderer != null)
+        // [Optimized] 매번 어드레서블을 로드하는 대신 중앙 캐시 사용 (0프레임 로딩)
+        Sprite icon = ItemDataManager.Instance.GetItemIcon(id);
+        if (icon != null)
         {
-            // [Fix] AssetReference 대신 전역 주소 문자열을 사용하여 충돌 방지
-            string address = $"ItemIcon_{data.id:D5}";
-            iconHandle = UnityEngine.AddressableAssets.Addressables.LoadAssetAsync<Sprite>(address);
-            iconHandle.Completed += (handle) =>
+            spriteRenderer.sprite = icon;
+        }
+        else
+        {
+            // 아직 로드되지 않은 경우 (드문 케이스)
+            StartCoroutine(RetryUpdateVisual(id));
+        }
+    }
+
+    private IEnumerator RetryUpdateVisual(int id)
+    {
+        int retries = 0;
+        while (retries < 5)
+        {
+            yield return new WaitForSeconds(0.2f);
+            Sprite icon = ItemDataManager.Instance.GetItemIcon(id);
+            if (icon != null)
             {
-                if (handle.Status == UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationStatus.Succeeded)
-                {
-                    spriteRenderer.sprite = handle.Result;
-                }
-            };
+                spriteRenderer.sprite = icon;
+                yield break;
+            }
+            retries++;
         }
     }
 

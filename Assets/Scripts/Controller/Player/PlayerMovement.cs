@@ -58,6 +58,9 @@ public class PlayerMovement : MonoBehaviour
 
     public void FixedTick(Vector2 moveInput)
     {
+        // [Multiplayer Fix] Only the owner should apply direct velocity changes to avoid conflict with NetworkTransform
+        if (!controller.IsOwner) return;
+
         OptimizedCheckGrounded();
 
         if (controller.IsDashing)
