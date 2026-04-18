@@ -4,6 +4,7 @@ using System;
 public class PlayerInventoryData
 {
     public PlayerInventorySlotData[] slots;
+    public event Action<int, PlayerInventorySlotData> OnInventoryChanged;
 
     public PlayerInventoryData(int size = 50)
     {
@@ -36,6 +37,8 @@ public class PlayerInventoryData
                     slots[i].stackCount += addCount;
                     remaining -= addCount;
 
+                    OnInventoryChanged?.Invoke(i, slots[i]);
+
                     if (remaining <= 0) return 0;
                 }
             }
@@ -50,6 +53,8 @@ public class PlayerInventoryData
                 slots[i].itemID = id;
                 slots[i].stackCount = addCount;
                 remaining -= addCount;
+
+                OnInventoryChanged?.Invoke(i, slots[i]);
 
                 if (remaining <= 0) return 0;
             }
@@ -72,7 +77,11 @@ public class PlayerInventoryData
     /// </summary>
     public void SetSlot(int index, PlayerInventorySlotData data)
     {
-        if (index >= 0 && index < slots.Length) slots[index] = data;
+        if (index >= 0 && index < slots.Length) 
+        {
+            slots[index] = data;
+            OnInventoryChanged?.Invoke(index, data);
+        }
     }
 
     /// <summary>
@@ -80,6 +89,10 @@ public class PlayerInventoryData
     /// </summary>
     public void ClearSlot(int index)
     {
-        if (index >= 0 && index < slots.Length) slots[index].Clear();
+        if (index >= 0 && index < slots.Length) 
+        {
+            slots[index].Clear();
+            OnInventoryChanged?.Invoke(index, slots[index]);
+        }
     }
 }
