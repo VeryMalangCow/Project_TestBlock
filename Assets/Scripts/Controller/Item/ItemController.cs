@@ -207,6 +207,7 @@ public class ItemController : NetworkBehaviour
         isAttracted = false;
         targetPlayer = null;
         rb.bodyType = RigidbodyType2D.Dynamic;
+        if (rb != null) rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // [Added] 안정성 강화
     }
 
     public void SetDropCooldown(bool applyBounce = false)
@@ -237,35 +238,59 @@ public class ItemController : NetworkBehaviour
         }
     }
 
+    private void OnTriggerStay2D(Collider2D collision)
+    {
+        if (!IsServer) return;
+
+        // [New] Stay 상태에서도 지속적으로 획득 시도 (Enter를 놓쳤을 경우 대비)
+        if (collision.attachedRigidbody != null && collision.attachedRigidbody.CompareTag("Player"))
+        {
+            if (collision.attachedRigidbody.TryGetComponent<PlayerController>(out var player))
+            {
+                TryPickup(player);
+            }
+        }
+    }
+
     private void TryPickup(PlayerController player)
     {
         if (cooldownTimer > 0 || isBeingPickedUp) return;
 
-        if (player.Data == null || player.Data.inventory == null) return;
+        if (player.Data == null || player.Data.inventory == null)
+        {
+            // 아직 플레이어 데이터가 준비되지 않았을 수 있음
+            return;
+        }
 
         int initialCount = stackCount.Value;
         if (initialCount <= 0) return;
 
         isBeingPickedUp = true; 
 
+        // [Logic] 아이템 추가 시도
         int remaining = player.Data.inventory.AddItem(itemID.Value, initialCount);
 
         if (remaining <= 0)
         {
+            // 모두 획득 성공
             stackCount.Value = 0; 
-            GetComponent<NetworkObject>().Despawn();
+            if (IsServer) GetComponent<NetworkObject>().Despawn();
         }
         else
         {
+            // 일부만 획득했거나 인벤토리가 가득 참
             if (remaining < initialCount)
             {
                 stackCount.Value = remaining;
-                SetDropCooldown(true); 
+                SetDropCooldown(true); // 튕겨나감
             }
             else
             {
+                // 아예 못 얻은 경우 (가득 참)
                 if (isAttracted) SetDropCooldown(true);
             }
+            
+            // 다시 먹을 수 있도록 플래그 해제
             isBeingPickedUp = false; 
         }
     }

@@ -385,8 +385,8 @@ public class InventoryUI : MonoBehaviour
 
         bool isModifierPressed = modifierAction != null && modifierAction.IsPressed();
 
-        if (buttonIndex == 0) HandleInteract00(ref inventory.slots[index], isModifierPressed);
-        else if (buttonIndex == 1) HandleInteract01(ref inventory.slots[index], isModifierPressed);
+        if (buttonIndex == 0) HandleInteract00(index, isModifierPressed);
+        else if (buttonIndex == 1) HandleInteract01(index, isModifierPressed);
 
         SyncData();
         UpdateGhostUI();
@@ -470,24 +470,28 @@ public class InventoryUI : MonoBehaviour
         else PlayerController.Local.RequestSyncInventoryServerRpc();
     }
 
-    private void HandleInteract00(ref PlayerInventorySlotData clickedSlot, bool isModifierPressed)
+    private void HandleInteract00(int index, bool isModifierPressed)
     {
+        var inventory = PlayerController.Local.Data.inventory;
+        var clickedSlot = inventory.GetSlot(index);
+
         if (draggingItemData == null)
         {
             if (!clickedSlot.IsEmpty)
             {
                 int amountToPick = isModifierPressed ? Mathf.CeilToInt(clickedSlot.stackCount / 2.0f) : clickedSlot.stackCount;
                 draggingItemData = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
-                clickedSlot.stackCount -= amountToPick;
-                if (clickedSlot.stackCount <= 0) clickedSlot.Clear();
+                
+                int remaining = clickedSlot.stackCount - amountToPick;
+                if (remaining <= 0) inventory.ClearSlot(index);
+                else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
             }
         }
         else
         {
             if (clickedSlot.IsEmpty)
             {
-                clickedSlot.itemID = draggingItemData.Value.itemID;
-                clickedSlot.stackCount = draggingItemData.Value.stackCount;
+                inventory.SetSlot(index, draggingItemData.Value);
                 ClearDragging();
             }
             else if (clickedSlot.itemID == draggingItemData.Value.itemID)
@@ -496,65 +500,74 @@ public class InventoryUI : MonoBehaviour
                 int max = data != null ? data.maxStack : 999;
                 int canAdd = max - clickedSlot.stackCount;
                 int toAdd = Mathf.Min(canAdd, draggingItemData.Value.stackCount);
-                clickedSlot.stackCount += toAdd;
+                
+                inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, clickedSlot.stackCount + toAdd));
+                
                 var updatedDragging = draggingItemData.Value;
                 updatedDragging.stackCount -= toAdd;
-                draggingItemData = updatedDragging;
-                if (draggingItemData.Value.stackCount <= 0) ClearDragging();
+                if (updatedDragging.stackCount <= 0) ClearDragging();
+                else draggingItemData = updatedDragging;
             }
             else
             {
                 int tempID = clickedSlot.itemID;
                 int tempCount = clickedSlot.stackCount;
-                clickedSlot.itemID = draggingItemData.Value.itemID;
-                clickedSlot.stackCount = draggingItemData.Value.stackCount;
+                
+                inventory.SetSlot(index, draggingItemData.Value);
                 draggingItemData = new PlayerInventorySlotData(tempID, tempCount);
             }
         }
     }
 
-    private void HandleInteract01(ref PlayerInventorySlotData clickedSlot, bool isModifierPressed)
+    private void HandleInteract01(int index, bool isModifierPressed)
     {
+        var inventory = PlayerController.Local.Data.inventory;
+        var clickedSlot = inventory.GetSlot(index);
+
         if (draggingItemData == null)
         {
             if (!clickedSlot.IsEmpty)
             {
                 int amountToPick = isModifierPressed ? Mathf.Min(10, clickedSlot.stackCount) : 1;
                 draggingItemData = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
-                clickedSlot.stackCount -= amountToPick;
-                if (clickedSlot.stackCount <= 0) clickedSlot.Clear();
+                
+                int remaining = clickedSlot.stackCount - amountToPick;
+                if (remaining <= 0) inventory.ClearSlot(index);
+                else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
             }
         }
         else
         {
             if (clickedSlot.IsEmpty)
             {
-                clickedSlot.itemID = draggingItemData.Value.itemID;
-                clickedSlot.stackCount = 1;
+                inventory.SetSlot(index, new PlayerInventorySlotData(draggingItemData.Value.itemID, 1));
+                
                 var updatedDragging = draggingItemData.Value;
                 updatedDragging.stackCount -= 1;
-                draggingItemData = updatedDragging;
-                if (draggingItemData.Value.stackCount <= 0) ClearDragging();
+                if (updatedDragging.stackCount <= 0) ClearDragging();
+                else draggingItemData = updatedDragging;
             }
             else if (clickedSlot.itemID == draggingItemData.Value.itemID)
             {
                 ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
                 int max = data != null ? data.maxStack : 999;
+
                 if (clickedSlot.stackCount < max)
                 {
-                    clickedSlot.stackCount += 1;
+                    inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, clickedSlot.stackCount + 1));
+                    
                     var updatedDragging = draggingItemData.Value;
                     updatedDragging.stackCount -= 1;
-                    draggingItemData = updatedDragging;
-                    if (draggingItemData.Value.stackCount <= 0) ClearDragging();
+                    if (updatedDragging.stackCount <= 0) ClearDragging();
+                    else draggingItemData = updatedDragging;
                 }
             }
             else
             {
                 int tempID = clickedSlot.itemID;
                 int tempCount = clickedSlot.stackCount;
-                clickedSlot.itemID = draggingItemData.Value.itemID;
-                clickedSlot.stackCount = draggingItemData.Value.stackCount;
+                
+                inventory.SetSlot(index, draggingItemData.Value);
                 draggingItemData = new PlayerInventorySlotData(tempID, tempCount);
             }
         }
