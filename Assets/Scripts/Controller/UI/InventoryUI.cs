@@ -170,6 +170,8 @@ public class InventoryUI : MonoBehaviour
         RefreshUI(refreshCount);
     }
 
+    private int lastSelectedIdx = -1;
+
     private void UpdateSelectionIndicator()
     {
         if (selectionIndicator == null || PlayerController.Local == null) return;
@@ -181,13 +183,37 @@ public class InventoryUI : MonoBehaviour
         RectTransform targetSlotRect = uiSlots[selectedIdx].GetComponent<RectTransform>();
         if (targetSlotRect != null)
         {
-            // 부모(Hotbar) 기준의 로컬 위치 사용
             Vector2 targetPos = targetSlotRect.anchoredPosition;
-            selectionIndicator.anchoredPosition = Vector2.SmoothDamp(
-                selectionIndicator.anchoredPosition, 
-                targetPos, 
-                ref indicatorVelocity, 
-                1f / selectionSmoothSpeed);
+
+            // [Logic] 키보드 입력을 감지하기 위해 현재 프레임에 숫자 키가 눌렸는지 확인
+            bool isNumberKeyPressed = false;
+            for (int i = 0; i < 10; i++)
+            {
+                Key k = (i == 9) ? Key.Digit0 : (Key)((int)Key.Digit1 + i);
+                if (Keyboard.current[k].wasPressedThisFrame)
+                {
+                    isNumberKeyPressed = true;
+                    break;
+                }
+            }
+
+            if (isNumberKeyPressed)
+            {
+                // 키보드 입력 시 즉시 위치 고정 (Snap)
+                selectionIndicator.anchoredPosition = targetPos;
+                indicatorVelocity = Vector2.zero; // 물리 속도 초기화
+            }
+            else
+            {
+                // 휠 입력 등 평상시에는 부드럽게 이동
+                selectionIndicator.anchoredPosition = Vector2.SmoothDamp(
+                    selectionIndicator.anchoredPosition, 
+                    targetPos, 
+                    ref indicatorVelocity, 
+                    1f / selectionSmoothSpeed);
+            }
+            
+            lastSelectedIdx = selectedIdx;
         }
     }
 
