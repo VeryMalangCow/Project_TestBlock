@@ -5,14 +5,19 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.EventSystems;
 
+/// <summary>
+/// 플레이어의 네트워크 상태, 입력 초기화 및 컴포넌트 조율을 담당하는 중앙 허브 클래스입니다.
+/// </summary>
 public class PlayerController : NetworkBehaviour
 {
-    #region Variable
+    #region Variable & Components
 
     [Header("### Components")]
     [SerializeField] private Rigidbody2D rb;
     [SerializeField] private BoxCollider2D col;
     [SerializeField] private PlayerVisuals visuals;
+    [SerializeField] private PlayerMovement movement;
+    [SerializeField] private PlayerInteraction interaction;
 
     [Header("### Input Actions")]
     [SerializeField] private InputActionAsset inputActions;
@@ -20,110 +25,86 @@ public class PlayerController : NetworkBehaviour
     private InputAction jumpAction;
     private InputAction dashAction;
     private InputAction interactAction;
-    private InputAction pointAction;
-
-    [Header("### Move")]
-    [SerializeField] private float moveSpeed = 8f;
-    [SerializeField] private float acceleration = 60f;
-    [SerializeField] private float deceleration = 50f;
-    [SerializeField] private float jumpForce = 13f;
-
-    [Header("### Dash")]
-    [SerializeField] private float dashSpeed = 28f;
-    [SerializeField] private float dashDuration = 0.2f;
-    [SerializeField] private float dashCooldown = 0.5f;
-    private float dashTimeLeft;
-    private float dashCooldownTimer;
-    private float dashDirection;
-
-    [Header("### Physics")]
-    [SerializeField] private LayerMask groundLayer;
-    [SerializeField] private float groundCheckRadius = 0.25f;
-    [SerializeField] private float stepHeight = 1.1f; 
-    [SerializeField] private float stepCheckDistance = 0.1f;
-
-    [Header("### Interaction")]
-    [SerializeField] private float interactRange = 6f;
-    [SerializeField] private GameObject itemDropPrefab;
-    private int selectedHotbarIndex = 0;
-    public int SelectedHotbarIndex => selectedHotbarIndex;
-
-    private Vector2 moveInput;
-    private bool isGrounded;
-
-    private PlayerData playerData;
-    public PlayerData Data => playerData;
-
-    public static PlayerController Local { get; private set; }
-
-    // [Public Property] 바라보는 방향 노출
-    public bool IsFlipped => isFlippedSync.Value;
-
-    // [Static Settings] 아이템 던지기 힘 설정
-    public static float DropThrowForce = 4f;   // 가로 던지는 힘
-    public static float DropUpwardForce = 6f;  // 세로(위쪽) 던지는 힘
-
-    private string debugStatus = "Initializing...";
-
     private InputAction interact01Action;
     private InputAction scrollAction;
+    private InputAction pointAction;
     private InputAction[] hotbarActions;
+
+    [Header("### Resources")]
+    [SerializeField] private GameObject itemDropPrefab;
+
+    private int selectedHotbarIndex = 0;
+    public int SelectedHotbarIndex => selectedHotbarIndex;
+    public PlayerData Data => playerData;
+    public static PlayerController Local { get; private set; }
+    public bool IsFlipped => isFlippedSync.Value;
+    public bool IsDashing => isDashingSync.Value;
+    public float DashDirection => dashDirectionSync.Value;
+
+    private Vector2 moveInput;
+    private PlayerData playerData;
+    private string debugStatus = "Initializing...";
 
     #endregion
 
     #region Network Sync Variables
 
-    // 1. Movement Sync
+    // Movement & State Sync
     private NetworkVariable<Vector2> moveInputSync = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isFlippedSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isGroundedSync = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-    // 2. State Sync
     private NetworkVariable<bool> isDashingSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<float> dashDirectionSync = new NetworkVariable<float>(0f, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<int> jumpCountSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int lastProcessedJumpCount;
 
-    // 3. Equipment Sync
+    // Appearance & Equipment Sync
     private NetworkVariable<int> helmetIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> chestplateIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> leggingsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> backpackIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> cloakIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-
-    // 4. Visual Appearance Sync
     private NetworkVariable<Color> skinColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> eyeColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> hairStyleSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
-    // 5. Inventory Delta Sync
     private NetworkList<PlayerInventorySlotData> inventorySlotsSync;
 
     #endregion
 
-    #region Awake & Setup
+    #region Unity Lifecycle
 
     private void Awake()
     {
         InitializeInput();
-        SetupPhysics();
+        SetupComponents();
         EnsureEventSystem();
         
-        // Initialize NetworkList (Must be done in Awake or Declaration)
-        inventorySlotsSync = new NetworkList<PlayerInventorySlotData>(
-            null, 
-            NetworkVariableReadPermission.Everyone, 
-            NetworkVariableWritePermission.Server);
+        inventorySlotsSync = new NetworkList<PlayerInventorySlotData>(null, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    }
+
+    private void SetupComponents()
+    {
+        int layer = LayerMask.NameToLayer("Ground");
+        LayerMask groundMask = (layer != -1) ? (1 << layer) : 0;
+
+        if (rb != null)
+        {
+            rb.includeLayers = groundMask;
+            rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
+            rb.interpolation = RigidbodyInterpolation2D.Interpolate;
+        }
+
+        // 컴포넌트 초기화
+        if (movement == null) movement = GetComponent<PlayerMovement>();
+        if (interaction == null) interaction = GetComponent<PlayerInteraction>();
+
+        movement?.Init(this, rb, col, groundMask);
+        interaction?.Init(this, itemDropPrefab);
     }
 
     private void InitializeInput()
     {
-        if (inputActions == null)
-        {
-            Debug.LogError("[PlayerController] InputActionAsset is missing!");
-            return;
-        }
+        if (inputActions == null) return;
 
         var playerMap = inputActions.FindActionMap("Player");
         if (playerMap != null)
@@ -144,16 +125,14 @@ public class PlayerController : NetworkBehaviour
             scrollAction?.Enable();
             pointAction?.Enable();
 
-            // Event-driven Input Handling
             jumpAction.performed += OnJumpPerformed;
             dashAction.performed += OnDashPerformed;
             scrollAction.performed += OnScrollPerformed;
 
-            // Hotbar Actions Initialization (Event-driven)
             hotbarActions = new InputAction[10];
             for (int i = 0; i < 10; i++)
             {
-                int index = i; // Closure check
+                int index = i;
                 string actionName = $"Hotbar{(i == 9 ? 0 : i + 1)}";
                 var action = playerMap.FindAction(actionName);
                 if (action != null)
@@ -169,11 +148,10 @@ public class PlayerController : NetworkBehaviour
     public override void OnDestroy()
     {
         base.OnDestroy();
-        
         if (jumpAction != null) jumpAction.performed -= OnJumpPerformed;
         if (dashAction != null) dashAction.performed -= OnDashPerformed;
         if (scrollAction != null) scrollAction.performed -= OnScrollPerformed;
-
+        
         moveAction?.Disable();
         jumpAction?.Disable();
         dashAction?.Disable();
@@ -182,30 +160,27 @@ public class PlayerController : NetworkBehaviour
         scrollAction?.Disable();
         pointAction?.Disable();
 
-        if (hotbarActions != null)
-        {
-            foreach (var action in hotbarActions)
-            {
-                action?.Disable();
-            }
-        }
+        if (hotbarActions != null) foreach (var action in hotbarActions) action?.Disable();
     }
+
+    #endregion
+
+    #region Input Callbacks
 
     private void OnJumpPerformed(InputAction.CallbackContext ctx)
     {
         if (!IsOwner || debugStatus != "READY") return;
-        if (isGrounded && !isDashingSync.Value) jumpCountSync.Value++;
+        if (movement.IsGrounded && !isDashingSync.Value) jumpCountSync.Value++;
     }
 
     private void OnDashPerformed(InputAction.CallbackContext ctx)
     {
         if (!IsOwner || debugStatus != "READY") return;
-        if (!isDashingSync.Value && dashCooldownTimer <= 0)
+        if (!isDashingSync.Value && movement.DashCooldownTimer <= 0)
         {
             float dir = moveInput.x != 0 ? Mathf.Sign(moveInput.x) : (isFlippedSync.Value ? -1f : 1f);
             TriggerDashServerRpc(dir);
-            dashTimeLeft = dashDuration;
-            dashCooldownTimer = dashCooldown;
+            movement.StartDash(dir);
         }
     }
 
@@ -220,82 +195,39 @@ public class PlayerController : NetworkBehaviour
         }
     }
 
-    private void SetupPhysics()
-    {
-        int layer = LayerMask.NameToLayer("Ground");
-        if (layer != -1)
-        {
-            groundLayer = (1 << layer);
-            if (rb != null)
-            {
-                rb.includeLayers = groundLayer;
-                rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
-                rb.interpolation = RigidbodyInterpolation2D.Interpolate;
-            }
-        }
-    }
-
-    private void EnsureEventSystem()
-    {
-        if (Object.FindAnyObjectByType<EventSystem>() == null)
-        {
-            GameObject es = new GameObject("EventSystem");
-            es.AddComponent<EventSystem>();
-            es.AddComponent<StandaloneInputModule>();
-        }
-    }
-
     #endregion
 
-    #region Network Lifecycle
+    #region Network Logic
 
     public override void OnNetworkSpawn()
     {
         if (IsOwner) Local = this;
-
-        // Inventory Delta Sync Event
         inventorySlotsSync.OnListChanged += OnInventoryListChanged;
 
-        helmetIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Heads", newVal); };
-        chestplateIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Clothes", newVal); };
-        leggingsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Leggings", newVal); };
-        backpackIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Backpacks", newVal); };
-        cloakIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Cloaks", newVal); };
-
-        skinColorSync.OnValueChanged += (oldVal, newVal) => { visuals.SetSkinColor(newVal); };
-        eyeColorSync.OnValueChanged += (oldVal, newVal) => { visuals.SetEyeColor(newVal); };
-        hairColorSync.OnValueChanged += (oldVal, newVal) => { visuals.SetHairColor(newVal); };
-        hairStyleSync.OnValueChanged += (oldVal, newVal) => { visuals.SetHair(newVal); };
+        helmetIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Heads", newVal);
+        chestplateIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Clothes", newVal);
+        leggingsIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Leggings", newVal);
+        skinColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetSkinColor(newVal);
+        eyeColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetEyeColor(newVal);
+        hairColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetHairColor(newVal);
+        hairStyleSync.OnValueChanged += (oldVal, newVal) => visuals.SetHair(newVal);
 
         StartCoroutine(InitPlayerCo());
     }
 
     private void OnInventoryListChanged(NetworkListEvent<PlayerInventorySlotData> changeEvent)
     {
-        // [Delta Sync] 리스트의 특정 인덱스가 변하면 로컬 데이터에 즉시 반영
         if (playerData != null && playerData.inventory != null)
-        {
             playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
-        }
     }
 
     private IEnumerator InitPlayerCo()
     {
         debugStatus = "Waiting for Map...";
-        
-        if (rb != null)
-        {
-            rb.simulated = false;
-            rb.bodyType = RigidbodyType2D.Kinematic;
-            rb.gravityScale = 0;
-            rb.linearVelocity = Vector2.zero;
-        }
+        if (rb != null) { rb.simulated = false; rb.bodyType = RigidbodyType2D.Kinematic; rb.gravityScale = 0; }
         if (visuals != null) visuals.gameObject.SetActive(false);
 
-        while (MapManager.Instance == null || !MapManager.Instance.IsMapReady())
-        {
-            yield return null;
-        }
+        while (MapManager.Instance == null || !MapManager.Instance.IsMapReady()) yield return null;
 
         if (IsOwner)
         {
@@ -304,367 +236,136 @@ public class PlayerController : NetworkBehaviour
             yield return new WaitForSeconds(0.5f);
 
             playerData = new PlayerData();
-
-            // [Server] 인벤토리 동기화 리스트 초기화 (50슬롯)
             if (IsServer)
             {
                 inventorySlotsSync.Clear();
                 for (int i = 0; i < 50; i++) inventorySlotsSync.Add(new PlayerInventorySlotData(-1, 0));
-            }
-
-            // [Test] 초기 아이템 지급 (ID 0~5)
-            // 서버 권한으로 아이템을 추가하고 네트워크 리스트에 동기화
-            if (IsServer)
-            {
                 for (int i = 0; i <= 5; i++)
                 {
                     ItemData item = ItemDataManager.Instance.GetItem(i);
-                    if (item != null)
-                    {
-                        playerData.inventory.AddItem(i, item.maxStack);
-                    }
+                    if (item != null) playerData.inventory.AddItem(i, item.maxStack);
                 }
                 SyncInventoryToNetwork();
             }
-
             UpdateAppearance(playerData.visual);
             UpdateEquipment(playerData.equipment);
         }
 
-        if (!IsServer || IsOwner)
-        {
-            debugStatus = "Rendering Local Chunks...";
-            int retry = 0;
-            while (retry < 100) 
-            {
-                if (MapManager.Instance != null && MapManager.Instance.IsTerrainReadyAt(transform.position))
-                {
-                    yield return new WaitForFixedUpdate();
-                    break;
-                }
-                
-                if (IsOwner && MeshManager.Instance != null)
-                {
-                    int cx = Mathf.FloorToInt(transform.position.x / ChunkData.Size);
-                    int cy = Mathf.FloorToInt(transform.position.y / ChunkData.Size);
-                    MeshManager.Instance.ForceRenderChunk(cx, cy);
-                }
-                retry++;
-                yield return new WaitForSeconds(0.1f);
-            }
-        }
-
-        if (visuals != null)
-        {
-            visuals.gameObject.SetActive(true);
-            visuals.Init();
-            
-            visuals.SetSkinColor(skinColorSync.Value);
-            visuals.SetEyeColor(eyeColorSync.Value);
-            visuals.SetHairColor(hairColorSync.Value);
-            visuals.SetHair(hairStyleSync.Value);
-            visuals.SetArmor("Heads", helmetIdSync.Value);
-            visuals.SetArmor("Clothes", chestplateIdSync.Value);
-            visuals.SetArmor("Leggings", leggingsIdSync.Value);
-        }
-
-        if (IsOwner && Camera.main != null)
-        {
-            CameraController cam = Camera.main.GetComponent<CameraController>();
-            if (cam != null)
-            {
-                cam.enabled = true;
-                cam.SetTarget(transform);
-            }
-        }
-
         debugStatus = "READY";
-        if (rb != null)
-        {
-            rb.bodyType = RigidbodyType2D.Dynamic;
-            rb.simulated = true;
-            rb.gravityScale = 3f;
-        }
-        enabled = true;
+        if (rb != null) { rb.bodyType = RigidbodyType2D.Dynamic; rb.simulated = true; rb.gravityScale = 3f; }
+        if (visuals != null) { visuals.gameObject.SetActive(true); visuals.Init(); }
+        if (IsOwner && Camera.main != null) Camera.main.GetComponent<CameraController>()?.SetTarget(transform);
     }
 
-    /// <summary>
-    /// [Server-Only] 현재 로컬 인벤토리 데이터를 NetworkList에 덮어씌워 클라이언트에 전파합니다.
-    /// </summary>
     public void SyncInventoryToNetwork()
     {
         if (!IsServer || playerData == null) return;
-
         for (int i = 0; i < inventorySlotsSync.Count; i++)
         {
             var localSlot = playerData.inventory.GetSlot(i);
-            if (!inventorySlotsSync[i].Equals(localSlot))
-            {
-                inventorySlotsSync[i] = localSlot;
-            }
+            if (!inventorySlotsSync[i].Equals(localSlot)) inventorySlotsSync[i] = localSlot;
         }
     }
 
-    [ServerRpc]
-    public void RequestSyncInventoryServerRpc()
-    {
-        SyncInventoryToNetwork();
-    }
-
-    [ServerRpc]
-    private void RequestSpawnServerRpc()
-    {
-        Vector2 spawnPos = MapManager.Instance.GetSurfacePosition(50f);
-        ConfirmSpawnClientRpc(spawnPos);
-    }
-
-    [ClientRpc]
-    private void ConfirmSpawnClientRpc(Vector2 pos)
-    {
-        if (IsOwner)
-        {
-            transform.position = pos;
-            rb.position = pos;
-            rb.linearVelocity = Vector2.zero;
-            var networkTransform = GetComponent<NetworkTransform>();
-            if (networkTransform != null) networkTransform.Teleport(pos, Quaternion.identity, transform.localScale);
-            debugStatus = "Spawned at Surface";
-        }
-    }
+    [ServerRpc] public void RequestSyncInventoryServerRpc() => SyncInventoryToNetwork();
+    [ServerRpc] private void RequestSpawnServerRpc() => ConfirmSpawnClientRpc(MapManager.Instance.GetSurfacePosition(50f));
+    [ClientRpc] private void ConfirmSpawnClientRpc(Vector2 pos) { if (IsOwner) { transform.position = pos; rb.position = pos; debugStatus = "Spawned"; } }
 
     #endregion
 
-    #region Update Loops
-private void Update()
-{
-    if (!IsOwner)
+    #region Update & Visuals
+
+    private void Update()
     {
-        if (visuals != null)
+        if (!IsOwner)
         {
-            visuals.SetFlip(isFlippedSync.Value);
-            // [Optimization] Non-owners calculate animation frames locally based on synced velocity and state
-            visuals.UpdateVisuals(rb.linearVelocity.x, isGroundedSync.Value, isDashingSync.Value);
+            visuals?.SetFlip(isFlippedSync.Value);
+            // 타 클라이언트에서도 속도와 동기화된 상태값을 바탕으로 로컬 애니메이션 재생
+            visuals?.UpdateVisuals(rb.linearVelocity.x, isGroundedSync.Value, isDashingSync.Value);
+            return;
         }
-        return;
+
+        // Owner Input & Timers
+        moveInput = moveAction.ReadValue<Vector2>();
+        moveInputSync.Value = moveInput;
+        movement.Tick();
+        
+        HandleInteraction();
+        UpdateVisuals();
     }
 
-    HandleOwnerInput();
-    UpdateTimers();
-    UpdateVisuals();
-}
-
-private void FixedUpdate()
-{
-    if (debugStatus != "READY") return;
-
-    if (IsOwner)
+    private void FixedUpdate()
     {
-        CheckGrounded();
+        if (debugStatus != "READY" || !IsOwner) return;
 
+        movement.FixedTick(moveInput);
+
+        // Jump Physics logic (Sync trigger)
         if (jumpCountSync.Value > lastProcessedJumpCount)
         {
-            if (isGrounded) ApplyJumpPhysics();
+            if (movement.IsGrounded) movement.ApplyJump();
             lastProcessedJumpCount = jumpCountSync.Value;
         }
+    }
 
-        if (isDashingSync.Value)
+    private void UpdateVisuals()
+    {
+        if (visuals == null) return;
+
+        if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
         {
-            HandleDash();
-            HandleStepClimb(Vector2.zero);
+            isFlippedSync.Value = moveInput.x < 0;
+            visuals.SetFlip(isFlippedSync.Value);
         }
-        else
-        {
-            HandleHorizontalMovement(moveInput);
-            HandleStepClimb(moveInput);
-        }
-    }
-}
 
-#endregion
-
-#region Visuals & Physics Logic
-
-private void UpdateVisuals()
-{
-    if (visuals == null) return;
-
-    if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
-    {
-        isFlippedSync.Value = moveInput.x < 0;
-        visuals.SetFlip(isFlippedSync.Value);
+        visuals.UpdateVisuals(rb.linearVelocity.x, movement.IsGrounded, isDashingSync.Value);
     }
 
-    // [Separation] Delegate animation frame calculation to PlayerVisuals
-    visuals.UpdateVisuals(rb.linearVelocity.x, isGrounded, isDashingSync.Value);
-}
-
-private void UpdateTimers()
-{
-    if (IsOwner)
-    {
-        if (dashCooldownTimer > 0) dashCooldownTimer -= Time.deltaTime;
-        if (isDashingSync.Value)
-        {
-            dashTimeLeft -= Time.deltaTime;
-            if (dashTimeLeft <= 0) EndDashServerRpc();
-        }
-    }
-}
-
-private void HandleDash()
-{
-    rb.gravityScale = 0;
-    rb.linearVelocity = new Vector2(dashDirectionSync.Value * dashSpeed, 0);
-}
-
-private void HandleStepClimb(Vector2 input)
-{
-    float dir = isDashingSync.Value ? dashDirectionSync.Value : (input.x != 0 ? Mathf.Sign(input.x) : 0);
-    if (dir == 0) return;
-
-    Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y + 0.1f);
-    Vector2 direction = new Vector2(dir, 0);
-    float distance = (col.size.x / 2f) + stepCheckDistance;
-
-    RaycastHit2D hitLower = Physics2D.Raycast(origin, direction, distance, groundLayer);
-    if (hitLower.collider != null)
-    {
-        Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
-        RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
-        if (hitUpper.collider == null) rb.position += new Vector2(0, 0.25f);
-    }
-}
-
-private void CheckGrounded()
-{
-    if (col == null) return;
-    float boxWidth = col.bounds.size.x * 0.85f;
-    float boxHeight = groundCheckRadius;
-    Vector2 boxCenter = new Vector2(col.bounds.center.x, col.bounds.min.y - (boxHeight / 2f));
-    isGrounded = Physics2D.OverlapBox(boxCenter, new Vector2(boxWidth, boxHeight), 0f, groundLayer);
-
-    // Sync grounded state to other clients for local animation calculation
-    if (isGroundedSync.Value != isGrounded) isGroundedSync.Value = isGrounded;
-}
-    private void HandleHorizontalMovement(Vector2 input)
-    {
-        rb.gravityScale = 3f;
-        float targetSpeed = input.x * moveSpeed;
-        float currentSpeed = rb.linearVelocity.x;
-        float accelRate = (Mathf.Abs(targetSpeed) > 0.01f) ? acceleration : deceleration;
-        float newX = Mathf.MoveTowards(currentSpeed, targetSpeed, accelRate * Time.fixedDeltaTime);
-        rb.linearVelocity = new Vector2(newX, rb.linearVelocity.y);
-    }
-
-    private void ApplyJumpPhysics()
-    {
-        rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0);
-        rb.AddForce(Vector2.up * jumpForce, ForceMode2D.Impulse);
-    }
+    public void OnGroundedChanged(bool grounded) { if (IsOwner) isGroundedSync.Value = grounded; }
 
     #endregion
 
-    #region Input Handling
+    #region Interaction & ServerRpc
 
-    private void HandleOwnerInput()
+    private void HandleInteraction()
     {
-        if (!IsOwner || moveAction == null) return;
-        moveInput = moveAction.ReadValue<Vector2>();
-        moveInputSync.Value = moveInput; 
+        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject()) return;
+        
+        if (interactAction.WasPressedThisFrame()) interaction.UseItem(0, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
+        else if (interact01Action.WasPressedThisFrame()) interaction.UseItem(1, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
     }
 
+    [ServerRpc] public void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
+
+    [ServerRpc]
+    public void DropItemServerRpc(int id, int count, float lookDir) => interaction.HandleDropItem(id, count, lookDir);
+
     [ServerRpc] private void TriggerDashServerRpc(float direction) { isDashingSync.Value = true; dashDirectionSync.Value = direction; }
+    public void EndDash() { if (IsServer) isDashingSync.Value = false; else EndDashServerRpc(); }
     [ServerRpc] private void EndDashServerRpc() { isDashingSync.Value = false; }
 
     #endregion
 
-    #region Data Update (Visual & Equipment)
+    #region Data Helpers
 
-    public void UpdateAppearance(PlayerVisualData visualData)
+    public void UpdateAppearance(PlayerVisualData v)
     {
         if (!IsOwner) return;
-        Color sCol, eCol, hCol;
-        if (ColorUtility.TryParseHtmlString(visualData.skinColorHex, out sCol)) skinColorSync.Value = sCol;
-        if (ColorUtility.TryParseHtmlString(visualData.eyeColorHex, out eCol)) eyeColorSync.Value = eCol;
-        if (ColorUtility.TryParseHtmlString(visualData.hairColorHex, out hCol)) hairColorSync.Value = hCol;
-        hairStyleSync.Value = visualData.hairStyleIndex;
+        if (ColorUtility.TryParseHtmlString(v.skinColorHex, out Color s)) skinColorSync.Value = s;
+        if (ColorUtility.TryParseHtmlString(v.eyeColorHex, out Color e)) eyeColorSync.Value = e;
+        if (ColorUtility.TryParseHtmlString(v.hairColorHex, out Color h)) hairColorSync.Value = h;
+        hairStyleSync.Value = v.hairStyleIndex;
     }
 
-    public void UpdateEquipment(PlayerEquipmentData equipmentData)
+    public void UpdateEquipment(PlayerEquipmentData e)
     {
         if (!IsOwner) return;
-        helmetIdSync.Value = equipmentData.helmetIndex;
-        chestplateIdSync.Value = equipmentData.chestplateIndex;
-        leggingsIdSync.Value = equipmentData.leggingsIndex;
+        helmetIdSync.Value = e.helmetIndex;
+        chestplateIdSync.Value = e.chestplateIndex;
+        leggingsIdSync.Value = e.leggingsIndex;
     }
 
-    #endregion
-
-    #region Interaction
-
-    private void HandleInteraction()
-    {
-        // Continuous interaction logic if needed in the future
-    }
-
-    private void UseItem(int buttonIndex)
-    {
-        if (playerData == null || playerData.inventory == null) return;
-        PlayerInventorySlotData selectedSlot = playerData.inventory.GetSlot(selectedHotbarIndex);
-        if (selectedSlot.IsEmpty) return;
-
-        // [Logic] Item interaction framework (Block placement as test)
-        if (selectedSlot.itemID >= 0)
-        {
-            Vector2 screenPos = pointAction.ReadValue<Vector2>();
-            UpdateBlock(selectedSlot.itemID, screenPos);
-        }
-    }
-
-    private void UpdateBlock(int id, Vector2 screenPos)
-    {
-        if (MapManager.Instance == null || Camera.main == null) return;
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-        if (Vector2.Distance(transform.position, worldPos) > interactRange) return;
-        UpdateBlockServerRpc(Mathf.FloorToInt(worldPos.x), Mathf.FloorToInt(worldPos.y), id);
-    }
-
-    [ServerRpc] private void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
-
-    [ServerRpc]
-    public void DropItemServerRpc(int id, int count, float lookDir)
-    {
-        if (itemDropPrefab == null)
-        {
-            Debug.LogError("[PlayerController] itemDropPrefab is not assigned!");
-            return;
-        }
-
-        // 1. 플레이어 본체 위치에서 바라보는 방향으로 살짝 앞에서 생성 (겹침 방지)
-        Vector3 spawnPos = transform.position + new Vector3(lookDir * 0.8f, 0.5f, 0);
-        NetworkObject netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, spawnPos, Quaternion.identity);
-        
-        // 2. 데이터 설정
-        ItemController item = netObj.GetComponent<ItemController>();
-        item.itemID.Value = id;
-        item.stackCount.Value = count;
-
-        // 3. 던지는 연출 (인자로 받은 방향 사용)
-        Vector2 throwForce = new Vector2(lookDir * DropThrowForce, DropUpwardForce);
-        
-        // ItemController 내부에 Rigidbody2D가 있으므로 힘 전달
-        if (netObj.TryGetComponent<Rigidbody2D>(out var rb))
-        {
-            rb.linearVelocity = throwForce;
-        }
-
-        // 4. 아이템 쿨다운 활성화 (자석 기능 2초 정지, 튕기기 효과는 꺼짐)
-        item.SetDropCooldown(false);
-    }
-
-    #endregion
-
-    #region Debug GUI
+    private void EnsureEventSystem() { if (Object.FindAnyObjectByType<EventSystem>() == null) { new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule)); } }
 
     private void OnGUI()
     {
@@ -672,14 +373,10 @@ private void CheckGrounded()
         GUI.color = Color.black;
         GUILayout.BeginArea(new Rect(15, 15, 300, 250));
         GUILayout.Label($"<b>[PLAYER STATUS]</b>");
-        GUILayout.Label($"OwnerID: {OwnerClientId}");
-        GUILayout.Label($"Position: {transform.position}");
         GUILayout.Label($"Status: {debugStatus}");
-        GUILayout.Label($"IsGrounded: {isGrounded}");
-        GUILayout.Label($"JumpCount: {jumpCountSync.Value}");
+        GUILayout.Label($"IsGrounded: {movement.IsGrounded}");
         GUILayout.Label($"Dashing: {isDashingSync.Value}");
         GUILayout.EndArea();
     }
-
     #endregion
 }

@@ -62,8 +62,8 @@ public class PlayerVisuals : MonoBehaviour
         }
 
         // 2. Load Static Parts (Eye, Pupil - Always Visible)
-        SetStaticPart("Eye", "Eye/Eye", 0);
-        SetStaticPart("Pupil", "Pupil/Pupil", 0);
+        SetStaticPart("Eye", "Eye", 0);
+        SetStaticPart("Pupil", "Pupil", 0);
     }
 
     private void SetStaticPart(string layerName, string resourcePath, int id)
@@ -88,7 +88,7 @@ public class PlayerVisuals : MonoBehaviour
 
     public void SetHair(int styleIndex)
     {
-        SetStaticPart("Hair", "Hair/Hair", styleIndex);
+        SetStaticPart("Hair", "Hair", styleIndex);
         UpdateHairVisibility();
     }
 

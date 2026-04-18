@@ -11,10 +11,12 @@ GameObject:
   - component: {fileID: 1325977739421646645}
   - component: {fileID: 4402373017650948094}
   - component: {fileID: 2064117366825417993}
+  - component: {fileID: 2795475633606825749}
+  - component: {fileID: 6624281061998066826}
+  - component: {fileID: 83550278281042039}
   - component: {fileID: 4366262622963462345}
   - component: {fileID: 7557954901024385104}
   - component: {fileID: 3691483584524692821}
-  - component: {fileID: 83550278281042039}
   m_Layer: 3
   m_Name: Prefab_Player
   m_TagString: Player
@@ -52,7 +54,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3836181582
+  GlobalObjectIdHash: 4087358549
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -81,24 +83,95 @@ MonoBehaviour:
   rb: {fileID: 7557954901024385104}
   col: {fileID: 1977730540923760186}
   visuals: {fileID: 4155625903134356229}
+  movement: {fileID: 2795475633606825749}
+  interaction: {fileID: 6624281061998066826}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  itemDropPrefab: {fileID: 2994726321107835729, guid: 64e1813cd709a2d4b935635ac744c184, type: 3}
+--- !u!114 &2795475633606825749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162841608114231149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5dd365cfd8ca0184fb59c4be67ae682e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMovement
   moveSpeed: 8
-  acceleration: 300
-  deceleration: 600
-  jumpForce: 12
-  dashSpeed: 12
-  dashDuration: 0.3
-  dashCooldown: 1
+  acceleration: 60
+  deceleration: 50
+  jumpForce: 13
+  dashSpeed: 28
+  dashDuration: 0.2
+  dashCooldown: 0.5
   groundLayer:
     serializedVersion: 2
     m_Bits: 64
-  groundCheckRadius: 0.2
-  stepHeight: 1.2
+  groundCheckRadius: 0.25
+  stepHeight: 1.1
   stepCheckDistance: 0.1
-  selectedBlockId: 0
+--- !u!114 &6624281061998066826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162841608114231149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cd26b5adcf76a9145b3044ebbcb9cdbb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
   interactRange: 6
-  itemDropPrefab: {fileID: 2994726321107835729, guid: 64e1813cd709a2d4b935635ac744c184, type: 3}
-  walkAnimSpeedMultiplier: 2
+  itemDropPrefab: {fileID: 0}
+--- !u!114 &83550278281042039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162841608114231149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 435ecf582efbaf745b58c53b72009807, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
+  ShowTopMostFoldoutHeaderGroup: 1
+  NetworkTransformExpanded: 1
+  AutoOwnerAuthorityTickOffset: 1
+  PositionInterpolationType: 0
+  RotationInterpolationType: 0
+  ScaleInterpolationType: 0
+  PositionLerpSmoothing: 1
+  PositionMaxInterpolationTime: 0.05
+  RotationLerpSmoothing: 1
+  RotationMaxInterpolationTime: 0.1
+  ScaleLerpSmoothing: 1
+  ScaleMaxInterpolationTime: 0.1
+  AuthorityMode: 1
+  TickSyncChildren: 0
+  UseUnreliableDeltas: 1
+  SyncPositionX: 1
+  SyncPositionY: 1
+  SyncPositionZ: 1
+  SyncRotAngleX: 0
+  SyncRotAngleY: 0
+  SyncRotAngleZ: 0
+  SyncScaleX: 0
+  SyncScaleY: 0
+  SyncScaleZ: 0
+  PositionThreshold: 0.02
+  RotAngleThreshold: 0.01
+  ScaleThreshold: 0.01
+  UseQuaternionSynchronization: 0
+  UseQuaternionCompression: 0
+  UseHalfFloatPrecision: 0
+  InLocalSpace: 0
+  SwitchTransformSpaceWhenParented: 0
+  Interpolate: 1
+  SlerpPosition: 0
 --- !u!114 &4366262622963462345
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -169,52 +242,6 @@ SortingGroup:
   m_SortingOrder: 1
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
---- !u!114 &83550278281042039
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 162841608114231149}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 435ecf582efbaf745b58c53b72009807, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::ClientNetworkTransform
-  ShowTopMostFoldoutHeaderGroup: 1
-  NetworkTransformExpanded: 1
-  AutoOwnerAuthorityTickOffset: 1
-  PositionInterpolationType: 0
-  RotationInterpolationType: 0
-  ScaleInterpolationType: 0
-  PositionLerpSmoothing: 1
-  PositionMaxInterpolationTime: 0.05
-  RotationLerpSmoothing: 1
-  RotationMaxInterpolationTime: 0.1
-  ScaleLerpSmoothing: 1
-  ScaleMaxInterpolationTime: 0.1
-  AuthorityMode: 1
-  TickSyncChildren: 0
-  UseUnreliableDeltas: 1
-  SyncPositionX: 1
-  SyncPositionY: 1
-  SyncPositionZ: 1
-  SyncRotAngleX: 0
-  SyncRotAngleY: 0
-  SyncRotAngleZ: 0
-  SyncScaleX: 0
-  SyncScaleY: 0
-  SyncScaleZ: 0
-  PositionThreshold: 0.02
-  RotAngleThreshold: 0.01
-  ScaleThreshold: 0.01
-  UseQuaternionSynchronization: 0
-  UseQuaternionCompression: 0
-  UseHalfFloatPrecision: 0
-  InLocalSpace: 0
-  SwitchTransformSpaceWhenParented: 0
-  Interpolate: 1
-  SlerpPosition: 0
 --- !u!1 &315711372752958681
 GameObject:
   m_ObjectHideFlags: 0
@@ -565,6 +592,7 @@ MonoBehaviour:
   - name: ArmBack
     renderer: {fileID: 9166107974653693631}
     currentSheet: []
+  walkAnimSpeedMultiplier: 2.5
 --- !u!1 &3915201043299887287
 GameObject:
   m_ObjectHideFlags: 0
