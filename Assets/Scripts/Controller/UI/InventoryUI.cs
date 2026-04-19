@@ -540,30 +540,37 @@ public class InventoryUI : MonoBehaviour
         {
             if (clickedSlot.IsEmpty)
             {
-                inventory.SetSlot(index, new PlayerInventorySlotData(draggingItemData.Value.itemID, 1));
-                
-                var updatedDragging = draggingItemData.Value;
-                updatedDragging.stackCount -= 1;
-                if (updatedDragging.stackCount <= 0) ClearDragging();
-                else draggingItemData = updatedDragging;
+                // Slot is empty -> Drop ALL
+                inventory.SetSlot(index, draggingItemData.Value);
+                ClearDragging();
             }
             else if (clickedSlot.itemID == draggingItemData.Value.itemID)
             {
+                // Same item -> Pick UP (from slot to ghost)
                 ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
                 int max = data != null ? data.maxStack : 999;
 
-                if (clickedSlot.stackCount < max)
+                if (draggingItemData.Value.stackCount < max)
                 {
-                    inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, clickedSlot.stackCount + 1));
-                    
-                    var updatedDragging = draggingItemData.Value;
-                    updatedDragging.stackCount -= 1;
-                    if (updatedDragging.stackCount <= 0) ClearDragging();
-                    else draggingItemData = updatedDragging;
+                    int canPick = max - draggingItemData.Value.stackCount;
+                    int desiredPick = isModifierPressed ? Mathf.Min(10, clickedSlot.stackCount) : 1;
+                    int toPick = Mathf.Min(canPick, desiredPick);
+
+                    if (toPick > 0)
+                    {
+                        var updatedDragging = draggingItemData.Value;
+                        updatedDragging.stackCount += toPick;
+                        draggingItemData = updatedDragging;
+
+                        int remaining = clickedSlot.stackCount - toPick;
+                        if (remaining <= 0) inventory.ClearSlot(index);
+                        else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
+                    }
                 }
             }
             else
             {
+                // Different item -> Swap
                 int tempID = clickedSlot.itemID;
                 int tempCount = clickedSlot.stackCount;
                 
