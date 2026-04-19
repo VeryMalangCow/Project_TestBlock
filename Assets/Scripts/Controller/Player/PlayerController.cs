@@ -314,9 +314,6 @@ public class PlayerController : NetworkBehaviour
             {
                 inventorySlotsSync[i] = playerData.inventory.GetSlot(i);
             }
-
-            UpdateAppearance(playerData.visual);
-            UpdateEquipment(playerData.equipment);
         }
 
         // [Owner-Specific Logic]
@@ -335,6 +332,11 @@ public class PlayerController : NetworkBehaviour
             {
                 yield return new WaitForSeconds(0.1f);
             }
+
+            // [Important] 본인의 데이터(커스터마이징 등)를 네트워크 변수에 반영합니다.
+            // NetworkVariable이 OwnerWrite 권한이므로, 반드시 Owner가 직접 써야 합니다.
+            UpdateAppearance(playerData.visual);
+            UpdateEquipment(playerData.equipment);
             
             // 데이터가 모두 준비된 후 UI 갱신 강제
             InventoryUI ui = Object.FindAnyObjectByType<InventoryUI>();
