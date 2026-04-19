@@ -223,8 +223,22 @@ public class PlayerController : NetworkBehaviour
 
     public override void OnNetworkSpawn()
     {
+        // [Data Initialization] 모든 객체는 데이터를 가져야 동기화 가능
+        playerData = new PlayerData();
+
         if (IsOwner) Local = this;
+        
+        // [Sync Event Subscription]
         inventorySlotsSync.OnListChanged += OnInventoryListChanged;
+        
+        // [Important] NetworkList는 스폰 시점에 이미 데이터가 있을 수 있으므로 초기 수동 동기화 수행
+        if (!IsServer && inventorySlotsSync.Count > 0)
+        {
+            for (int i = 0; i < inventorySlotsSync.Count; i++)
+            {
+                playerData.inventory.SetSlot(i, inventorySlotsSync[i]);
+            }
+        }
 
         helmetIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Helmet", newVal);
         chestplateIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Chestplate", newVal);
@@ -242,8 +256,19 @@ public class PlayerController : NetworkBehaviour
 
     private void OnInventoryListChanged(NetworkListEvent<PlayerInventorySlotData> changeEvent)
     {
-        if (playerData != null && playerData.inventory != null)
-            playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
+        if (playerData == null || playerData.inventory == null) return;
+
+        switch (changeEvent.Type)
+        {
+            case NetworkListEvent<PlayerInventorySlotData>.EventType.Add:
+            case NetworkListEvent<PlayerInventorySlotData>.EventType.Value:
+                playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
+                break;
+            case NetworkListEvent<PlayerInventorySlotData>.EventType.Clear:
+                // Clear 시 로컬 인벤토리도 초기화 로직이 필요할 수 있음
+                break;
+            // 필요한 다른 타입들(Remove 등) 처리...
+        }
     }
 
     private IEnumerator InitPlayerCo()
@@ -252,66 +277,71 @@ public class PlayerController : NetworkBehaviour
         if (rb != null) { rb.simulated = false; rb.bodyType = RigidbodyType2D.Kinematic; rb.gravityScale = 0; }
         if (visuals != null) visuals.gameObject.SetActive(false);
 
+        // [Common] 데이터베이스 및 맵 준비 대기 (모든 클라이언트 공통)
         while (MapManager.Instance == null || !MapManager.Instance.IsMapReady()) yield return null;
+        
+        int dbRetry = 0;
+        while (ItemDataManager.Instance.GetItem(9) == null && dbRetry < 20)
+        {
+            yield return new WaitForSeconds(0.1f);
+            dbRetry++;
+        }
 
+        // [Server-Authoritative Data Initialization]
+        if (IsServer)
+        {
+            debugStatus = "Initializing Data (Server)...";
+            
+            // 인벤토리 리스트 초기화 (서버가 리스트를 채우면 클라이언트로 전송됨)
+            inventorySlotsSync.Clear();
+            for (int i = 0; i < 50; i++) 
+            {
+                inventorySlotsSync.Add(new PlayerInventorySlotData(-1, 0));
+            }
+
+            // 테스트용 초기 아이템 지급
+            for (int i = 0; i <= 9; i++)
+            {
+                ItemData item = ItemDataManager.Instance.GetItem(i);
+                if (item != null) 
+                {
+                    playerData.inventory.AddItem(i, item.maxStack);
+                }
+            }
+            
+            // 네트워크 리스트에 최종 반영
+            for (int i = 0; i < inventorySlotsSync.Count; i++)
+            {
+                inventorySlotsSync[i] = playerData.inventory.GetSlot(i);
+            }
+
+            UpdateAppearance(playerData.visual);
+            UpdateEquipment(playerData.equipment);
+        }
+
+        // [Owner-Specific Logic]
         if (IsOwner)
         {
             debugStatus = "Requesting Spawn...";
             RequestSpawnServerRpc();
             
-            // Wait until position is set via ConfirmSpawnClientRpc
             while (debugStatus == "Requesting Spawn...") yield return null;
 
-            // [Optimization] Set MeshManager target early to start building chunks around spawn point
             if (MeshManager.Instance != null) MeshManager.Instance.SetTarget(transform);
 
-            // [Safety] Wait for physical chunks (mesh + collider) to be built at spawn position
             debugStatus = "Building Terrain...";
             float terrainWaitStartTime = Time.time;
             while (!MapManager.Instance.IsTerrainReadyAt(rb.position) && Time.time - terrainWaitStartTime < 5f)
             {
                 yield return new WaitForSeconds(0.1f);
             }
-
-            playerData = new PlayerData();
-            if (IsServer)
-            {
-                // [Robust] 인벤토리 초기화 및 아이템 지급 로직 개선
-                inventorySlotsSync.Clear();
-                for (int i = 0; i < 50; i++) inventorySlotsSync.Add(new PlayerInventorySlotData(-1, 0));
-                
-                // 데이터베이스 로딩 대기 강화
-                int retryCount = 0;
-                while (ItemDataManager.Instance.GetItem(9) == null && retryCount < 10)
-                {
-                    yield return new WaitForSeconds(0.1f);
-                    retryCount++;
-                }
-
-                // 로컬 데이터에 아이템 추가
-                for (int i = 0; i <= 9; i++)
-                {
-                    ItemData item = ItemDataManager.Instance.GetItem(i);
-                    if (item != null) 
-                    {
-                        playerData.inventory.AddItem(i, item.maxStack);
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[PlayerController] Item ID {i} still not found in Database after retries.");
-                    }
-                }
-                
-                // 네트워크 리스트에 강제 덮어쓰기 (동기화 보장)
-                for (int i = 0; i < inventorySlotsSync.Count; i++)
-                {
-                    inventorySlotsSync[i] = playerData.inventory.GetSlot(i);
-                }
-            }
-            UpdateAppearance(playerData.visual);
-            UpdateEquipment(playerData.equipment);
+            
+            // 데이터가 모두 준비된 후 UI 갱신 강제
+            InventoryUI ui = Object.FindAnyObjectByType<InventoryUI>();
+            if (ui != null) ui.RefreshUI();
         }
 
+        // [Visual Initialization]
         if (visuals != null)
         {
             visuals.gameObject.SetActive(true);
