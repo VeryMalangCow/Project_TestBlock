@@ -199,6 +199,39 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
 
 ----------
 
+## 13. Input Actions & Interaction Rules
+### General Controls
+- **Move**: Horizontal movement. Synchronized via `moveInputSync`.
+- **Jump**: Vertical movement/Jump trigger. Increments `jumpCountSync` (int) to ensure reliable triggers.
+- **Dash**: High-speed movement burst. Server-authoritative state (`isDashingSync`). 0.5s duration, 1s cooldown.
+- **Inventory**: Toggles the Inventory UI visibility.
+- **Modifier**: Acts as a multiplier or divider for inventory actions (e.g., 1 vs 10, Half stack).
+- **ScrollWheel**: Mouse scroll or equivalent. Navigates the Hotbar (0-9).
+- **Point**: Pointer position (Screen Space). Used for world interaction and UI raycasting.
+
+### Inventory Interaction (In-UI)
+All UI-based item management is handled via `Interact_00` and `Interact_01`.
+
+#### Interact_00
+- **Without Ghost (Empty Hand):**
+  - **Normal:** Pick up the entire stack from the slot.
+  - **Modifier Pressed:** Pick up half of the stack (rounded up).
+- **With Ghost (Holding Item):**
+  - **Click Empty Slot:** Drop the entire Ghost stack into the slot.
+  - **Click Same Item:** Add Ghost stack to slot until `MaxStack`. Remaining stay in Ghost.
+  - **Click Different Item:** Swap the Ghost stack with the entire stack in the slot.
+
+#### Interact_01
+- **Without Ghost (Empty Hand):**
+  - **Normal:** Pick up **1 item** from the slot into Ghost.
+  - **Modifier Pressed:** Pick up **10 items** from the slot into Ghost.
+- **With Ghost (Holding Item):**
+  - **Click Empty Slot:** Drop **the entire Ghost stack** into the slot.
+  - **Click Same Item:** Pick up more from the slot into Ghost (**1** if Normal, **10** if Modifier Pressed) up to `MaxStack`.
+  - **Click Different Item:** Swap the Ghost stack with the entire stack in the slot.
+
+----------
+
 ## Next Actions (Todo)
 ### 1. Multiplayer Validation (Cross-PC)
 - **Goal:** Perform a real-world connection test between two different PCs using the **6-digit Join Code**.
