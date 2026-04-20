@@ -21,6 +21,8 @@ public class PlayerInventoryData
     /// </summary>
     public int AddItem(int id, int count)
     {
+        UnityEngine.Debug.Log($"<color=orange>[InventoryData] AddItem called! ID: {id}, Count: { count}</color> ");
+
         ItemData itemData = ItemDataManager.Instance.GetItem(id);
         if (itemData == null) return count;
 
@@ -85,13 +87,25 @@ public class PlayerInventoryData
     }
 
     /// <summary>
+    /// Updates a slot without triggering OnInventoryChanged event.
+    /// Used for network sync to prevent infinite loops.
+    /// </summary>
+    public void SetSlotWithoutNotify(int index, PlayerInventorySlotData data)
+    {
+        if (index >= 0 && index < slots.Length)
+        {
+            slots[index] = data;
+        }
+    }
+
+    /// <summary>
     /// Clears the specific slot.
     /// </summary>
     public void ClearSlot(int index)
     {
         if (index >= 0 && index < slots.Length) 
         {
-            slots[index].Clear();
+            slots[index] = new PlayerInventorySlotData(-1, 0);
             OnInventoryChanged?.Invoke(index, slots[index]);
         }
     }

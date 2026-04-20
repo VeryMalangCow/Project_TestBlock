@@ -80,6 +80,10 @@ public class ItemController : NetworkBehaviour
             isAttracted = false;
             isBeingPickedUp = false;
             cooldownTimer = 0;
+            
+            // [Fix] 다음 스폰 시 OnValueChanged가 확실히 트리거되도록 값 초기화
+            itemID.Value = -1;
+            stackCount.Value = 0;
         }
     }
 
@@ -232,12 +236,15 @@ public class ItemController : NetworkBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        Debug.Log($"[Critical-Test] Trigger Enter occurred with: {collision.gameObject.name}");
+
         if (!IsServer) return;
 
         if (collision.attachedRigidbody != null && collision.attachedRigidbody.CompareTag("Player"))
         {
             if (collision.attachedRigidbody.TryGetComponent<PlayerController>(out var player))
             {
+                Debug.Log($"[Physics] Player detected! Calling TryPickup.");
                 TryPickup(player);
             }
         }
@@ -298,6 +305,8 @@ public class ItemController : NetworkBehaviour
             // 다시 먹을 수 있도록 플래그 해제
             isBeingPickedUp = false; 
         }
+
+        Debug.Log($"[Server] Item Picked up. Remaining: {remaining}. Is Server: {IsServer}, Player: {player.OwnerClientId}");
     }
 
     #endregion

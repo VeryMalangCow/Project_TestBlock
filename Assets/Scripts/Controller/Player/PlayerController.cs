@@ -227,16 +227,24 @@ public class PlayerController : NetworkBehaviour
         playerData = new PlayerData();
 
         if (IsOwner) Local = this;
-        
+
         // [Sync Event Subscription]
         inventorySlotsSync.OnListChanged += OnInventoryListChanged;
-        
-        // [Important] NetworkList는 스폰 시점에 이미 데이터가 있을 수 있으므로 초기 수동 동기화 수행
-        if (!IsServer && inventorySlotsSync.Count > 0)
+
+        if (IsServer)
         {
-            for (int i = 0; i < inventorySlotsSync.Count; i++)
+            // 서버에서 인벤토리 데이터가 변경되면 즉시 네트워크 리스트 갱신 (자동 동기화)
+            playerData.inventory.OnInventoryChanged += OnServerInventoryChanged;
+        }
+        else
+        {
+            // [Important] NetworkList는 스폰 시점에 이미 데이터가 있을 수 있으므로 초기 수동 동기화 수행
+            if (inventorySlotsSync.Count > 0)
             {
-                playerData.inventory.SetSlot(i, inventorySlotsSync[i]);
+                for (int i = 0; i < inventorySlotsSync.Count; i++)
+                {
+                    playerData.inventory.SetSlotWithoutNotify(i, inventorySlotsSync[i]);
+                }
             }
         }
 
@@ -254,20 +262,35 @@ public class PlayerController : NetworkBehaviour
         StartCoroutine(InitPlayerCo());
     }
 
+    private void OnServerInventoryChanged(int index, PlayerInventorySlotData data)
+    {
+        if (!IsServer) return;
+        if (index >= 0 && index < inventorySlotsSync.Count)
+        {
+            // 값이 다를 때만 네트워크 변수 갱신 (무한 루프 및 트래픽 방지)
+            if (!inventorySlotsSync[index].Equals(data))
+            {
+                Debug.Log($"[Sync-Server] Updating NetworkList at {index} (ID: {data.itemID}, Count: {data.stackCount})");
+                inventorySlotsSync[index] = data;
+            }
+        }
+    }
+
     private void OnInventoryListChanged(NetworkListEvent<PlayerInventorySlotData> changeEvent)
     {
         if (playerData == null || playerData.inventory == null) return;
-
+        
         switch (changeEvent.Type)
         {
             case NetworkListEvent<PlayerInventorySlotData>.EventType.Add:
             case NetworkListEvent<PlayerInventorySlotData>.EventType.Value:
+                // [Fix] SetSlot을 사용하여 클라이언트 UI 이벤트를 트리거함
                 playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
                 break;
             case NetworkListEvent<PlayerInventorySlotData>.EventType.Clear:
-                // Clear 시 로컬 인벤토리도 초기화 로직이 필요할 수 있음
+                // [Fix] Clear 시에도 모든 슬롯에 대해 알림을 주어 UI를 비움
+                for (int i = 0; i < 50; i++) playerData.inventory.ClearSlot(i);
                 break;
-            // 필요한 다른 타입들(Remove 등) 처리...
         }
     }
 
@@ -368,10 +391,16 @@ public class PlayerController : NetworkBehaviour
     public void SyncInventoryToNetwork()
     {
         if (!IsServer || playerData == null) return;
+        Debug.Log($"<color=cyan>[Sync] SyncInventoryToNetwork Called! Player: { OwnerClientId}</ color > ");
+
         for (int i = 0; i < inventorySlotsSync.Count; i++)
         {
             var localSlot = playerData.inventory.GetSlot(i);
-            if (!inventorySlotsSync[i].Equals(localSlot)) inventorySlotsSync[i] = localSlot;
+            if (!inventorySlotsSync[i].Equals(localSlot))
+            {
+                Debug.Log($"[Sync] Updating NetworkList at Index {i}: {localSlot.itemID}x{ localSlot.stackCount}");
+                inventorySlotsSync[i] = localSlot; 
+            }
         }
     }
 
