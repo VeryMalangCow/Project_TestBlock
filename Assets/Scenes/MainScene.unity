@@ -1870,6 +1870,7 @@ GameObject:
   - component: {fileID: 350201560}
   - component: {fileID: 350201561}
   - component: {fileID: 350201562}
+  - component: {fileID: 350201563}
   m_Layer: 0
   m_Name: NetworkManager
   m_TagString: Untagged
@@ -1965,6 +1966,18 @@ MonoBehaviour:
     PacketDelayMS: 0
     PacketJitterMS: 0
     PacketDropRate: 0
+--- !u!114 &350201563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 350201559}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a7e9125c13e117e4e979e2f1b7b9565e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NetworkDebugger
 --- !u!1001 &377474124
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -13994,15 +14007,15 @@ SceneRoots:
   - {fileID: 1818312837}
   - {fileID: 1253600310}
   - {fileID: 1755343285}
-  - {fileID: 1194561359}
   - {fileID: 350201560}
-  - {fileID: 303799028}
   - {fileID: 1022117362}
+  - {fileID: 2116599705}
+  - {fileID: 1194561359}
+  - {fileID: 303799028}
   - {fileID: 1355317556}
   - {fileID: 1668643430}
   - {fileID: 1481759068}
   - {fileID: 192996980}
-  - {fileID: 2116599705}
   - {fileID: 449771670}
   - {fileID: 694770584}
   - {fileID: 1081475347}

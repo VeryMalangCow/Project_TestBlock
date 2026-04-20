@@ -232,12 +232,13 @@ public class InventoryUI : MonoBehaviour
         List<RaycastResult> results = new List<RaycastResult>();
         raycaster.Raycast(eventData, results);
 
+        Debug.Log($"[InventoryUI-Interaction] Clicked! Button: {buttonIndex}, Results: {results.Count}");
+
         bool hitSlot = false;
         foreach (var result in results)
         {
             if (result.gameObject.TryGetComponent<InventorySlotUI>(out var slotUI))
             {
-                // Check if it's an equipment slot or inventory slot
                 bool isEquipSlot = equipmentSlots.Contains(slotUI);
                 if (isEquipSlot) OnEquipmentSlotClicked(equipmentSlots.IndexOf(slotUI), buttonIndex);
                 else OnSlotClicked(slotUI.SlotIndex, buttonIndex);
@@ -247,7 +248,13 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        if (!hitSlot && buttonIndex == 1 && draggingItemData != null) RequestDropItem();
+        // [Fix] 우클릭(buttonIndex == 1) 시 슬롯을 맞추지 못했고 드래그 중인 아이템이 있다면 버리기 요청
+        // 만약 배경 패널 등에 막혀서 hitSlot이 true가 되더라도, 그게 슬롯이 아니라면 버려야 합니다.
+        if (!hitSlot && buttonIndex == 1 && draggingItemData != null) 
+        {
+            Debug.Log("[InventoryUI-Interaction] Conditions met for dropping item.");
+            RequestDropItem();
+        }
     }
 
     public void ToggleInventory()
@@ -261,7 +268,15 @@ public class InventoryUI : MonoBehaviour
 
     private void RequestDropItem()
     {
-        if (draggingItemData == null || PlayerController.Local == null) return;
+        if (draggingItemData == null) return;
+        if (PlayerController.Local == null) 
+        {
+            Debug.LogError("[InventoryUI] Failed to drop: PlayerController.Local is NULL!");
+            return;
+        }
+
+        Debug.Log($"[InventoryUI-Client] Requesting Drop: ItemID {draggingItemData.Value.itemID}, Count {draggingItemData.Value.stackCount}");
+        
         float lookDir = PlayerController.Local.IsFlipped ? -1f : 1f;
         PlayerController.Local.DropItemServerRpc(draggingItemData.Value.itemID, draggingItemData.Value.stackCount, lookDir);
         ClearDragging();

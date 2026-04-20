@@ -4,10 +4,11 @@ using Unity.Netcode;
 using UnityEngine;
 
 /// <summary>
-/// NGO 전용 멀티플레이어 오브젝트 풀링 매니저.
-/// INetworkPrefabInstanceHandler를 구현하여 NGO의 생성/파괴 로직을 가로챕니다.
+/// Unity 6 & NGO 2.x 환경용 네트워크 오브젝트 풀 매니저
+/// - 프리팹별 전용 InstanceHandler 등록
+/// - 클라이언트에서 정상적으로 시각 오브젝트가 생성되도록 수정
 /// </summary>
-public class NetworkObjectPoolManager : NetworkBehaviour, INetworkPrefabInstanceHandler
+public class NetworkObjectPoolManager : MonoBehaviour
 {
     public static NetworkObjectPoolManager Instance { get; private set; }
 
@@ -21,10 +22,15 @@ public class NetworkObjectPoolManager : NetworkBehaviour, INetworkPrefabInstance
     [Header("### Pool Settings")]
     [SerializeField] private List<PoolConfig> pooledPrefabs = new List<PoolConfig>();
 
-    // 프리팹별 풀링 큐 (NetworkObject 단위로 관리)
-    private Dictionary<GameObject, Queue<NetworkObject>> poolDictionary = new Dictionary<GameObject, Queue<NetworkObject>>();
-    // 네트워크 프리팹 탐색용 딕셔너리
-    private Dictionary<uint, GameObject> networkPrefabToGameObject = new Dictionary<uint, GameObject>();
+    // 공식 프리팹 기준 풀
+    private readonly Dictionary<GameObject, Queue<NetworkObject>> poolDictionary = new();
+    private readonly Dictionary<GameObject, PoolInstanceHandler> handlerDictionary = new();
+
+    // 현재 사용 중인 객체 추적
+    private readonly HashSet<NetworkObject> activeObjects = new();
+
+    // 각 인스턴스가 어느 prefab 풀에 속하는지 추적
+    private readonly Dictionary<NetworkObject, GameObject> instanceToPrefab = new();
 
     private void Awake()
     {
@@ -33,82 +39,108 @@ public class NetworkObjectPoolManager : NetworkBehaviour, INetworkPrefabInstance
             Destroy(gameObject);
             return;
         }
+
         Instance = this;
     }
 
-    public override void OnNetworkSpawn()
+    private void Start()
     {
-        // 서버와 클라이언트 모두에서 핸들러 등록
+        StartCoroutine(WaitForNetworkManager());
+    }
+
+    private IEnumerator WaitForNetworkManager()
+    {
+        while (NetworkManager.Singleton == null)
+        {
+            yield return null;
+        }
+
+        var networkPrefabs = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs;
+
         foreach (var config in pooledPrefabs)
         {
-            if (config.prefab == null) continue;
-
-            NetworkObject networkObject = config.prefab.GetComponent<NetworkObject>();
-            if (networkObject == null)
+            if (config.prefab == null)
             {
-                Debug.LogError($"[NetworkObjectPoolManager] {config.prefab.name} has no NetworkObject component!");
                 continue;
             }
 
-            // [Fix] GlobalObjectIdHash -> PrefabIdHash (NGO 최신 버전 대응)
-            uint prefabHash = networkObject.PrefabIdHash;
-            networkPrefabToGameObject[prefabHash] = config.prefab;
+            GameObject officialPrefab = null;
 
-            // NGO 시스템에 이 프리팹은 내가 직접 관리하겠다고 보고
-            NetworkManager.Singleton.PrefabHandler.AddHandler(networkObject, this);
+            foreach (var netPrefab in networkPrefabs)
+            {
+                if (netPrefab.Prefab == null)
+                {
+                    continue;
+                }
+
+                if (netPrefab.Prefab == config.prefab || netPrefab.Prefab.name == config.prefab.name)
+                {
+                    officialPrefab = netPrefab.Prefab;
+                    break;
+                }
+            }
+
+            if (officialPrefab == null)
+            {
+                Debug.LogWarning($"[Pool-Init] NetworkPrefab not found for {config.prefab.name}");
+                continue;
+            }
+
+            if (!poolDictionary.ContainsKey(officialPrefab))
+            {
+                poolDictionary[officialPrefab] = new Queue<NetworkObject>();
+            }
+
+            // 프리팹별 전용 핸들러 등록
+            if (!handlerDictionary.ContainsKey(officialPrefab))
+            {
+                var handler = new PoolInstanceHandler(this, officialPrefab);
+                handlerDictionary.Add(officialPrefab, handler);
+                NetworkManager.Singleton.PrefabHandler.AddHandler(officialPrefab, handler);
+            }
 
             // 초기 풀 생성
-            if (!poolDictionary.ContainsKey(config.prefab))
+            for (int i = 0; i < config.initialSize; i++)
             {
-                poolDictionary[config.prefab] = new Queue<NetworkObject>();
-                for (int i = 0; i < config.initialSize; i++)
-                {
-                    CreateNewInstance(config.prefab);
-                }
+                CreateNewInstance(officialPrefab);
             }
+
+            Debug.Log($"[Pool-Init] Registered {officialPrefab.name}");
         }
     }
 
-    public override void OnNetworkDespawn()
+    #region Inner Handler
+
+    /// <summary>
+    /// 프리팹 하나당 하나씩 등록되는 전용 핸들러
+    /// </summary>
+    private class PoolInstanceHandler : INetworkPrefabInstanceHandler
     {
-        // 핸들러 해제
-        if (NetworkManager.Singleton != null && NetworkManager.Singleton.PrefabHandler != null)
+        private readonly NetworkObjectPoolManager manager;
+        private readonly GameObject prefab;
+
+        public PoolInstanceHandler(NetworkObjectPoolManager manager, GameObject prefab)
         {
-            foreach (var config in pooledPrefabs)
-            {
-                if (config.prefab != null && config.prefab.TryGetComponent<NetworkObject>(out var netObj))
-                {
-                    NetworkManager.Singleton.PrefabHandler.RemoveHandler(netObj);
-                }
-            }
+            this.manager = manager;
+            this.prefab = prefab;
         }
-    }
 
-    #region INetworkPrefabInstanceHandler Implementation
+        public NetworkObject Instantiate(ulong ownerClientId, Vector3 position, Quaternion rotation)
+        {
+            // ownerClientId를 해시처럼 사용하면 안 됨
+            NetworkObject netObj = manager.GetNetworkObjectFromPool(prefab);
 
-    /// <summary>
-    /// NGO가 오브젝트 생성을 요청할 때 호출됩니다. (Server/Client 공통)
-    /// </summary>
-    public NetworkObject Instantiate(ulong globalObjectIdHash, Vector3 position, Quaternion rotation)
-    {
-        // ulong 하쉬값을 uint로 변환하여 딕셔너리에서 프리팹 탐색
-        uint hash32 = (uint)globalObjectIdHash;
-        if (!networkPrefabToGameObject.TryGetValue(hash32, out GameObject prefab)) return null;
+            netObj.transform.SetPositionAndRotation(position, rotation);
+            netObj.gameObject.SetActive(true);
+            manager.activeObjects.Add(netObj);
 
-        NetworkObject netObj = GetNetworkObjectFromPool(prefab);
-        netObj.transform.position = position;
-        netObj.transform.rotation = rotation;
-        netObj.gameObject.SetActive(true);
+            return netObj;
+        }
 
-        return netObj;
-    }
-
-    /// <summary>
-    /// NGO가 오브젝트 파괴(Despawn)를 요청할 때 호출됩니다. (Server/Client 공통)
-    /// </summary>
-    public void Destroy(NetworkObject networkObject)
-    {
-        ReturnToPool(networkObject);
+        public void Destroy(NetworkObject networkObject)
+        {
+            manager.ReturnToPool(networkObject);
+        }
     }
 
     #endregion
@@ -117,39 +149,66 @@ public class NetworkObjectPoolManager : NetworkBehaviour, INetworkPrefabInstance
 
     private NetworkObject GetNetworkObjectFromPool(GameObject prefab)
     {
-        if (!poolDictionary.ContainsKey(prefab) || poolDictionary[prefab].Count == 0)
+        if (!poolDictionary.ContainsKey(prefab))
         {
-            return CreateNewInstance(prefab);
+            poolDictionary[prefab] = new Queue<NetworkObject>();
         }
 
-        NetworkObject netObj = poolDictionary[prefab].Dequeue();
-        return netObj;
+        while (poolDictionary[prefab].Count > 0)
+        {
+            NetworkObject netObj = poolDictionary[prefab].Dequeue();
+
+            if (netObj != null && !activeObjects.Contains(netObj))
+            {
+                return netObj;
+            }
+        }
+
+        return CreateNewInstance(prefab);
     }
 
     private NetworkObject CreateNewInstance(GameObject prefab)
     {
-        // Unity 엔진의 Instantiate 호출
-        GameObject obj = UnityEngine.Object.Instantiate(prefab);
+        GameObject obj = Instantiate(prefab);
         obj.SetActive(false);
+
         NetworkObject netObj = obj.GetComponent<NetworkObject>();
-        
-        if (!poolDictionary.ContainsKey(prefab)) poolDictionary[prefab] = new Queue<NetworkObject>();
-        
-        ReturnToPool(netObj);
-        
+
+        if (netObj == null)
+        {
+            Debug.LogError($"[Pool] Prefab {prefab.name} does not have NetworkObject.");
+            return null;
+        }
+
+        if (!poolDictionary.ContainsKey(prefab))
+        {
+            poolDictionary[prefab] = new Queue<NetworkObject>();
+        }
+
+        poolDictionary[prefab].Enqueue(netObj);
+        instanceToPrefab[netObj] = prefab;
+
         return netObj;
     }
 
     private void ReturnToPool(NetworkObject networkObject)
     {
+        if (networkObject == null)
+        {
+            return;
+        }
+
+        activeObjects.Remove(networkObject);
+
         networkObject.gameObject.SetActive(false);
 
-        // [Fix] GlobalObjectIdHash -> PrefabIdHash
-        uint hash = networkObject.PrefabIdHash;
-        if (networkPrefabToGameObject.TryGetValue(hash, out GameObject prefab))
+        if (instanceToPrefab.TryGetValue(networkObject, out GameObject prefab))
         {
-            if (!poolDictionary.ContainsKey(prefab)) poolDictionary[prefab] = new Queue<NetworkObject>();
-            
+            if (!poolDictionary.ContainsKey(prefab))
+            {
+                poolDictionary[prefab] = new Queue<NetworkObject>();
+            }
+
             if (!poolDictionary[prefab].Contains(networkObject))
             {
                 poolDictionary[prefab].Enqueue(networkObject);
@@ -157,33 +216,91 @@ public class NetworkObjectPoolManager : NetworkBehaviour, INetworkPrefabInstance
         }
         else
         {
-            Destroy(networkObject.gameObject);
+            Debug.LogWarning($"[Pool] Returned object {networkObject.name} has no prefab mapping.");
         }
     }
 
     #endregion
 
-    #region Public API (Server Only)
+    #region Public API (Server)
 
-    /// <summary>
-    /// 서버에서 아이템 등을 생성할 때 사용하는 메서드입니다.
-    /// </summary>
-    public NetworkObject Spawn(GameObject prefab, Vector3 position, Quaternion rotation)
+    public NetworkObject Spawn(GameObject prefab, Vector3 pos, Quaternion rot)
     {
-        if (!IsServer) return null;
-
-        // [Fix] 수동으로 Instantiate를 호출하는 대신, 
-        // 유니티 엔진의 Instantiate로 복사본을 만든 뒤 Spawn을 호출합니다.
-        // 그러면 우리가 등록한 PrefabHandler(this)가 내부적으로 Instantiate를 가로채서 풀링된 객체를 반환합니다.
-        GameObject obj = UnityEngine.Object.Instantiate(prefab, position, rotation);
-        NetworkObject netObj = obj.GetComponent<NetworkObject>();
-        
-        if (netObj != null)
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
         {
-            netObj.Spawn();
+            return null;
         }
-        
+
+        GameObject officialPrefab = GetOfficialPrefab(prefab);
+        if (officialPrefab == null)
+        {
+            Debug.LogError($"[Pool-Spawn] Could not find official prefab for {prefab.name}");
+            return null;
+        }
+
+        NetworkObject netObj = GetNetworkObjectFromPool(officialPrefab);
+        if (netObj == null)
+        {
+            return null;
+        }
+
+        netObj.transform.SetPositionAndRotation(pos, rot);
+        netObj.gameObject.SetActive(true);
+        activeObjects.Add(netObj);
+
+        if (!netObj.IsSpawned)
+        {
+            netObj.Spawn(true);
+        }
+
         return netObj;
+    }
+
+    public void Despawn(NetworkObject networkObject, bool destroy = false)
+    {
+        if (networkObject == null)
+        {
+            return;
+        }
+
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsServer)
+        {
+            return;
+        }
+
+        if (networkObject.IsSpawned)
+        {
+            networkObject.Despawn(destroy);
+        }
+        else
+        {
+            ReturnToPool(networkObject);
+        }
+    }
+
+    private GameObject GetOfficialPrefab(GameObject prefab)
+    {
+        if (prefab == null || NetworkManager.Singleton == null)
+        {
+            return null;
+        }
+
+        var networkPrefabs = NetworkManager.Singleton.NetworkConfig.Prefabs.Prefabs;
+
+        foreach (var netPrefab in networkPrefabs)
+        {
+            if (netPrefab.Prefab == null)
+            {
+                continue;
+            }
+
+            if (netPrefab.Prefab == prefab || netPrefab.Prefab.name == prefab.name)
+            {
+                return netPrefab.Prefab;
+            }
+        }
+
+        return null;
     }
 
     #endregion

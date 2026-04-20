@@ -470,7 +470,11 @@ public class PlayerController : NetworkBehaviour
     [ServerRpc] public void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
 
     [ServerRpc]
-    public void DropItemServerRpc(int id, int count, float lookDir) => interaction.HandleDropItem(id, count, lookDir);
+    public void DropItemServerRpc(int id, int count, float lookDir)
+    {
+        Debug.Log($"<color=red>[RPC-RECEIVE]</color> DropItemServerRpc received on Server! ID: {id}, Count: {count}");
+        interaction.HandleDropItem(id, count, lookDir);
+    }
 
     public void EndDash() { if (IsOwner) isDashingSync.Value = false; }
 

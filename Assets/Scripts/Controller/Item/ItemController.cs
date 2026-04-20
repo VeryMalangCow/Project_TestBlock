@@ -48,7 +48,9 @@ public class ItemController : NetworkBehaviour
     {
         // 서버/클라이언트 공통: 아이템 ID가 결정되면 스프라이트 업데이트
         itemID.OnValueChanged += (oldVal, newVal) => UpdateVisual(newVal);
-        if (itemID.Value != -1) UpdateVisual(itemID.Value);
+        
+        // 초기 시각적 숨김 (ID가 설정될 때까지)
+        if (spriteRenderer != null) spriteRenderer.enabled = false;
 
         if (IsServer)
         {
@@ -59,9 +61,12 @@ public class ItemController : NetworkBehaviour
         }
         else
         {
-            // 클라이언트는 서버의 현재 위치에서 시작
+            // [Fix] 클라이언트는 스폰 즉시 서버의 현재 위치로 텔레포트 (Lerp 방지)
             transform.position = netPosition.Value;
         }
+
+        // 이미 ID가 설정된 상태로 스폰되었다면 즉시 업데이트
+        if (itemID.Value != -1) UpdateVisual(itemID.Value);
     }
 
     public override void OnNetworkDespawn()
@@ -308,6 +313,7 @@ public class ItemController : NetworkBehaviour
         if (icon != null)
         {
             spriteRenderer.sprite = icon;
+            spriteRenderer.enabled = true; // [Added] 아이콘이 준비되었을 때만 렌더러 활성화
         }
         else
         {
@@ -326,6 +332,7 @@ public class ItemController : NetworkBehaviour
             if (icon != null)
             {
                 spriteRenderer.sprite = icon;
+                spriteRenderer.enabled = true; // [Added] 지연 로딩 시에도 활성화
                 yield break;
             }
             retries++;

@@ -216,7 +216,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerInteraction
   interactRange: 6
-  itemDropPrefab: {fileID: 0}
+  itemDropPrefab: {fileID: 2994726321107835729, guid: 64e1813cd709a2d4b935635ac744c184, type: 3}
 --- !u!114 &83550278281042039
 MonoBehaviour:
   m_ObjectHideFlags: 0

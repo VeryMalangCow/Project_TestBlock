@@ -46,10 +46,26 @@ public class PlayerInteraction : MonoBehaviour
 
     public void HandleDropItem(int id, int count, float lookDir)
     {
-        if (itemDropPrefab == null) return;
+        if (itemDropPrefab == null) 
+        {
+            Debug.LogError("[Interaction] itemDropPrefab is NULL!");
+            return;
+        }
+
+        Debug.Log($"[Interaction-Server] Requesting Spawn for ItemID: {id}. IsServer: {Unity.Netcode.NetworkManager.Singleton.IsServer}");
 
         Vector3 spawnPos = transform.position + new Vector3(lookDir * 0.8f, 0.5f, 0);
-        NetworkObject netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, spawnPos, Quaternion.identity);
+        
+        // 매니저 호출 전후 로그
+        var netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, spawnPos, Quaternion.identity);
+        
+        if (netObj == null)
+        {
+            Debug.LogError("[Interaction-Server] Spawn failed! Manager returned NULL.");
+            return;
+        }
+
+        Debug.Log($"[Interaction-Server] Spawn SUCCESS. NetObj: {netObj.name}, Hash: {netObj.PrefabIdHash}");
         
         ItemController item = netObj.GetComponent<ItemController>();
         item.itemID.Value = id;
