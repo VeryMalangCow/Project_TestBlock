@@ -282,6 +282,12 @@ public class ItemController : NetworkBehaviour
         // [Logic] 아이템 추가 시도
         int remaining = player.Data.inventory.AddItem(itemID.Value, initialCount);
 
+        // [Fix] 수동 동기화 호출 (자동 동기화로 인한 이중 패킷 및 데이터 오염 방지)
+        if (remaining < initialCount)
+        {
+            player.SyncInventoryToNetwork();
+        }
+
         if (remaining <= 0)
         {
             // 모두 획득 성공

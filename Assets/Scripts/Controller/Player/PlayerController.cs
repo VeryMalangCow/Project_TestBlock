@@ -231,12 +231,7 @@ public class PlayerController : NetworkBehaviour
         // [Sync Event Subscription]
         inventorySlotsSync.OnListChanged += OnInventoryListChanged;
 
-        if (IsServer)
-        {
-            // 서버에서 인벤토리 데이터가 변경되면 즉시 네트워크 리스트 갱신 (자동 동기화)
-            playerData.inventory.OnInventoryChanged += OnServerInventoryChanged;
-        }
-        else
+        if (!IsServer)
         {
             // [Important] NetworkList는 스폰 시점에 이미 데이터가 있을 수 있으므로 초기 수동 동기화 수행
             if (inventorySlotsSync.Count > 0)
@@ -262,20 +257,6 @@ public class PlayerController : NetworkBehaviour
         StartCoroutine(InitPlayerCo());
     }
 
-    private void OnServerInventoryChanged(int index, PlayerInventorySlotData data)
-    {
-        if (!IsServer) return;
-        if (index >= 0 && index < inventorySlotsSync.Count)
-        {
-            // 값이 다를 때만 네트워크 변수 갱신 (무한 루프 및 트래픽 방지)
-            if (!inventorySlotsSync[index].Equals(data))
-            {
-                Debug.Log($"[Sync-Server] Updating NetworkList at {index} (ID: {data.itemID}, Count: {data.stackCount})");
-                inventorySlotsSync[index] = data;
-            }
-        }
-    }
-
     private void OnInventoryListChanged(NetworkListEvent<PlayerInventorySlotData> changeEvent)
     {
         if (playerData == null || playerData.inventory == null) return;
@@ -284,11 +265,12 @@ public class PlayerController : NetworkBehaviour
         {
             case NetworkListEvent<PlayerInventorySlotData>.EventType.Add:
             case NetworkListEvent<PlayerInventorySlotData>.EventType.Value:
-                // [Fix] SetSlot을 사용하여 클라이언트 UI 이벤트를 트리거함
+                // [Fix] 서버는 이미 로컬 데이터가 원본이므로 패킷 수신 시 무시 (충돌 방지)
+                if (IsServer) return;
                 playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
                 break;
+
             case NetworkListEvent<PlayerInventorySlotData>.EventType.Clear:
-                // [Fix] Clear 시에도 모든 슬롯에 대해 알림을 주어 UI를 비움
                 for (int i = 0; i < 50; i++) playerData.inventory.ClearSlot(i);
                 break;
         }
@@ -391,20 +373,20 @@ public class PlayerController : NetworkBehaviour
     public void SyncInventoryToNetwork()
     {
         if (!IsServer || playerData == null) return;
-        Debug.Log($"<color=cyan>[Sync] SyncInventoryToNetwork Called! Player: { OwnerClientId}</ color > ");
-
+        
+        // [Fix] 현재 리스트 상태를 로컬 데이터와 비교하여 필요한 경우에만 갱신
         for (int i = 0; i < inventorySlotsSync.Count; i++)
         {
             var localSlot = playerData.inventory.GetSlot(i);
             if (!inventorySlotsSync[i].Equals(localSlot))
             {
-                Debug.Log($"[Sync] Updating NetworkList at Index {i}: {localSlot.itemID}x{ localSlot.stackCount}");
-                inventorySlotsSync[i] = localSlot; 
+                inventorySlotsSync[i] = localSlot;
             }
         }
     }
 
     [ServerRpc] public void RequestSyncInventoryServerRpc() => SyncInventoryToNetwork();
+
     [ServerRpc] private void RequestSpawnServerRpc() => ConfirmSpawnClientRpc(MapManager.Instance.GetSurfacePosition(50f));
     [ClientRpc] private void ConfirmSpawnClientRpc(Vector2 pos) { if (IsOwner) { transform.position = pos; rb.position = pos; debugStatus = "Spawned"; } }
 

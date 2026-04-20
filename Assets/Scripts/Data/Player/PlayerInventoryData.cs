@@ -21,8 +21,6 @@ public class PlayerInventoryData
     /// </summary>
     public int AddItem(int id, int count)
     {
-        UnityEngine.Debug.Log($"<color=orange>[InventoryData] AddItem called! ID: {id}, Count: { count}</color> ");
-
         ItemData itemData = ItemDataManager.Instance.GetItem(id);
         if (itemData == null) return count;
 
@@ -36,9 +34,13 @@ public class PlayerInventoryData
                 if (slots[i].itemID == id && slots[i].stackCount < itemData.maxStack)
                 {
                     int addCount = Math.Min(remaining, itemData.maxStack - slots[i].stackCount);
-                    slots[i].stackCount += addCount;
+                    
+                    // [Fix] 구조체 멤버 직접 수정 후 배열에 명시적 재할당 (안정성 보장)
+                    var updatedSlot = slots[i];
+                    updatedSlot.stackCount += addCount;
+                    slots[i] = updatedSlot;
+                    
                     remaining -= addCount;
-
                     OnInventoryChanged?.Invoke(i, slots[i]);
 
                     if (remaining <= 0) return 0;
@@ -52,10 +54,9 @@ public class PlayerInventoryData
             if (slots[i].IsEmpty)
             {
                 int addCount = Math.Min(remaining, itemData.maxStack);
-                slots[i].itemID = id;
-                slots[i].stackCount = addCount;
+                slots[i] = new PlayerInventorySlotData(id, addCount);
+                
                 remaining -= addCount;
-
                 OnInventoryChanged?.Invoke(i, slots[i]);
 
                 if (remaining <= 0) return 0;
