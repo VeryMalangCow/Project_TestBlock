@@ -73,6 +73,15 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> hairStyleSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
 
+    // [New] 서버에서 관리하는 마우스 드래깅 아이템 (유령 아이템)
+    private NetworkVariable<PlayerInventorySlotData> ghostItemSync = new NetworkVariable<PlayerInventorySlotData>(
+        new PlayerInventorySlotData(-1, 0),
+        NetworkVariableReadPermission.Owner, // 본인만 알면 됨
+        NetworkVariableWritePermission.Server
+    );
+
+    public PlayerInventorySlotData GhostItem => ghostItemSync.Value;
+
     private NetworkList<PlayerInventorySlotData> inventorySlotsSync;
 
     #endregion
@@ -481,10 +490,132 @@ public class PlayerController : NetworkBehaviour
     [ServerRpc] public void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
 
     [ServerRpc]
+    public void InteractSlotServerRpc(int index, int buttonIndex, bool isModifier)
+    {
+        if (playerData == null || playerData.inventory == null) return;
+        var inventory = playerData.inventory;
+        var clickedSlot = inventory.GetSlot(index);
+        var draggingData = ghostItemSync.Value;
+
+        if (buttonIndex == 0) // Interact_00 (Left Click)
+        {
+            if (draggingData.IsEmpty)
+            {
+                if (!clickedSlot.IsEmpty)
+                {
+                    int amountToPick = isModifier ? Mathf.CeilToInt(clickedSlot.stackCount / 2.0f) : clickedSlot.stackCount;
+                    ghostItemSync.Value = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
+                    
+                    int remaining = clickedSlot.stackCount - amountToPick;
+                    if (remaining <= 0) inventory.ClearSlot(index);
+                    else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
+                }
+            }
+            else
+            {
+                if (clickedSlot.IsEmpty)
+                {
+                    inventory.SetSlot(index, draggingData);
+                    ghostItemSync.Value = new PlayerInventorySlotData(-1, 0);
+                }
+                else if (clickedSlot.itemID == draggingData.itemID)
+                {
+                    ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
+                    int max = data != null ? data.maxStack : 999;
+                    int canAdd = max - clickedSlot.stackCount;
+                    int toAdd = Mathf.Min(canAdd, draggingData.stackCount);
+                    
+                    inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, clickedSlot.stackCount + toAdd));
+                    
+                    draggingData.stackCount -= toAdd;
+                    if (draggingData.stackCount <= 0) ghostItemSync.Value = new PlayerInventorySlotData(-1, 0);
+                    else ghostItemSync.Value = draggingData;
+                }
+                else
+                {
+                    // Swap
+                    PlayerInventorySlotData temp = clickedSlot;
+                    inventory.SetSlot(index, draggingData);
+                    ghostItemSync.Value = temp;
+                }
+            }
+        }
+        else if (buttonIndex == 1) // Interact_01 (Right Click)
+        {
+            if (draggingData.IsEmpty)
+            {
+                if (!clickedSlot.IsEmpty)
+                {
+                    int amountToPick = isModifier ? Mathf.Min(10, clickedSlot.stackCount) : 1;
+                    ghostItemSync.Value = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
+                    
+                    int remaining = clickedSlot.stackCount - amountToPick;
+                    if (remaining <= 0) inventory.ClearSlot(index);
+                    else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
+                }
+            }
+            else
+            {
+                if (clickedSlot.IsEmpty)
+                {
+                    // Drop ALL
+                    inventory.SetSlot(index, draggingData);
+                    ghostItemSync.Value = new PlayerInventorySlotData(-1, 0);
+                }
+                else if (clickedSlot.itemID == draggingData.itemID)
+                {
+                    ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
+                    int max = data != null ? data.maxStack : 999;
+                    if (draggingData.stackCount < max)
+                    {
+                        int canPick = max - draggingData.stackCount;
+                        int desiredPick = isModifier ? Mathf.Min(10, clickedSlot.stackCount) : 1;
+                        int toPick = Mathf.Min(canPick, desiredPick);
+
+                        if (toPick > 0)
+                        {
+                            draggingData.stackCount += toPick;
+                            ghostItemSync.Value = draggingData;
+
+                            int remaining = clickedSlot.stackCount - toPick;
+                            if (remaining <= 0) inventory.ClearSlot(index);
+                            else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
+                        }
+                    }
+                }
+                else
+                {
+                    // Swap
+                    PlayerInventorySlotData temp = clickedSlot;
+                    inventory.SetSlot(index, draggingData);
+                    ghostItemSync.Value = temp;
+                }
+            }
+        }
+
+        SyncInventoryToNetwork();
+    }
+
+    [ServerRpc]
     public void DropItemServerRpc(int id, int count, float lookDir)
     {
         Debug.Log($"<color=red>[RPC-RECEIVE]</color> DropItemServerRpc received on Server! ID: {id}, Count: {count}");
-        interaction.HandleDropItem(id, count, lookDir);
+        
+        // [Fix] 버리는 아이템이 서버에서 관리하는 GhostItem과 일치하는지 확인 (보안 및 데이터 정합성)
+        if (ghostItemSync.Value.itemID == id && ghostItemSync.Value.stackCount >= count)
+        {
+            interaction.HandleDropItem(id, count, lookDir);
+            
+            // GhostItem 수량 차감
+            var updatedGhost = ghostItemSync.Value;
+            updatedGhost.stackCount -= count;
+            if (updatedGhost.stackCount <= 0) ghostItemSync.Value = new PlayerInventorySlotData(-1, 0);
+            else ghostItemSync.Value = updatedGhost;
+        }
+        else
+        {
+            Debug.LogWarning($"[Drop-Server] Invalid drop request from client! Ghost: {ghostItemSync.Value.itemID}x{ghostItemSync.Value.stackCount}, Requested: {id}x{count}");
+        }
     }
 
     public void EndDash() { if (IsOwner) isDashingSync.Value = false; }

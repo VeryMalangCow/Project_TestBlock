@@ -10,10 +10,12 @@ using TMPro;
 
 public class InventoryUI : MonoBehaviour
 {
+    #region Variables & Settings
+
     [Header("### Settings")]
     [SerializeField] private Transform hotbarParent; 
     [SerializeField] private Transform mainInventoryParent; 
-    [SerializeField] private Transform equipmentParent; // [New]
+    [SerializeField] private Transform equipmentParent; 
 
     [Header("### UI Panels")]
     [SerializeField] private GameObject[] alwaysOnObjects; 
@@ -47,7 +49,7 @@ public class InventoryUI : MonoBehaviour
     [SerializeField] private EventSystem eventSystem;
 
     private List<InventorySlotUI> uiSlots = new List<InventorySlotUI>();
-    private List<InventorySlotUI> equipmentSlots = new List<InventorySlotUI>(); // [New]
+    private List<InventorySlotUI> equipmentSlots = new List<InventorySlotUI>(); 
     private List<CanvasGroup> toggleCanvasGroups = new List<CanvasGroup>();
     private List<RectTransform> toggleRects = new List<RectTransform>();
 
@@ -57,12 +59,12 @@ public class InventoryUI : MonoBehaviour
     private bool isAnimating = false;
     private bool shouldSnapSelection = false;
 
-    // 드래그 상태 데이터
-    private int draggingSlotIndex = -1;
-    private bool isDraggingEquipment = false; // [New]
-    private PlayerInventorySlotData? draggingItemData = null; 
     private AsyncOperationHandle<Sprite> ghostIconHandle;
     private int currentGhostItemID = -2;
+
+    #endregion
+
+    #region Unity Lifecycle
 
     private void Awake()
     {
@@ -102,29 +104,6 @@ public class InventoryUI : MonoBehaviour
         InitializeInputActions();
     }
 
-    private void InitializeInputActions()
-    {
-        if (inputActions != null)
-        {
-            var playerMap = inputActions.FindActionMap("Player");
-            if (playerMap != null)
-            {
-                inventoryAction = playerMap.FindAction("Inventory");
-                modifierAction = playerMap.FindAction("Modifier"); 
-                interact00Action = playerMap.FindAction("Interact_00");
-                interact01Action = playerMap.FindAction("Interact_01");
-                pointAction = playerMap.FindAction("Point");
-
-                hotbarActions = new InputAction[10];
-                for (int i = 0; i < 10; i++)
-                {
-                    string actionName = $"Hotbar{(i == 9 ? 0 : i + 1)}";
-                    hotbarActions[i] = playerMap.FindAction(actionName);
-                }
-            }
-        }
-    }
-
     private void OnEnable()
     {
         if (inventoryAction != null) { inventoryAction.performed += OnInventoryToggle; inventoryAction.Enable(); }
@@ -161,15 +140,60 @@ public class InventoryUI : MonoBehaviour
         pointAction?.Disable();
     }
 
+    private void Start()
+    {
+        if (gameObject.activeInHierarchy) StartCoroutine(InitializeRoutine());
+    }
+
+    private void Update()
+    {
+        if (!isInitialized) return;
+        UpdateGhostUI(); 
+        UpdateSelectionIndicator();
+    }
+
+    private void OnDestroy()
+    {
+        if (PlayerController.Local != null && PlayerController.Local.Data != null)
+            PlayerController.Local.Data.inventory.OnInventoryChanged -= OnInventoryDataChanged;
+        ReleaseGhostIcon();
+    }
+
+    #endregion
+
+    #region Input Actions & Callbacks
+
+    private void InitializeInputActions()
+    {
+        if (inputActions != null)
+        {
+            var playerMap = inputActions.FindActionMap("Player");
+            if (playerMap != null)
+            {
+                inventoryAction = playerMap.FindAction("Inventory");
+                modifierAction = playerMap.FindAction("Modifier"); 
+                interact00Action = playerMap.FindAction("Interact_00");
+                interact01Action = playerMap.FindAction("Interact_01");
+                pointAction = playerMap.FindAction("Point");
+
+                hotbarActions = new InputAction[10];
+                for (int i = 0; i < 10; i++)
+                {
+                    string actionName = $"Hotbar{(i == 9 ? 0 : i + 1)}";
+                    hotbarActions[i] = playerMap.FindAction(actionName);
+                }
+            }
+        }
+    }
+
     private void OnInventoryToggle(InputAction.CallbackContext ctx) => ToggleInventory();
     private void OnInteract00Performed(InputAction.CallbackContext ctx) { if (isInventoryOpen) HandleInputInteraction(0); }
     private void OnInteract01Performed(InputAction.CallbackContext ctx) { if (isInventoryOpen) HandleInputInteraction(1); }
     private void OnHotbarKeyPressed(InputAction.CallbackContext ctx) => shouldSnapSelection = true;
 
-    private void Start()
-    {
-        if (gameObject.activeInHierarchy) StartCoroutine(InitializeRoutine());
-    }
+    #endregion
+
+    #region Initialization & Core Logic
 
     private IEnumerator InitializeRoutine()
     {
@@ -179,16 +203,92 @@ public class InventoryUI : MonoBehaviour
         PlayerController.Local.Data.inventory.OnInventoryChanged += OnInventoryDataChanged;
     }
 
+    private void InitializeUI()
+    {
+        if (isInitialized) return;
+        uiSlots.Clear();
+        equipmentSlots.Clear();
+        CollectSlotsFromParent(hotbarParent, uiSlots, false);
+        CollectSlotsFromParent(mainInventoryParent, uiSlots, false);
+        CollectSlotsFromParent(equipmentParent, equipmentSlots, true);
+        isInitialized = true;
+        
+        RefreshUI();
+        RefreshEquipmentUI();
+    }
+
+    private void CollectSlotsFromParent(Transform parent, List<InventorySlotUI> list, bool isEquip)
+    {
+        if (parent == null) return;
+        for (int i = 0; i < parent.childCount; i++)
+        {
+            if (parent.GetChild(i).TryGetComponent<InventorySlotUI>(out var slotUI))
+            {
+                int index = list.Count;
+                list.Add(slotUI);
+                slotUI.Init(this, index); 
+                if (!isEquip) slotUI.gameObject.SetActive(index < HOTBAR_COUNT);
+            }
+        }
+    }
+
     private void OnInventoryDataChanged(int index, PlayerInventorySlotData data)
     {
         if (index >= 0 && index < uiSlots.Count) uiSlots[index].UpdateSlot(data);
     }
 
-    private void Update()
+    #endregion
+
+    #region UI Updates (Refresh/Ghost/Indicator)
+
+    public void RefreshUI(int count = -1)
     {
-        if (!isInitialized) return;
-        HandleGhostIconFollow();
-        UpdateSelectionIndicator();
+        if (PlayerController.Local == null || PlayerController.Local.Data == null || !isInitialized) return;
+        var inventory = PlayerController.Local.Data.inventory;
+        int loopCount = (count == -1) ? uiSlots.Count : Mathf.Min(count, uiSlots.Count);
+        for (int i = 0; i < loopCount; i++) if (i < inventory.slots.Length) uiSlots[i].UpdateSlot(inventory.GetSlot(i));
+    }
+
+    public void RefreshEquipmentUI()
+    {
+        if (PlayerController.Local == null || PlayerController.Local.Data == null || !isInitialized) return;
+        var equipment = PlayerController.Local.Data.equipment;
+        
+        for (int i = 0; i < equipmentSlots.Count; i++)
+        {
+            ItemType type = equipmentSlots[i].TargetType;
+            int typeID = equipment.GetEquipment(type);
+            int itemID = ItemDataManager.Instance.FindItemIDByType(type, typeID);
+            equipmentSlots[i].UpdateSlot(new PlayerInventorySlotData(itemID, itemID >= 0 ? 1 : 0));
+        }
+    }
+
+    private void UpdateGhostUI()
+    {
+        if (PlayerController.Local == null) return;
+        
+        var ghostData = PlayerController.Local.GhostItem;
+
+        if (ghostData.IsEmpty) 
+        { 
+            if (ghostSlotPanel != null && ghostSlotPanel.activeSelf) ghostSlotPanel.SetActive(false); 
+            currentGhostItemID = -2;
+            return; 
+        }
+        
+        if (ghostSlotPanel != null)
+        {
+            if (pointAction != null) ghostSlotPanel.transform.position = pointAction.ReadValue<Vector2>();
+            if (!ghostSlotPanel.activeSelf) ghostSlotPanel.SetActive(true);
+            
+            if (ghostData.itemID != currentGhostItemID)
+            {
+                currentGhostItemID = ghostData.itemID;
+                Sprite icon = ItemDataManager.Instance.GetItemIcon(currentGhostItemID);
+                if (ghostIcon != null) { ghostIcon.sprite = icon; ghostIcon.enabled = (icon != null); }
+            }
+            if (ghostStackText != null) ghostStackText.text = ghostData.stackCount > 1 ? ghostData.stackCount.ToString() : "";
+        }
     }
 
     private void UpdateSelectionIndicator()
@@ -216,11 +316,9 @@ public class InventoryUI : MonoBehaviour
         }
     }
 
-    private void HandleGhostIconFollow()
-    {
-        if (draggingItemData == null || ghostSlotPanel == null || pointAction == null) return;
-        ghostSlotPanel.transform.position = pointAction.ReadValue<Vector2>();
-    }
+    #endregion
+
+    #region Interaction Logic
 
     private void HandleInputInteraction(int buttonIndex)
     {
@@ -231,8 +329,6 @@ public class InventoryUI : MonoBehaviour
 
         List<RaycastResult> results = new List<RaycastResult>();
         raycaster.Raycast(eventData, results);
-
-        Debug.Log($"[InventoryUI-Interaction] Clicked! Button: {buttonIndex}, Results: {results.Count}");
 
         bool hitSlot = false;
         foreach (var result in results)
@@ -248,38 +344,52 @@ public class InventoryUI : MonoBehaviour
             }
         }
 
-        // [Fix] 우클릭(buttonIndex == 1) 시 슬롯을 맞추지 못했고 드래그 중인 아이템이 있다면 버리기 요청
-        // 만약 배경 패널 등에 막혀서 hitSlot이 true가 되더라도, 그게 슬롯이 아니라면 버려야 합니다.
-        if (!hitSlot && buttonIndex == 1 && draggingItemData != null) 
+        if (!hitSlot && PlayerController.Local != null && !PlayerController.Local.GhostItem.IsEmpty) 
         {
-            Debug.Log("[InventoryUI-Interaction] Conditions met for dropping item.");
             RequestDropItem();
         }
     }
+
+    public void OnSlotClicked(int index, int buttonIndex)
+    {
+        if (!isInventoryOpen || PlayerController.Local == null) return;
+        
+        bool isModifierPressed = modifierAction != null && modifierAction.IsPressed();
+        PlayerController.Local.InteractSlotServerRpc(index, buttonIndex, isModifierPressed);
+    }
+
+    public void OnEquipmentSlotClicked(int index, int buttonIndex)
+    {
+        // TODO: 장비창 조작도 서버 RPC 방식으로 전환 예정
+    }
+
+    private void RequestDropItem()
+    {
+        if (PlayerController.Local == null) return;
+        
+        var ghostData = PlayerController.Local.GhostItem;
+        if (ghostData.IsEmpty) return;
+
+        Debug.Log($"[InventoryUI-Client] Requesting Drop: ItemID {ghostData.itemID}, Count {ghostData.stackCount}");
+        
+        float lookDir = PlayerController.Local.IsFlipped ? -1f : 1f;
+        PlayerController.Local.DropItemServerRpc(ghostData.itemID, ghostData.stackCount, lookDir);
+    }
+
+    #endregion
+
+    #region Animation & Visibility
 
     public void ToggleInventory()
     {
         if (isAnimating) return;
         isInventoryOpen = !isInventoryOpen;
-        if (!isInventoryOpen && draggingItemData != null) RequestDropItem();
+        
+        if (!isInventoryOpen && PlayerController.Local != null && !PlayerController.Local.GhostItem.IsEmpty) 
+            RequestDropItem();
+            
         StopAllCoroutines();
         StartCoroutine(ToggleAnimationRoutine(isInventoryOpen));
-    }
-
-    private void RequestDropItem()
-    {
-        if (draggingItemData == null) return;
-        if (PlayerController.Local == null) 
-        {
-            Debug.LogError("[InventoryUI] Failed to drop: PlayerController.Local is NULL!");
-            return;
-        }
-
-        Debug.Log($"[InventoryUI-Client] Requesting Drop: ItemID {draggingItemData.Value.itemID}, Count {draggingItemData.Value.stackCount}");
-        
-        float lookDir = PlayerController.Local.IsFlipped ? -1f : 1f;
-        PlayerController.Local.DropItemServerRpc(draggingItemData.Value.itemID, draggingItemData.Value.stackCount, lookDir);
-        ClearDragging();
     }
 
     private IEnumerator ToggleAnimationRoutine(bool isOpen)
@@ -324,308 +434,16 @@ public class InventoryUI : MonoBehaviour
         isAnimating = false;
     }
 
-    private void InitializeUI()
-    {
-        if (isInitialized) return;
-        uiSlots.Clear();
-        equipmentSlots.Clear();
-        CollectSlotsFromParent(hotbarParent, uiSlots, false);
-        CollectSlotsFromParent(mainInventoryParent, uiSlots, false);
-        CollectSlotsFromParent(equipmentParent, equipmentSlots, true);
-        isInitialized = true;
-        
-        RefreshUI();
-        RefreshEquipmentUI();
-    }
-
-    private void CollectSlotsFromParent(Transform parent, List<InventorySlotUI> list, bool isEquip)
-    {
-        if (parent == null) return;
-        for (int i = 0; i < parent.childCount; i++)
-        {
-            if (parent.GetChild(i).TryGetComponent<InventorySlotUI>(out var slotUI))
-            {
-                int index = list.Count;
-                list.Add(slotUI);
-                slotUI.Init(this, index); 
-                if (!isEquip) slotUI.gameObject.SetActive(index < HOTBAR_COUNT);
-            }
-        }
-    }
-
     private void UpdateSlotsVisibility(bool showAll)
     {
         for (int i = 0; i < uiSlots.Count; i++) if (i >= HOTBAR_COUNT) uiSlots[i].gameObject.SetActive(showAll);
     }
 
-    public void RefreshUI(int count = -1)
-    {
-        if (PlayerController.Local == null || PlayerController.Local.Data == null || !isInitialized) return;
-        var inventory = PlayerController.Local.Data.inventory;
-        int loopCount = (count == -1) ? uiSlots.Count : Mathf.Min(count, uiSlots.Count);
-        for (int i = 0; i < loopCount; i++) if (i < inventory.slots.Length) uiSlots[i].UpdateSlot(inventory.GetSlot(i));
-    }
-
-    public void RefreshEquipmentUI()
-    {
-        if (PlayerController.Local == null || PlayerController.Local.Data == null || !isInitialized) return;
-        var equipment = PlayerController.Local.Data.equipment;
-        
-        for (int i = 0; i < equipmentSlots.Count; i++)
-        {
-            ItemType type = equipmentSlots[i].TargetType;
-            int typeID = equipment.GetEquipment(type);
-            
-            // Note: Currently equipment slots visualize typeID, but for UI icons we might need ItemID mapping
-            // For now, let's find the first item that matches this type and typeID in database
-            int itemID = ItemDataManager.Instance.FindItemIDByType(type, typeID);
-            equipmentSlots[i].UpdateSlot(new PlayerInventorySlotData(itemID, itemID >= 0 ? 1 : 0));
-        }
-    }
-
-    #region Interaction Logic
-
-    public void OnSlotClicked(int index, int buttonIndex)
-    {
-        if (!isInventoryOpen) return;
-        if (PlayerController.Local == null || PlayerController.Local.Data == null) return;
-        
-        var inventory = PlayerController.Local.Data.inventory;
-
-        // [New] Right click to auto-equip
-        if (buttonIndex == 1 && draggingItemData == null)
-        {
-            if (TryAutoEquip(index)) return;
-        }
-
-        bool isModifierPressed = modifierAction != null && modifierAction.IsPressed();
-
-        if (buttonIndex == 0) HandleInteract00(index, isModifierPressed);
-        else if (buttonIndex == 1) HandleInteract01(index, isModifierPressed);
-
-        SyncData();
-        UpdateGhostUI();
-    }
-
-    public void OnEquipmentSlotClicked(int index, int buttonIndex)
-    {
-        if (!isInventoryOpen) return;
-        if (PlayerController.Local == null || PlayerController.Local.Data == null) return;
-
-        var equipment = PlayerController.Local.Data.equipment;
-        InventorySlotUI slotUI = equipmentSlots[index];
-        ItemType slotType = slotUI.TargetType;
-
-        if (buttonIndex == 0) // Left Click
-        {
-            if (draggingItemData == null)
-            {
-                // Unload equipment to ghost
-                int typeID = equipment.GetEquipment(slotType);
-                if (typeID >= 0)
-                {
-                    int itemID = ItemDataManager.Instance.FindItemIDByType(slotType, typeID);
-                    draggingItemData = new PlayerInventorySlotData(itemID, 1);
-                    equipment.SetEquipment(slotType, -1);
-                }
-            }
-            else
-            {
-                // Try to equip ghost item
-                ItemData item = ItemDataManager.Instance.GetItem(draggingItemData.Value.itemID);
-                if (item != null && item.type == slotType)
-                {
-                    int oldTypeID = equipment.GetEquipment(slotType);
-                    int oldItemID = ItemDataManager.Instance.FindItemIDByType(slotType, oldTypeID);
-                    
-                    equipment.SetEquipment(slotType, item.typeID);
-                    
-                    if (oldItemID >= 0) draggingItemData = new PlayerInventorySlotData(oldItemID, 1);
-                    else ClearDragging();
-                }
-            }
-        }
-
-        SyncData();
-        UpdateGhostUI();
-        RefreshEquipmentUI();
-        PlayerController.Local.UpdateEquipment(equipment); // Sync visuals
-    }
-
-    private bool TryAutoEquip(int inventoryIndex)
-    {
-        var inventory = PlayerController.Local.Data.inventory;
-        var slot = inventory.GetSlot(inventoryIndex);
-        if (slot.IsEmpty) return false;
-
-        ItemData item = ItemDataManager.Instance.GetItem(slot.itemID);
-        if (item == null) return false;
-
-        // Only equipment types
-        if (item.type < ItemType.Helmet || item.type > ItemType.Jetbag) return false;
-
-        var equipment = PlayerController.Local.Data.equipment;
-        int oldTypeID = equipment.GetEquipment(item.type);
-        int oldItemID = ItemDataManager.Instance.FindItemIDByType(item.type, oldTypeID);
-
-        // Swap
-        equipment.SetEquipment(item.type, item.typeID);
-        
-        if (oldItemID >= 0) inventory.SetSlot(inventoryIndex, new PlayerInventorySlotData(oldItemID, 1));
-        else inventory.ClearSlot(inventoryIndex);
-
-        RefreshEquipmentUI();
-        PlayerController.Local.UpdateEquipment(equipment);
-        return true;
-    }
-
-    private void SyncData()
-    {
-        if (PlayerController.Local.IsServer) PlayerController.Local.SyncInventoryToNetwork();
-        else PlayerController.Local.RequestSyncInventoryServerRpc();
-    }
-
-    private void HandleInteract00(int index, bool isModifierPressed)
-    {
-        var inventory = PlayerController.Local.Data.inventory;
-        var clickedSlot = inventory.GetSlot(index);
-
-        if (draggingItemData == null)
-        {
-            if (!clickedSlot.IsEmpty)
-            {
-                int amountToPick = isModifierPressed ? Mathf.CeilToInt(clickedSlot.stackCount / 2.0f) : clickedSlot.stackCount;
-                draggingItemData = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
-                
-                int remaining = clickedSlot.stackCount - amountToPick;
-                if (remaining <= 0) inventory.ClearSlot(index);
-                else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
-            }
-        }
-        else
-        {
-            if (clickedSlot.IsEmpty)
-            {
-                inventory.SetSlot(index, draggingItemData.Value);
-                ClearDragging();
-            }
-            else if (clickedSlot.itemID == draggingItemData.Value.itemID)
-            {
-                ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
-                int max = data != null ? data.maxStack : 999;
-                int canAdd = max - clickedSlot.stackCount;
-                int toAdd = Mathf.Min(canAdd, draggingItemData.Value.stackCount);
-                
-                inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, clickedSlot.stackCount + toAdd));
-                
-                var updatedDragging = draggingItemData.Value;
-                updatedDragging.stackCount -= toAdd;
-                if (updatedDragging.stackCount <= 0) ClearDragging();
-                else draggingItemData = updatedDragging;
-            }
-            else
-            {
-                int tempID = clickedSlot.itemID;
-                int tempCount = clickedSlot.stackCount;
-                
-                inventory.SetSlot(index, draggingItemData.Value);
-                draggingItemData = new PlayerInventorySlotData(tempID, tempCount);
-            }
-        }
-    }
-
-    private void HandleInteract01(int index, bool isModifierPressed)
-    {
-        var inventory = PlayerController.Local.Data.inventory;
-        var clickedSlot = inventory.GetSlot(index);
-
-        if (draggingItemData == null)
-        {
-            if (!clickedSlot.IsEmpty)
-            {
-                int amountToPick = isModifierPressed ? Mathf.Min(10, clickedSlot.stackCount) : 1;
-                draggingItemData = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
-                
-                int remaining = clickedSlot.stackCount - amountToPick;
-                if (remaining <= 0) inventory.ClearSlot(index);
-                else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
-            }
-        }
-        else
-        {
-            if (clickedSlot.IsEmpty)
-            {
-                // Slot is empty -> Drop ALL
-                inventory.SetSlot(index, draggingItemData.Value);
-                ClearDragging();
-            }
-            else if (clickedSlot.itemID == draggingItemData.Value.itemID)
-            {
-                // Same item -> Pick UP (from slot to ghost)
-                ItemData data = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
-                int max = data != null ? data.maxStack : 999;
-
-                if (draggingItemData.Value.stackCount < max)
-                {
-                    int canPick = max - draggingItemData.Value.stackCount;
-                    int desiredPick = isModifierPressed ? Mathf.Min(10, clickedSlot.stackCount) : 1;
-                    int toPick = Mathf.Min(canPick, desiredPick);
-
-                    if (toPick > 0)
-                    {
-                        var updatedDragging = draggingItemData.Value;
-                        updatedDragging.stackCount += toPick;
-                        draggingItemData = updatedDragging;
-
-                        int remaining = clickedSlot.stackCount - toPick;
-                        if (remaining <= 0) inventory.ClearSlot(index);
-                        else inventory.SetSlot(index, new PlayerInventorySlotData(clickedSlot.itemID, remaining));
-                    }
-                }
-            }
-            else
-            {
-                // Different item -> Swap
-                int tempID = clickedSlot.itemID;
-                int tempCount = clickedSlot.stackCount;
-                
-                inventory.SetSlot(index, draggingItemData.Value);
-                draggingItemData = new PlayerInventorySlotData(tempID, tempCount);
-            }
-        }
-    }
-
     #endregion
 
-    private void OnDestroy()
-    {
-        if (PlayerController.Local != null && PlayerController.Local.Data != null)
-            PlayerController.Local.Data.inventory.OnInventoryChanged -= OnInventoryDataChanged;
-        ReleaseGhostIcon();
-    }
+    #region Helpers
 
     private void ReleaseGhostIcon() { if (ghostIconHandle.IsValid()) Addressables.Release(ghostIconHandle); }
-
-    #region Helper Methods
-
-    private void UpdateGhostUI()
-    {
-        if (draggingItemData == null || draggingItemData.Value.IsEmpty) { ClearDragging(); return; }
-        if (ghostSlotPanel != null)
-        {
-            if (pointAction != null) ghostSlotPanel.transform.position = pointAction.ReadValue<Vector2>();
-            ghostSlotPanel.SetActive(true);
-            if (draggingItemData.Value.itemID != currentGhostItemID)
-            {
-                currentGhostItemID = draggingItemData.Value.itemID;
-                Sprite icon = ItemDataManager.Instance.GetItemIcon(currentGhostItemID);
-                if (ghostIcon != null) { ghostIcon.sprite = icon; ghostIcon.enabled = (icon != null); }
-            }
-            if (ghostStackText != null) ghostStackText.text = draggingItemData.Value.stackCount > 1 ? draggingItemData.Value.stackCount.ToString() : "";
-        }
-    }
-
-    private void ClearDragging() { currentGhostItemID = -2; draggingSlotIndex = -1; draggingItemData = null; if (ghostSlotPanel != null) ghostSlotPanel.SetActive(false); }
 
     #endregion
 }
