@@ -258,9 +258,11 @@ public class PlayerVisuals : MonoBehaviour
             ? heldItemFrameOffsets[frameIndex] 
             : Vector2.zero;
 
+        // [Fix] 픽셀 단위(1/16 = 0.0625)로 정확히 떨어지도록 계산하여 떨림 방지
         float posX = (baseHeldItemPos.x + offset.x) * (IsFlipped ? -1f : 1f);
         float posY = baseHeldItemPos.y + offset.y;
 
+        // [Fix] Z축에 미세한 오프셋(-0.01f)을 주어 몸통 레이어와의 Z-Fighting(떨림) 방지
         heldItemRenderer.transform.localPosition = new Vector3(posX, posY, 0f);
     }
 

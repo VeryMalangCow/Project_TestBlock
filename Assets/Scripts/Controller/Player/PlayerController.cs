@@ -444,7 +444,12 @@ public class PlayerController : NetworkBehaviour
             proxySpeedX = deltaX / Time.deltaTime;
             lastPosition = transform.position;
 
-            visuals?.SetFlip(isFlippedSync.Value);
+            // [Fix] 방향이 바뀔 때만 SetFlip 호출 (아이템 떨림 방지)
+            if (visuals != null && visuals.IsFlipped != isFlippedSync.Value)
+            {
+                visuals.SetFlip(isFlippedSync.Value);
+            }
+
             // Use calculated proxySpeedX for animation
             visuals?.UpdateVisuals(proxySpeedX, isGroundedSync.Value, isDashingSync.Value);
             return;
@@ -479,8 +484,12 @@ public class PlayerController : NetworkBehaviour
 
         if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
         {
-            isFlippedSync.Value = moveInput.x < 0;
-            visuals.SetFlip(isFlippedSync.Value);
+            bool newFlip = moveInput.x < 0;
+            if (isFlippedSync.Value != newFlip)
+            {
+                isFlippedSync.Value = newFlip;
+                visuals.SetFlip(newFlip);
+            }
         }
 
         visuals.UpdateVisuals(rb.linearVelocity.x, movement.IsGrounded, isDashingSync.Value);

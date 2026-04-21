@@ -126,7 +126,7 @@ TextureImporter:
     serializedVersion: 2
     sprites:
     - serializedVersion: 2
-      name: UI_Slot_00
+      name: UI_Inventory_Slot_00
       rect:
         serializedVersion: 2
         x: 71
@@ -148,7 +148,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: UI_Slot_01
+      name: UI_Inventory_Slot_01
       rect:
         serializedVersion: 2
         x: 71
@@ -170,7 +170,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: UI_Panel_00
+      name: UI_Inventory_Panel_00
       rect:
         serializedVersion: 2
         x: 0
@@ -192,7 +192,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: UI_Panel_01
+      name: UI_Inventory_Panel_01
       rect:
         serializedVersion: 2
         x: 123
@@ -434,7 +434,7 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: UI_Select
+      name: UI_Inventory_Select
       rect:
         serializedVersion: 2
         x: 108
@@ -451,6 +451,50 @@ TextureImporter:
       bones: []
       spriteID: b3e62e5f8fed4c847a946cc1a9158eb2
       internalID: 1531219542
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Panel_Hp_InnerFrame
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 367
+        width: 24
+        height: 24
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 2f5497128f1ad1046863ad2d691b813b
+      internalID: -1153200758
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Panel_Hp_Bar
+      rect:
+        serializedVersion: 2
+        x: 8
+        y: 335
+        width: 21
+        height: 31
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 6f47f1a3de8e9924aa35fab28b017d49
+      internalID: 1394446209
       vertices: []
       indices: 
       edges: []
@@ -477,13 +521,15 @@ TextureImporter:
       UI_Deco_02: 20220665
       UI_Deco_03: -102472445
       UI_Helmet: -870306624
+      UI_Inventory_Panel_00: -1549992443
+      UI_Inventory_Panel_01: 564234129
+      UI_Inventory_Select: 1531219542
+      UI_Inventory_Slot_00: 7810555872850217448
+      UI_Inventory_Slot_01: -1970593529
       UI_Jetbag: 1310844292
       UI_Leggings: -1640420262
-      UI_Panel_00: -1549992443
-      UI_Panel_01: 564234129
-      UI_Select: 1531219542
-      UI_Slot_00: 7810555872850217448
-      UI_Slot_01: -1970593529
+      UI_Panel_Hp_Bar: 1394446209
+      UI_Panel_Hp_InnerFrame: -1153200758
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 

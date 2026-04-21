@@ -145,7 +145,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3836181582
+  GlobalObjectIdHash: 4087358549
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -545,7 +545,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 1288713565158605174}
+  m_Father: {fileID: 5581803561638476078}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &348720962500958746
 SpriteRenderer:
@@ -916,6 +916,7 @@ Transform:
   - {fileID: 1590605308250086085}
   - {fileID: 8444228720629637384}
   - {fileID: 1288713565158605174}
+  - {fileID: 1353456672213204836}
   - {fileID: 1014080257499952734}
   - {fileID: 7686304336685400412}
   - {fileID: 8543542451450519638}
@@ -1470,8 +1471,7 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1353456672213204836}
+  m_Children: []
   m_Father: {fileID: 5581803561638476078}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &5506491753063629393
