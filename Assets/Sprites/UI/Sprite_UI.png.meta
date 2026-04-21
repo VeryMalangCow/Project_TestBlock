@@ -459,13 +459,13 @@ TextureImporter:
       name: UI_Panel_Hp_InnerFrame
       rect:
         serializedVersion: 2
-        x: 8
-        y: 367
+        x: 108
+        y: 53
         width: 24
         height: 24
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 0, y: 0, z: 0, w: 0}
+      border: {x: 12, y: 12, z: 12, w: 12}
       customData: 
       outline: []
       physicsShape: []
@@ -481,9 +481,9 @@ TextureImporter:
       name: UI_Panel_Hp_Bar
       rect:
         serializedVersion: 2
-        x: 8
-        y: 335
-        width: 21
+        x: 0
+        y: 79
+        width: 420
         height: 31
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
@@ -495,6 +495,336 @@ TextureImporter:
       bones: []
       spriteID: 6f47f1a3de8e9924aa35fab28b017d49
       internalID: 1394446209
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Black
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 511
+        width: 1
+        height: 1
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: acc62c34a8b25c040af1f44f145b9724
+      internalID: -293294935
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Panel_Hp_Liner
+      rect:
+        serializedVersion: 2
+        x: 133
+        y: 51
+        width: 10
+        height: 27
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 13, z: 0, w: 13}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c834a093895dcd54d9db824d7bb82934
+      internalID: 2012484642
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Panel_Mp_Bar
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 111
+        width: 420
+        height: 31
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 52cff4f303c10664cbe40d6f415f864c
+      internalID: -1988150727
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_GaugeSideBar
+      rect:
+        serializedVersion: 2
+        x: 144
+        y: 27
+        width: 27
+        height: 51
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 1, y: 25, z: 25, w: 25}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: a75418ff76fb9ca4d92ff454a1773357
+      internalID: -1191339834
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_GaugeFrameBar
+      rect:
+        serializedVersion: 2
+        x: 172
+        y: 27
+        width: 48
+        height: 48
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 24, y: 24, z: 24, w: 24}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d54e99c772e05534ab682eadacfb1e98
+      internalID: 1002472646
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_GaugeTextBar
+      rect:
+        serializedVersion: 2
+        x: 221
+        y: 27
+        width: 29
+        height: 28
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 14, y: 14, z: 15, w: 14}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 35e097aa9fe147b46a62f8e5bbaef284
+      internalID: -2057830229
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_GemFrame00
+      rect:
+        serializedVersion: 2
+        x: 221
+        y: 56
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 10, y: 10, z: 10, w: 10}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 18b1b3e2446097e47a783a29affd6cc0
+      internalID: 407238800
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_GemFrame01
+      rect:
+        serializedVersion: 2
+        x: 242
+        y: 63
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 6, y: 6, z: 6, w: 6}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: d5ebabf0780911a41b6da8493f6f27ed
+      internalID: 1882491736
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_HpGem02
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 79
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: da13637a700e077439db319cc02769f7
+      internalID: 918240941
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_HpGem01
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 94
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cdcd92ddfb0fcf94a8263c3e194d0ccb
+      internalID: 1272958792
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_HpGem00
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 105
+        width: 5
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c05a276fdc85afb4c8d619c08db9561c
+      internalID: -1697776507
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_MpGem00
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 137
+        width: 5
+        height: 5
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f03627af74e4aa145b9a3066f62f1bcd
+      internalID: 578259298
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_MpGem01
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 126
+        width: 10
+        height: 10
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4b39c7446ae690d47936d22fb2ef7c98
+      internalID: 1421780994
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_MpGem02
+      rect:
+        serializedVersion: 2
+        x: 421
+        y: 111
+        width: 14
+        height: 14
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3fdc0ba7a8923b94686c02ab02d49433
+      internalID: 1570652947
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: Sprite_UI_0
+      rect:
+        serializedVersion: 2
+        x: 454
+        y: 76
+        width: 42
+        height: 38
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f126e6178373764478f54c3fef0e85ca
+      internalID: -464407818
       vertices: []
       indices: 
       edges: []
@@ -513,14 +843,25 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
+      Sprite_UI_0: -464407818
       UI_Accessory: -489669675
+      UI_Black: -293294935
       UI_Boots: 551306774
       UI_Chestplate: -904088328
       UI_Deco_00: 258850448
       UI_Deco_01: 1473317769
       UI_Deco_02: 20220665
       UI_Deco_03: -102472445
+      UI_GaugeFrameBar: 1002472646
+      UI_GaugeSideBar: -1191339834
+      UI_GaugeTextBar: -2057830229
+      UI_GemFrame00: 407238800
+      UI_GemFrame01: 1882491736
+      UI_Gradient: -742155037
       UI_Helmet: -870306624
+      UI_HpGem00: -1697776507
+      UI_HpGem01: 1272958792
+      UI_HpGem02: 918240941
       UI_Inventory_Panel_00: -1549992443
       UI_Inventory_Panel_01: 564234129
       UI_Inventory_Select: 1531219542
@@ -528,8 +869,13 @@ TextureImporter:
       UI_Inventory_Slot_01: -1970593529
       UI_Jetbag: 1310844292
       UI_Leggings: -1640420262
+      UI_MpGem00: 578259298
+      UI_MpGem01: 1421780994
+      UI_MpGem02: 1570652947
       UI_Panel_Hp_Bar: 1394446209
       UI_Panel_Hp_InnerFrame: -1153200758
+      UI_Panel_Hp_Liner: 2012484642
+      UI_Panel_Mp_Bar: -1988150727
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
