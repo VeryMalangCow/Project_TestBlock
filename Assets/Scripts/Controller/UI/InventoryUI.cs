@@ -360,7 +360,10 @@ public class InventoryUI : MonoBehaviour
 
     public void OnEquipmentSlotClicked(int index, int buttonIndex)
     {
-        // TODO: 장비창 조작도 서버 RPC 방식으로 전환 예정
+        if (!isInventoryOpen || PlayerController.Local == null || index < 0 || index >= equipmentSlots.Count) return;
+
+        bool isModifierPressed = modifierAction != null && modifierAction.IsPressed();
+        PlayerController.Local.InteractEquipmentSlotServerRpc(equipmentSlots[index].TargetType, buttonIndex, isModifierPressed);
     }
 
     private void RequestDropItem()

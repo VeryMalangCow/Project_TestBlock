@@ -63,11 +63,11 @@ public class PlayerController : NetworkBehaviour
     private int lastProcessedJumpCount;
 
     // Appearance & Equipment Sync
-    private NetworkVariable<int> helmetIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> chestplateIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> leggingsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> bootsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
-    private NetworkVariable<int> jetbagIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> helmetIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> chestplateIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> leggingsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> bootsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
+    private NetworkVariable<int> jetbagIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<Color> skinColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> eyeColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -252,11 +252,11 @@ public class PlayerController : NetworkBehaviour
             }
         }
 
-        helmetIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Helmet", newVal);
-        chestplateIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Chestplate", newVal);
-        leggingsIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Leggings", newVal);
-        bootsIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Boots", newVal);
-        jetbagIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetArmor("Jetbag", newVal);
+        helmetIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Helmet", newVal); if (!IsServer) { playerData.equipment.helmetIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
+        chestplateIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Chestplate", newVal); if (!IsServer) { playerData.equipment.chestplateIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
+        leggingsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Leggings", newVal); if (!IsServer) { playerData.equipment.leggingsIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
+        bootsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Boots", newVal); if (!IsServer) { playerData.equipment.bootsIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
+        jetbagIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Jetbag", newVal); if (!IsServer) { playerData.equipment.jetbagIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
 
         skinColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetSkinColor(newVal);
         eyeColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetEyeColor(newVal);
@@ -348,9 +348,9 @@ public class PlayerController : NetworkBehaviour
             }
 
             // [Important] 본인의 데이터(커스터마이징 등)를 네트워크 변수에 반영합니다.
-            // NetworkVariable이 OwnerWrite 권한이므로, 반드시 Owner가 직접 써야 합니다.
             UpdateAppearance(playerData.visual);
-            UpdateEquipment(playerData.equipment);
+            var e = playerData.equipment;
+            UpdateEquipmentServerRpc(e.helmetIndex, e.chestplateIndex, e.leggingsIndex, e.bootsIndex, e.jetbagIndex);
             
             // 데이터가 모두 준비된 후 UI 갱신 강제
             InventoryUI ui = Object.FindAnyObjectByType<InventoryUI>();
@@ -546,6 +546,22 @@ public class PlayerController : NetworkBehaviour
             {
                 if (!clickedSlot.IsEmpty)
                 {
+                    // [Added] Auto-Equip Check
+                    ItemData itemData = ItemDataManager.Instance.GetItem(clickedSlot.itemID);
+                    if (itemData != null && IsEquipmentType(itemData.type))
+                    {
+                        int oldTypeID = playerData.equipment.GetEquipment(itemData.type);
+                        int oldItemID = ItemDataManager.Instance.FindItemIDByType(itemData.type, oldTypeID);
+                        
+                        SetEquipmentOnServer(itemData.type, itemData.typeID);
+                        
+                        if (oldItemID >= 0) inventory.SetSlot(index, new PlayerInventorySlotData(oldItemID, 1));
+                        else inventory.ClearSlot(index);
+                        
+                        SyncInventoryToNetwork();
+                        return;
+                    }
+
                     int amountToPick = isModifier ? Mathf.Min(10, clickedSlot.stackCount) : 1;
                     ghostItemSync.Value = new PlayerInventorySlotData(clickedSlot.itemID, amountToPick);
                     
@@ -597,6 +613,70 @@ public class PlayerController : NetworkBehaviour
     }
 
     [ServerRpc]
+    public void InteractEquipmentSlotServerRpc(ItemType type, int buttonIndex, bool isModifier)
+    {
+        if (playerData == null || playerData.equipment == null) return;
+        
+        var draggingData = ghostItemSync.Value;
+        int currentTypeID = playerData.equipment.GetEquipment(type);
+        int currentItemID = ItemDataManager.Instance.FindItemIDByType(type, currentTypeID);
+        PlayerInventorySlotData currentSlotData = new PlayerInventorySlotData(currentItemID, currentItemID >= 0 ? 1 : 0);
+
+        if (buttonIndex == 0) // Left Click
+        {
+            if (draggingData.IsEmpty)
+            {
+                if (!currentSlotData.IsEmpty)
+                {
+                    ghostItemSync.Value = currentSlotData;
+                    SetEquipmentOnServer(type, -1);
+                }
+            }
+            else
+            {
+                ItemData draggingItemData = ItemDataManager.Instance.GetItem(draggingData.itemID);
+                if (draggingItemData != null && draggingItemData.type == type)
+                {
+                    SetEquipmentOnServer(type, draggingItemData.typeID);
+                    ghostItemSync.Value = currentSlotData;
+                }
+            }
+        }
+        else if (buttonIndex == 1) // Right Click
+        {
+            if (draggingData.IsEmpty && !currentSlotData.IsEmpty)
+            {
+                if (playerData.inventory.AddItem(currentItemID, 1) == 0)
+                {
+                    SetEquipmentOnServer(type, -1);
+                    SyncInventoryToNetwork();
+                }
+            }
+        }
+    }
+
+    private void SetEquipmentOnServer(ItemType type, int typeID)
+    {
+        if (!IsServer) return;
+        playerData.equipment.SetEquipment(type, typeID);
+        switch (type)
+        {
+            case ItemType.Helmet: helmetIdSync.Value = typeID; break;
+            case ItemType.Chestplate: chestplateIdSync.Value = typeID; break;
+            case ItemType.Leggings: leggingsIdSync.Value = typeID; break;
+            case ItemType.Boots: bootsIdSync.Value = typeID; break;
+            case ItemType.Jetbag: jetbagIdSync.Value = typeID; break;
+        }
+    }
+
+    private bool IsEquipmentType(ItemType type)
+    {
+        return type == ItemType.Helmet || type == ItemType.Chestplate || 
+               type == ItemType.Leggings || type == ItemType.Boots || 
+               type == ItemType.Jetbag;
+    }
+
+    [ServerRpc]
     public void DropItemServerRpc(int id, int count, float lookDir)
     {
         Debug.Log($"<color=red>[RPC-RECEIVE]</color> DropItemServerRpc received on Server! ID: {id}, Count: {count}");
@@ -633,14 +713,14 @@ public class PlayerController : NetworkBehaviour
         hairStyleSync.Value = v.hairStyleIndex;
     }
 
-    public void UpdateEquipment(PlayerEquipmentData e)
+    [ServerRpc]
+    public void UpdateEquipmentServerRpc(int helmet, int chest, int leggings, int boots, int jetbag)
     {
-        if (!IsOwner) return;
-        helmetIdSync.Value = e.helmetIndex;
-        chestplateIdSync.Value = e.chestplateIndex;
-        leggingsIdSync.Value = e.leggingsIndex;
-        bootsIdSync.Value = e.bootsIndex;
-        jetbagIdSync.Value = e.jetbagIndex;
+        SetEquipmentOnServer(ItemType.Helmet, helmet);
+        SetEquipmentOnServer(ItemType.Chestplate, chest);
+        SetEquipmentOnServer(ItemType.Leggings, leggings);
+        SetEquipmentOnServer(ItemType.Boots, boots);
+        SetEquipmentOnServer(ItemType.Jetbag, jetbag);
     }
 
     private void EnsureEventSystem() { if (Object.FindAnyObjectByType<EventSystem>() == null) { new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule)); } }
