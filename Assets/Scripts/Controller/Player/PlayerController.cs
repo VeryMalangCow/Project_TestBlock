@@ -72,6 +72,7 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<Color> eyeColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<Color> hairColorSync = new NetworkVariable<Color>(Color.white, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> hairStyleSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
+    private NetworkVariable<int> heldItemIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
     // [New] 서버에서 관리하는 마우스 드래깅 아이템 (유령 아이템)
     private NetworkVariable<PlayerInventorySlotData> ghostItemSync = new NetworkVariable<PlayerInventorySlotData>(
@@ -154,7 +155,7 @@ public class PlayerController : NetworkBehaviour
                 var action = playerMap.FindAction(actionName);
                 if (action != null)
                 {
-                    action.performed += _ => { if (IsOwner) selectedHotbarIndex = index; };
+                    action.performed += _ => { if (IsOwner) { selectedHotbarIndex = index; RefreshHeldItem(); } };
                     action.Enable();
                     hotbarActions[i] = action;
                 }
@@ -223,6 +224,9 @@ public class PlayerController : NetworkBehaviour
         {
             if (scroll > 0) selectedHotbarIndex = (selectedHotbarIndex - 1 + 10) % 10;
             else selectedHotbarIndex = (selectedHotbarIndex + 1) % 10;
+            
+            // [New] 핫바 선택 변경 시 들고 있는 아이템 갱신
+            RefreshHeldItem();
         }
     }
 
@@ -262,6 +266,7 @@ public class PlayerController : NetworkBehaviour
         eyeColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetEyeColor(newVal);
         hairColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetHairColor(newVal);
         hairStyleSync.OnValueChanged += (oldVal, newVal) => visuals.SetHair(newVal);
+        heldItemIdSync.OnValueChanged += (oldVal, newVal) => visuals.SetHeldItem(newVal);
 
         StartCoroutine(InitPlayerCo());
     }
@@ -277,12 +282,36 @@ public class PlayerController : NetworkBehaviour
                 // [Fix] 서버는 이미 로컬 데이터가 원본이므로 패킷 수신 시 무시 (충돌 방지)
                 if (IsServer) return;
                 playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
+                
+                // [New] 현재 선택된 핫바 슬롯의 아이템이 바뀌었다면 들고 있는 아이템 갱신
+                if (IsOwner && changeEvent.Index == selectedHotbarIndex)
+                {
+                    RefreshHeldItem();
+                }
                 break;
 
             case NetworkListEvent<PlayerInventorySlotData>.EventType.Clear:
                 for (int i = 0; i < 50; i++) playerData.inventory.ClearSlot(i);
+                if (IsOwner) RefreshHeldItem();
                 break;
         }
+    }
+
+    public void RefreshHeldItem()
+    {
+        if (!IsOwner || playerData == null || playerData.inventory == null) return;
+
+        var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
+        int itemID = slot.IsEmpty ? -1 : slot.itemID;
+        
+        // 서버에 현재 들고 있는 아이템 ID 업데이트 요청
+        UpdateHeldItemServerRpc(itemID);
+    }
+
+    [ServerRpc]
+    public void UpdateHeldItemServerRpc(int itemID)
+    {
+        heldItemIdSync.Value = itemID;
     }
 
     private IEnumerator InitPlayerCo()
@@ -355,6 +384,9 @@ public class PlayerController : NetworkBehaviour
             // 데이터가 모두 준비된 후 UI 갱신 강제
             InventoryUI ui = Object.FindAnyObjectByType<InventoryUI>();
             if (ui != null) ui.RefreshUI();
+
+            // [New] 초기 들고 있는 아이템 동기화
+            RefreshHeldItem();
         }
 
         // [Visual Initialization]

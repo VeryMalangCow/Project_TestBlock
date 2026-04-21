@@ -174,7 +174,7 @@ RectTransform:
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 32, y: 32}
+  m_SizeDelta: {x: 44, y: 44}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &3117976359845296070
 CanvasRenderer:
@@ -268,6 +268,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::InventorySlotUI
   iconImage: {fileID: 7257560393089717953}
   stackText: {fileID: 2102874135082244912}
+  targetType: 0
 --- !u!222 &4743221111093183073
 CanvasRenderer:
   m_ObjectHideFlags: 0

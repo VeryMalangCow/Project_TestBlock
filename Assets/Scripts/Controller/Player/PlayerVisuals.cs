@@ -23,6 +23,11 @@ public class PlayerVisuals : MonoBehaviour
 
     [Header("### Layers")]
     [SerializeField] private List<VisualLayer> layers = new List<VisualLayer>();
+    [SerializeField] private SpriteRenderer heldItemRenderer; // [New] 손에 들고 있는 아이템 표시용 렌더러
+
+    [Header("### Held Item Offset Settings (PPU 16)")]
+    [SerializeField] private Vector2 baseHeldItemPos = new Vector2(0.25f, -0.125f); // 기본 손 위치 (오른쪽 4px, 아래 2px 정도 가정)
+    [SerializeField] private Vector2[] heldItemFrameOffsets = new Vector2[11]; // 0:Idle, 1-8:Walk, 9:Jump, 10:Dash
 
     [Header("### Animation Settings")]
     [SerializeField] private float walkAnimSpeedMultiplier = 2.5f;
@@ -240,6 +245,23 @@ public class PlayerVisuals : MonoBehaviour
         {
             layer.SetSprite(frameIndex);
         }
+
+        // [New] 들고 있는 아이템의 위치를 프레임 오프셋에 맞춰 조정
+        UpdateHeldItemTransform(frameIndex);
+    }
+
+    private void UpdateHeldItemTransform(int frameIndex)
+    {
+        if (heldItemRenderer == null) return;
+
+        Vector2 offset = (frameIndex >= 0 && frameIndex < heldItemFrameOffsets.Length) 
+            ? heldItemFrameOffsets[frameIndex] 
+            : Vector2.zero;
+
+        float posX = (baseHeldItemPos.x + offset.x) * (IsFlipped ? -1f : 1f);
+        float posY = baseHeldItemPos.y + offset.y;
+
+        heldItemRenderer.transform.localPosition = new Vector3(posX, posY, 0f);
     }
 
     public void SetFlip(bool flipX)
@@ -250,6 +272,41 @@ public class PlayerVisuals : MonoBehaviour
             if (layer.renderer != null)
             {
                 layer.renderer.flipX = flipX;
+            }
+        }
+
+        // [New] 들고 있는 아이템도 플립 및 위치 적용
+        if (heldItemRenderer != null)
+        {
+            heldItemRenderer.flipX = flipX;
+            UpdateHeldItemTransform(currentFrameIndex);
+        }
+    }
+
+    public void SetHeldItem(int itemID)
+    {
+        if (heldItemRenderer == null) return;
+
+        if (itemID == -1)
+        {
+            heldItemRenderer.enabled = false;
+            heldItemRenderer.sprite = null;
+        }
+        else
+        {
+            Sprite icon = ItemDataManager.Instance.GetItemIcon(itemID);
+            if (icon != null)
+            {
+                heldItemRenderer.sprite = icon;
+                heldItemRenderer.enabled = true;
+                heldItemRenderer.color = Color.white;
+                
+                // [New] 아이템이 바뀔 때 위치도 강제 갱신
+                UpdateHeldItemTransform(currentFrameIndex);
+            }
+            else
+            {
+                heldItemRenderer.enabled = false;
             }
         }
     }
