@@ -252,11 +252,11 @@ public class PlayerController : NetworkBehaviour
             }
         }
 
-        helmetIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Helmet", newVal); if (!IsServer) { playerData.equipment.helmetIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
-        chestplateIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Chestplate", newVal); if (!IsServer) { playerData.equipment.chestplateIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
-        leggingsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Leggings", newVal); if (!IsServer) { playerData.equipment.leggingsIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
-        bootsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Boots", newVal); if (!IsServer) { playerData.equipment.bootsIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
-        jetbagIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Jetbag", newVal); if (!IsServer) { playerData.equipment.jetbagIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); } };
+        helmetIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Helmet", newVal); playerData.equipment.helmetIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); };
+        chestplateIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Chestplate", newVal); playerData.equipment.chestplateIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); };
+        leggingsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Leggings", newVal); playerData.equipment.leggingsIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); };
+        bootsIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Boots", newVal); playerData.equipment.bootsIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); };
+        jetbagIdSync.OnValueChanged += (oldVal, newVal) => { visuals.SetArmor("Jetbag", newVal); playerData.equipment.jetbagIndex = newVal; Object.FindAnyObjectByType<InventoryUI>()?.RefreshEquipmentUI(); };
 
         skinColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetSkinColor(newVal);
         eyeColorSync.OnValueChanged += (oldVal, newVal) => visuals.SetEyeColor(newVal);

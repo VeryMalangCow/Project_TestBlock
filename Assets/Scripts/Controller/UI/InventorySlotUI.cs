@@ -54,6 +54,7 @@ public class InventorySlotUI : MonoBehaviour
         {
             iconImage.sprite = icon;
             iconImage.enabled = true;
+            iconImage.color = Color.white; // [Fix] 알파값이 0일 경우를 대비해 흰색(알파 1)으로 설정
         }
         else
         {
