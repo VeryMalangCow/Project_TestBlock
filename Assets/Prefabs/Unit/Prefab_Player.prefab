@@ -541,7 +541,7 @@ Transform:
   m_GameObject: {fileID: 1740446300114903644}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.3125, y: -0.53125, z: 0}
+  m_LocalPosition: {x: -0.25, y: -0.4, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -986,7 +986,7 @@ MonoBehaviour:
     renderer: {fileID: 3468690731886727851}
     currentSheet: []
   heldItemRenderer: {fileID: 348720962500958746}
-  baseHeldItemPos: {x: -0.3125, y: -0.53125}
+  baseHeldItemPos: {x: -0.3125, y: -0.5625}
   heldItemFrameOffsets:
   - {x: 0, y: 0}
   - {x: 0, y: 0.125}
