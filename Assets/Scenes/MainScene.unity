@@ -3947,7 +3947,7 @@ MonoBehaviour:
   selectionIndicator: {fileID: 2032796910}
   selectionSmoothSpeed: 15
   ghostSlotPanel: {fileID: 1524092958}
-  ghostIcon: {fileID: 1524092961}
+  ghostIcon: {fileID: 0}
   ghostStackText: {fileID: 1524092960}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   raycaster: {fileID: 136349098}
@@ -15037,17 +15037,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.TextMeshPro::TMPro.TextMeshProUGUI
---- !u!114 &1524092961 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 7257560393089717953, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
-  m_PrefabInstance: {fileID: 1524092956}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
 --- !u!1 &1528001595
 GameObject:
   m_ObjectHideFlags: 0
@@ -17379,7 +17368,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ItemIconCacheManager
   iconArray: {fileID: 0}
-  itemIconMaterial: {fileID: 2100000, guid: d3947be1835502045afa62fa3ead0387, type: 2}
+  itemIconMaterial: {fileID: 2100000, guid: a392dbbbe436ec64c8090a78d2045703, type: 2}
 --- !u!4 &1767151681
 Transform:
   m_ObjectHideFlags: 0

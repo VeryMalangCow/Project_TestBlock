@@ -149,7 +149,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3013450719656994305}
   - component: {fileID: 3117976359845296070}
-  - component: {fileID: 7257560393089717953}
+  - component: {fileID: 7201741517689529385}
   m_Layer: 5
   m_Name: Icon
   m_TagString: Untagged
@@ -184,7 +184,7 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4744818082695605368}
   m_CullTransparentMesh: 1
---- !u!114 &7257560393089717953
+--- !u!114 &7201741517689529385
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -193,18 +193,18 @@ MonoBehaviour:
   m_GameObject: {fileID: 4744818082695605368}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
+  m_Script: {fileID: 11500000, guid: cecfe8f09910f684bbe727a46a5d6282, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
+  m_EditorClassIdentifier: Assembly-CSharp::ItemIconImage
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 21300000, guid: aca8d820e14a31942b97451b5518f36b, type: 3}
+  m_Sprite: {fileID: 0}
   m_Type: 0
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -266,7 +266,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c6543c5db814eaf4e853f6355a331d79, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::InventorySlotUI
-  iconImage: {fileID: 7257560393089717953}
+  iconImage: {fileID: 7201741517689529385}
   stackText: {fileID: 2102874135082244912}
   targetType: 0
 --- !u!222 &4743221111093183073

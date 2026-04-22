@@ -5,7 +5,7 @@ using TMPro;
 public class InventorySlotUI : MonoBehaviour
 {
     [Header("### UI References")]
-    [SerializeField] protected Image iconImage;
+    [SerializeField] protected ItemIconImage iconImage;
     [SerializeField] protected TextMeshProUGUI stackText;
 
     [Header("### Config")]
@@ -84,21 +84,17 @@ public class InventorySlotUI : MonoBehaviour
         // [중앙 캐시 호출]
         int sliceIdx = ItemIconCacheManager.Instance.GetSlotIndex(nextID);
         
-        // 아이콘 표시용 머티리얼 설정
-        if (iconImage.material == null || iconImage.material.shader.name != "UI/ItemIconArray")
+        // [Batch] 공유 머티리얼 할당 (new 하지 않음!)
+        if (iconImage.material == null || iconImage.material.shader.name != "UI/ItemIconArrayBatch")
         {
-            // 전용 셰이더를 사용하는 새로운 머티리얼 인스턴스 생성 (드로우콜 배칭을 위해 나중에 최적화 가능)
-            Material sharedMat = Resources.Load<Material>("Materials/M_ItemIconArray"); 
-            if (sharedMat != null)
-                iconImage.material = new Material(sharedMat);
+            Material sharedMat = Resources.Load<Material>("Materials/M_ItemIconArrayBatch"); 
+            if (sharedMat != null) iconImage.material = sharedMat;
         }
 
-        if (iconImage.material != null)
-        {
-            iconImage.material.SetFloat("_SliceIndex", sliceIdx);
-            iconImage.enabled = true;
-            iconImage.color = Color.white;
-        }
+        // [Batch] 인덱스를 버텍스에 주입
+        iconImage.SetSliceIndex(sliceIdx);
+        iconImage.enabled = true;
+        iconImage.color = Color.white;
     }
 
     public void ClearSlot()
@@ -111,9 +107,8 @@ public class InventorySlotUI : MonoBehaviour
     {
         if (iconImage != null)
         {
-            if (iconImage.material != null && iconImage.material.shader.name == "UI/ItemIconArray")
-                iconImage.material.SetFloat("_SliceIndex", -1);
-
+            // [Batch] 인덱스를 -1로 설정
+            iconImage.SetSliceIndex(-1);
             iconImage.enabled = false;
         }
         if (stackText != null)
