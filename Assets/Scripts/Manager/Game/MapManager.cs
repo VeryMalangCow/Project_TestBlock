@@ -150,7 +150,7 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         RequestChunkServerRpc(cx, cy);
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [ServerRpc()]
     private void RequestChunkServerRpc(int cx, int cy, ServerRpcParams rpcParams = default)
     {
         if (activeMapData == null) return;
@@ -297,7 +297,7 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         else SetBlockServerRpc(worldX, worldY, id);
     }
 
-    [ServerRpc(RequireOwnership = false)]
+    [ServerRpc()]
     private void SetBlockServerRpc(int worldX, int worldY, int id, ServerRpcParams rpcParams = default)
     {
         InternalSetBlock(worldX, worldY, id);

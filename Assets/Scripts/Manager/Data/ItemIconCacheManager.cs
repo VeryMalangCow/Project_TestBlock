@@ -141,7 +141,16 @@ public class ItemIconCacheManager : PermanentSingleton<ItemIconCacheManager>
 
     private void OnDestroy()
     {
-        if (iconArray != null) Destroy(iconArray);
-        if (placeholderTex != null) Destroy(placeholderTex);
+        if (iconArray != null)
+        {
+            if (Application.isPlaying) Destroy(iconArray);
+            else DestroyImmediate(iconArray);
+        }
+
+        if (placeholderTex != null)
+        {
+            if (Application.isPlaying) Destroy(placeholderTex);
+            else DestroyImmediate(placeholderTex);
+        }
     }
 }
