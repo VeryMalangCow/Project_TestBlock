@@ -3947,7 +3947,7 @@ MonoBehaviour:
   selectionIndicator: {fileID: 2032796910}
   selectionSmoothSpeed: 15
   ghostSlotPanel: {fileID: 1524092958}
-  ghostIcon: {fileID: 0}
+  ghostIcon: {fileID: 1953952574}
   ghostStackText: {fileID: 1524092960}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   raycaster: {fileID: 136349098}
@@ -14998,13 +14998,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5282886487082916924, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents:
-    - targetCorrespondingSourceObject: {fileID: 6896202474442617380, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 1524092959}
+    m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
 --- !u!224 &1524092957 stripped
 RectTransform:
@@ -15016,18 +15014,6 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 6896202474442617380, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
   m_PrefabInstance: {fileID: 1524092956}
   m_PrefabAsset: {fileID: 0}
---- !u!225 &1524092959
-CanvasGroup:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1524092958}
-  m_Enabled: 1
-  m_Alpha: 1
-  m_Interactable: 1
-  m_BlocksRaycasts: 1
-  m_IgnoreParentGroups: 0
 --- !u!114 &1524092960 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 2102874135082244912, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
@@ -19342,6 +19328,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 3743516283863154747, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
   m_PrefabInstance: {fileID: 1941205830}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1953952574 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 7201741517689529385, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+  m_PrefabInstance: {fileID: 1524092956}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cecfe8f09910f684bbe727a46a5d6282, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ItemIconImage
 --- !u!1 &1956972475
 GameObject:
   m_ObjectHideFlags: 0

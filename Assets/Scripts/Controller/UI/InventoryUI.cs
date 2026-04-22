@@ -32,7 +32,7 @@ public class InventoryUI : MonoBehaviour
 
     [Header("### Drag & Drop UI (Ghost Slot)")]
     [SerializeField] private GameObject ghostSlotPanel; 
-    [SerializeField] private Image ghostIcon;       
+    [SerializeField] private ItemIconImage ghostIcon; 
     [SerializeField] private TextMeshProUGUI ghostStackText; 
 
     [Header("### Input")]
@@ -286,8 +286,21 @@ public class InventoryUI : MonoBehaviour
             if (ghostData.itemID != currentGhostItemID)
             {
                 currentGhostItemID = ghostData.itemID;
-                Sprite icon = ItemDataManager.Instance.GetItemIcon(currentGhostItemID);
-                if (ghostIcon != null) { ghostIcon.sprite = icon; ghostIcon.enabled = (icon != null); }
+
+                // [Batch] 캐시 매니저를 통해 인덱스 가져오기
+                int sliceIdx = ItemIconCacheManager.Instance.GetSlotIndex(currentGhostItemID);
+                
+                if (ghostIcon != null) 
+                {
+                    // 머티리얼 설정
+                    if (ghostIcon.material == null || ghostIcon.material.shader.name != "UI/ItemIconArrayBatch")
+                    {
+                        ghostIcon.material = ItemIconCacheManager.Instance.ItemIconMaterial;
+                    }
+                    
+                    ghostIcon.SetSliceIndex(sliceIdx);
+                    ghostIcon.enabled = (sliceIdx >= 0);
+                }
             }
             if (ghostStackText != null) ghostStackText.text = ghostData.stackCount > 1 ? ghostData.stackCount.ToString() : "";
         }
