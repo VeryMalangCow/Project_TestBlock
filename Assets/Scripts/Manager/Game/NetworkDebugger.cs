@@ -1,48 +1,69 @@
 using Unity.Netcode;
 using UnityEngine;
+using TMPro;
+using System.Text;
 using System.Collections.Generic;
 
-/// <summary>
-/// NGO 엔진 레벨의 모든 네트워크 객체를 실시간 감시합니다. (Unity 6 완벽 대응)
-/// </summary>
 public class NetworkDebugger : MonoBehaviour
 {
+    [Header("# Debug UI")]
+    [SerializeField] private TextMeshProUGUI debugDisplayText;
+    
+    private StringBuilder sb = new StringBuilder();
     private HashSet<ulong> trackedObjects = new HashSet<ulong>();
 
     private void Update()
     {
-        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) return;
+        if (debugDisplayText == null) return;
+        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsListening) 
+        {
+            debugDisplayText.text = "Network: Disconnected";
+            return;
+        }
 
-        // 현재 씬에 있는 모든 NetworkObject 탐색
-        var allNetObjs = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
+        UpdateDebugText();
+        TrackNetworkObjects();
+    }
+
+    private void UpdateDebugText()
+    {
+        sb.Clear();
         
+        // 1. 네트워크 정보
+        var nm = NetworkManager.Singleton;
+        string role = nm.IsServer ? (nm.IsHost ? "Host" : "Server") : "Client";
+        sb.AppendLine($"<b>[NET]</b> {role} (ID: {nm.LocalClientId})");
+        
+        // 2. 플레이어 정보
+        if (PlayerController.Local != null)
+        {
+            var p = PlayerController.Local;
+            sb.AppendLine($"<b>[PLAYER]</b> Pos: {p.transform.position.x:F1}, {p.transform.position.y:F1}");
+            sb.AppendLine($"Hotbar: {p.SelectedHotbarIndex + 1} | Dash: {p.IsDashing}");
+            
+            var ghost = p.GhostItem;
+            if (!ghost.IsEmpty) sb.AppendLine($"Ghost: {ghost.itemID} (x{ghost.stackCount})");
+        }
+
+        // 3. 맵 정보
+        if (MapManager.Instance != null)
+        {
+            sb.AppendLine($"<b>[MAP]</b> {MapManager.Instance.activeStyle} (Ready: {MapManager.Instance.IsMapReady()})");
+        }
+
+        debugDisplayText.text = sb.ToString();
+    }
+
+    private void TrackNetworkObjects()
+    {
+        var allNetObjs = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
         foreach (var obj in allNetObjs)
         {
             if (!trackedObjects.Contains(obj.NetworkObjectId))
             {
-                // 새로 발견된 객체 로그 출력
                 trackedObjects.Add(obj.NetworkObjectId);
-                
-                string status = obj.IsOwnedByServer ? "Server" : "Client";
-                Debug.Log($"<color=yellow>[Net-Spawn]</color> {status} Detected: {obj.name} | Hash: {obj.PrefabIdHash} | ID: {obj.NetworkObjectId}");
-                
-                // 만약 해시가 0이라면 즉시 경고
-                if (obj.PrefabIdHash == 0)
-                {
-                    Debug.LogError($"<color=red>[Net-CRITICAL]</color> Object {obj.name} spawned with HASH 0! This object is broken.");
-                }
+                Debug.Log($"[Net-Spawn] {obj.name} (ID: {obj.NetworkObjectId})");
             }
-        }
-    }
-
-    [ContextMenu("Force Log All Network Objects")]
-    public void LogAll()
-    {
-        var allNetObjs = Object.FindObjectsByType<NetworkObject>(FindObjectsSortMode.None);
-        Debug.Log($"--- Current Network Objects ({allNetObjs.Length}) ---");
-        foreach (var obj in allNetObjs)
-        {
-            Debug.Log($"{obj.name} | Hash: {obj.PrefabIdHash} | IsSpawned: {obj.IsSpawned}");
         }
     }
 }

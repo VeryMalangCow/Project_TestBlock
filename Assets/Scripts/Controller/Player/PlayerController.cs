@@ -767,16 +767,5 @@ public class PlayerController : NetworkBehaviour
 
     private void EnsureEventSystem() { if (Object.FindAnyObjectByType<EventSystem>() == null) { new GameObject("EventSystem", typeof(EventSystem), typeof(StandaloneInputModule)); } }
 
-    private void OnGUI()
-    {
-        if (!IsOwner) return;
-        GUI.color = Color.black;
-        GUILayout.BeginArea(new Rect(15, 15, 300, 250));
-        GUILayout.Label($"<b>[PLAYER STATUS]</b>");
-        GUILayout.Label($"Status: {debugStatus}");
-        GUILayout.Label($"IsGrounded: {movement.IsGrounded}");
-        GUILayout.Label($"Dashing: {isDashingSync.Value}");
-        GUILayout.EndArea();
-    }
     #endregion
 }
