@@ -84,10 +84,10 @@ public class InventorySlotUI : MonoBehaviour
         // [중앙 캐시 호출]
         int sliceIdx = ItemIconCacheManager.Instance.GetSlotIndex(nextID);
         
-        // [Batch] 공유 머티리얼 할당 (new 하지 않음!)
+        // [Batch] 공유 머티리얼 할당 (매니저에서 직접 가져옴)
         if (iconImage.material == null || iconImage.material.shader.name != "UI/ItemIconArrayBatch")
         {
-            Material sharedMat = Resources.Load<Material>("Materials/M_ItemIconArrayBatch"); 
+            Material sharedMat = ItemIconCacheManager.Instance.ItemIconMaterial; 
             if (sharedMat != null) iconImage.material = sharedMat;
         }
 

@@ -14986,6 +14986,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5282886487082916924, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+      propertyPath: m_Enabled
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6896202474442617380, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
       propertyPath: m_Name
       value: GhostSlot
@@ -14994,9 +14998,7 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents:
-    - {fileID: 1737104871975288280, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
-    - {fileID: 752852042374170458, guid: c5a7dcf00eff5944e99a37ded618dd1a, type: 3}
+    m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents:

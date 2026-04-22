@@ -23,6 +23,8 @@ public class ItemIconCacheManager : PermanentSingleton<ItemIconCacheManager>
     // 로딩 중이거나 에러 시 보여줄 기본 텍스처
     private Texture2D placeholderTex;
 
+    public Material ItemIconMaterial => itemIconMaterial;
+
     protected override void Awake()
     {
         base.Awake();
