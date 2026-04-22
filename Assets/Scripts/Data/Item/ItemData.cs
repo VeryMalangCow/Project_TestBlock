@@ -28,7 +28,6 @@ public class ItemData : ScriptableObject
     public int maxStack = 999;
     public int typeID = -1; // [Added] For visual resource mapping
     public ItemType type;
-    public float useTime;
 
     [Header("### Visuals (Addressables)")]
     public AssetReferenceSprite iconReference;

@@ -54,15 +54,14 @@ public class ItemConverterFromCSVToSO : EditorWindow
         for (int i = 1; i < lines.Length; i++)
         {
             string[] values = lines[i].Split(',');
-            if (values.Length < 7) continue; // Updated from 6 to 7 for TypeID
+            if (values.Length < 6) continue; // Updated to 6 columns (ID, TypeID, Name, Description, MaxStack, Type)
 
             int id = int.Parse(values[0]);
-            int typeID = int.Parse(values[1]); // [New] Second column is TypeID
+            int typeID = int.Parse(values[1]);
             string name = values[2];
             string description = values[3];
             int maxStack = int.Parse(values[4]);
             string typeStr = values[5];
-            float useTime = float.Parse(values[6]);
 
             string assetPath = $"{SO_DIR}/Item_{id:D5}.asset";
             ItemData itemData = AssetDatabase.LoadAssetAtPath<ItemData>(assetPath);
@@ -74,15 +73,13 @@ public class ItemConverterFromCSVToSO : EditorWindow
             }
 
             itemData.id = id;
-            itemData.typeID = typeID; // [Assign] 
+            itemData.typeID = typeID; 
             itemData.itemName = name;
             itemData.description = description.Replace("\\n", "\n");
             itemData.maxStack = maxStack;
             
             if (System.Enum.TryParse(typeStr, out ItemType parsedType))
                 itemData.type = parsedType;
-            
-            itemData.useTime = useTime;
 
             // 4. 아이콘 자동 매칭 및 Addressable 등록 (ItemIcons 그룹)
             string spritePath = $"{SPRITE_DIR}/Item_{id:D5}.png";
