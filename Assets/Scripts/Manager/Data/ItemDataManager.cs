@@ -9,8 +9,8 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
 {
     private Dictionary<int, ItemData> itemCache = new Dictionary<int, ItemData>();
     
-    // [Cache] 스프라이트와 핸들을 중앙에서 관리하여 중복 로드 방지 및 즉각 반환
-    private Dictionary<int, AsyncOperationHandle<Sprite>> iconCache = new Dictionary<int, AsyncOperationHandle<Sprite>>();
+    private Dictionary<int, AsyncOperationHandle<Texture2D>> iconHandles = new Dictionary<int, AsyncOperationHandle<Texture2D>>();
+    private Dictionary<int, Sprite> generatedSprites = new Dictionary<int, Sprite>();
 
     protected override void Awake()
     {
@@ -18,22 +18,11 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
         LoadItemDatabase();
     }
 
-    private void OnDestroy()
-    {
-        // 종료 시 모든 캐시된 에셋 일괄 해제
-        foreach (var handle in iconCache.Values)
-        {
-            if (handle.IsValid()) Addressables.Release(handle);
-        }
-        iconCache.Clear();
-    }
-
     private void LoadItemDatabase()
     {
         itemCache.Clear();
 
         // 1. [Addressable] 기반 데이터베이스 로드
-        // 이제 Resources.Load를 쓰지 않고 주소("ItemDatabase")로 직접 불러옵니다.
         var handle = Addressables.LoadAssetAsync<ItemDatabase>("ItemDatabase");
         ItemDatabase database = handle.WaitForCompletion();
         
@@ -60,6 +49,22 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
         Debug.Log($"[ItemDataManager] Successfully loaded {itemCache.Count} items from ScriptableObject.");
     }
 
+    private void OnDestroy()
+    {
+        // 종료 시 모든 캐시된 에셋 일괄 해제
+        foreach (var handle in iconHandles.Values)
+        {
+            if (handle.IsValid()) Addressables.Release(handle);
+        }
+        iconHandles.Clear();
+
+        foreach (var sprite in generatedSprites.Values)
+        {
+            if (sprite != null) Destroy(sprite);
+        }
+        generatedSprites.Clear();
+    }
+
     /// <summary>
     /// 아이템 아이콘을 즉시(동기식) 가져옵니다. 
     /// 캐시에 있다면 즉시 반환하고, 없다면 그 즉시 로드하여 저장합니다.
@@ -68,39 +73,42 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
     {
         if (id < 0) return null;
 
-        // 1. 이미 캐시에 로드된 경우 즉시 반환
-        if (iconCache.TryGetValue(id, out var existingHandle))
+        // 1. 이미 생성된 스프라이트가 있다면 즉시 반환
+        if (generatedSprites.TryGetValue(id, out var existingSprite))
         {
-            if (existingHandle.IsValid() && existingHandle.Status == AsyncOperationStatus.Succeeded)
-            {
-                return existingHandle.Result;
-            }
+            return existingSprite;
         }
 
         // 2. 캐시에 없거나 유효하지 않은 경우 즉시 로드 (Synchronous)
         try
         {
             string address = $"ItemIcon_{id:D5}";
-            var handle = Addressables.LoadAssetAsync<Sprite>(address);
+            // [Fix] Sprite가 아닌 Texture2D로 로드 (Default 타입 대응)
+            var handle = Addressables.LoadAssetAsync<Texture2D>(address);
             
-            // [핵심] 로드가 완료될 때까지 기다림 (0프레임 지연 실현)
             handle.WaitForCompletion();
 
             if (handle.Status == AsyncOperationStatus.Succeeded)
             {
-                iconCache[id] = handle;
-                return handle.Result;
+                iconHandles[id] = handle;
+                
+                // 런타임 Sprite 생성 (48x48 기반)
+                Texture2D tex = handle.Result;
+                Sprite newSprite = Sprite.Create(tex, new Rect(0, 0, tex.width, tex.height), new Vector2(0.5f, 0.5f), 16);
+                generatedSprites[id] = newSprite;
+                
+                return newSprite;
             }
             else
             {
-                Debug.LogWarning($"[ItemDataManager] Failed to sync-load icon for ID {id}");
+                Debug.LogWarning($"[ItemDataManager] Failed to sync-load icon texture for ID {id}");
                 Addressables.Release(handle);
                 return null;
             }
         }
         catch (Exception e)
         {
-            Debug.LogError($"[ItemDataManager] Error loading icon {id}: {e.Message}");
+            Debug.LogError($"[ItemDataManager] Error loading icon texture {id}: {e.Message}");
             return null;
         }
     }

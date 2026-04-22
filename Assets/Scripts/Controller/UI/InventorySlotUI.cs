@@ -39,7 +39,7 @@ public class InventorySlotUI : MonoBehaviour
 
         if (nextID == currentItemID) return;
 
-        // 2. ID가 바뀌었으므로 이미지 즉시 업데이트
+        // 2. ID가 바뀌었으므로 이미지 업데이트
         currentItemID = nextID;
 
         if (nextID == -1)
@@ -49,16 +49,22 @@ public class InventorySlotUI : MonoBehaviour
         }
 
         // [중앙 캐시 호출]
-        Sprite icon = ItemDataManager.Instance.GetItemIcon(nextID);
-        if (icon != null)
+        int sliceIdx = ItemIconCacheManager.Instance.GetSlotIndex(nextID);
+        
+        // 아이콘 표시용 머티리얼 설정
+        if (iconImage.material == null || iconImage.material.shader.name != "UI/ItemIconArray")
         {
-            iconImage.sprite = icon;
-            iconImage.enabled = true;
-            iconImage.color = Color.white; // [Fix] 알파값이 0일 경우를 대비해 흰색(알파 1)으로 설정
+            // 전용 셰이더를 사용하는 새로운 머티리얼 인스턴스 생성 (드로우콜 배칭을 위해 나중에 최적화 가능)
+            Material sharedMat = Resources.Load<Material>("Materials/M_ItemIconArray"); 
+            if (sharedMat != null)
+                iconImage.material = new Material(sharedMat);
         }
-        else
+
+        if (iconImage.material != null)
         {
-            ClearSlotInternal();
+            iconImage.material.SetFloat("_SliceIndex", sliceIdx);
+            iconImage.enabled = true;
+            iconImage.color = Color.white;
         }
     }
 
@@ -72,7 +78,9 @@ public class InventorySlotUI : MonoBehaviour
     {
         if (iconImage != null)
         {
-            iconImage.sprite = null;
+            if (iconImage.material != null && iconImage.material.shader.name == "UI/ItemIconArray")
+                iconImage.material.SetFloat("_SliceIndex", -1);
+
             iconImage.enabled = false;
         }
         if (stackText != null)

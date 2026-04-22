@@ -86,13 +86,49 @@ public class ItemConverterFromCSVToSO : EditorWindow
 
             // 4. 아이콘 자동 매칭 및 Addressable 등록 (ItemIcons 그룹)
             string spritePath = $"{SPRITE_DIR}/Item_{id:D5}.png";
-            Sprite icon = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
-            if (icon != null)
+            Texture2D iconTex = AssetDatabase.LoadAssetAtPath<Texture2D>(spritePath);
+            
+            if (iconTex != null)
             {
+                // [Import Settings Enforce] 48x48, Point Filter, Readable
+                TextureImporter importer = AssetImporter.GetAtPath(spritePath) as TextureImporter;
+                if (importer != null)
+                {
+                    bool needsReimport = false;
+                    if (importer.maxTextureSize != 48 || importer.filterMode != FilterMode.Point || !importer.isReadable)
+                    {
+                        importer.textureType = TextureImporterType.Default; // Use Default for Texture2DArray copy
+                        importer.maxTextureSize = 48;
+                        importer.filterMode = FilterMode.Point;
+                        importer.isReadable = true;
+                        importer.textureCompression = TextureImporterCompression.Uncompressed;
+                        
+                        // Platform specific to ensure RGBA32
+                        var settings_standalone = importer.GetDefaultPlatformTextureSettings();
+                        settings_standalone.format = TextureImporterFormat.RGBA32;
+                        importer.SetPlatformTextureSettings(settings_standalone);
+                        
+                        needsReimport = true;
+                    }
+
+                    if (needsReimport)
+                    {
+                        EditorUtility.SetDirty(importer);
+                        importer.SaveAndReimport();
+                        // Re-load after import settings change
+                        iconTex = AssetDatabase.LoadAssetAtPath<Texture2D>(spritePath);
+                    }
+                }
+
                 string guid = AssetDatabase.AssetPathToGUID(spritePath);
                 var entry = settings.CreateOrMoveEntry(guid, iconGroup);
                 entry.address = $"ItemIcon_{id:D5}";
-                itemData.iconReference = new AssetReferenceSprite(guid);
+                
+                // SO에는 여전히 Sprite 참조를 남길 수도 있지만, 
+                // 이제 시스템은 이 Texture2D 주소를 통해 캐시를 채웁니다.
+                Sprite iconSprite = AssetDatabase.LoadAssetAtPath<Sprite>(spritePath);
+                if (iconSprite != null)
+                    itemData.iconReference = new AssetReferenceSprite(guid);
             }
 
             EditorUtility.SetDirty(itemData);
