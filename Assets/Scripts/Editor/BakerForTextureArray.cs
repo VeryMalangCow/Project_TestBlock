@@ -124,20 +124,41 @@ public class BakerForTextureArray : EditorWindow
                 if (importer != null)
                 {
                     importer.textureType = TextureImporterType.Default;
-                    importer.maxTextureSize = 128; // Match actual atlas size
+                    importer.maxTextureSize = 128;
                     importer.filterMode = FilterMode.Point;
                     importer.textureCompression = TextureImporterCompression.Uncompressed;
                     importer.sRGBTexture = true;
                     importer.alphaIsTransparency = true;
                     importer.mipmapEnabled = false;
-                    importer.isReadable = true; // Required for CopyTexture in some scenarios
+                    importer.isReadable = true; // Required for Graphics.CopyTexture
                     
-                    // Optimization: Set platform specific settings to be sure
-                    TextureImporterPlatformSettings platformSettings = new TextureImporterPlatformSettings();
-                    platformSettings.maxTextureSize = 128;
-                    platformSettings.format = TextureImporterFormat.RGBA32;
-                    platformSettings.textureCompression = TextureImporterCompression.Uncompressed;
-                    importer.SetPlatformTextureSettings(platformSettings);
+                    // --- Platform Specific Overrides ---
+                    // Default/Standalone (Windows, Mac, Linux)
+                    TextureImporterPlatformSettings standaloneSettings = new TextureImporterPlatformSettings();
+                    standaloneSettings.name = "Standalone";
+                    standaloneSettings.overridden = true;
+                    standaloneSettings.maxTextureSize = 128;
+                    standaloneSettings.format = TextureImporterFormat.RGBA32; // Standard for Pixel Art Quality
+                    standaloneSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.SetPlatformTextureSettings(standaloneSettings);
+
+                    // Android
+                    TextureImporterPlatformSettings androidSettings = new TextureImporterPlatformSettings();
+                    androidSettings.name = "Android";
+                    androidSettings.overridden = true;
+                    androidSettings.maxTextureSize = 128;
+                    androidSettings.format = TextureImporterFormat.RGBA32; // Keeping RGBA32 for CopyTexture compatibility
+                    androidSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.SetPlatformTextureSettings(androidSettings);
+
+                    // iPhone (iOS)
+                    TextureImporterPlatformSettings iosSettings = new TextureImporterPlatformSettings();
+                    iosSettings.name = "iPhone";
+                    iosSettings.overridden = true;
+                    iosSettings.maxTextureSize = 128;
+                    iosSettings.format = TextureImporterFormat.RGBA32;
+                    iosSettings.textureCompression = TextureImporterCompression.Uncompressed;
+                    importer.SetPlatformTextureSettings(iosSettings);
 
                     EditorUtility.SetDirty(importer);
                     importer.SaveAndReimport();
