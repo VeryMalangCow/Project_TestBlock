@@ -274,29 +274,30 @@ public class PlayerController : NetworkBehaviour
     private void OnInventoryListChanged(NetworkListEvent<PlayerInventorySlotData> changeEvent)
     {
         if (playerData == null || playerData.inventory == null) return;
-        
-        switch (changeEvent.Type)
-        {
-            case NetworkListEvent<PlayerInventorySlotData>.EventType.Add:
-            case NetworkListEvent<PlayerInventorySlotData>.EventType.Value:
-                // [Fix] 서버는 이미 로컬 데이터가 원본이므로 패킷 수신 시 무시 (충돌 방지)
-                if (IsServer) return;
-                playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
-                
-                // [New] 현재 선택된 핫바 슬롯의 아이템이 바뀌었다면 들고 있는 아이템 갱신
-                if (IsOwner && changeEvent.Index == selectedHotbarIndex)
-                {
-                    RefreshHeldItem();
-                }
-                break;
 
-            case NetworkListEvent<PlayerInventorySlotData>.EventType.Clear:
-                for (int i = 0; i < 50; i++) playerData.inventory.ClearSlot(i);
-                if (IsOwner) RefreshHeldItem();
-                break;
+        // [Fix] 서버(호스트)인 경우에도 본인의 데이터라면 갱신 로직을 수행해야 합니다.
+        if (!IsServer)
+        {
+            playerData.inventory.SetSlot(changeEvent.Index, changeEvent.Value);
+        }
+
+        // [Key] 현재 선택된 핫바 슬롯의 아이템이 바뀌었다면 (들어올림, 교체, 배치 등) 
+        // 즉시 들고 있는 아이템을 다시 확인하여 동기화합니다.
+        if (IsOwner)
+        {
+            switch (changeEvent.Type)
+            {
+                case NetworkListEvent<PlayerInventorySlotData>.EventType.Add:
+                case NetworkListEvent<PlayerInventorySlotData>.EventType.Value:
+                case NetworkListEvent<PlayerInventorySlotData>.EventType.Remove:
+                    if (changeEvent.Index == selectedHotbarIndex)
+                    {
+                        RefreshHeldItem();
+                    }
+                    break;
+            }
         }
     }
-
     public void RefreshHeldItem()
     {
         if (!IsOwner || playerData == null || playerData.inventory == null) return;
