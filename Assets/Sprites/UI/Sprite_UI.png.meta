@@ -548,7 +548,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 0
-        y: 111
+        y: 128
         width: 420
         height: 31
       alignment: 0
@@ -615,11 +615,11 @@ TextureImporter:
         serializedVersion: 2
         x: 221
         y: 27
-        width: 29
+        width: 28
         height: 28
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
-      border: {x: 14, y: 14, z: 15, w: 14}
+      border: {x: 12, y: 12, z: 12, w: 12}
       customData: 
       outline: []
       physicsShape: []
@@ -746,7 +746,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 421
-        y: 137
+        y: 154
         width: 5
         height: 5
       alignment: 0
@@ -768,7 +768,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 421
-        y: 126
+        y: 143
         width: 10
         height: 10
       alignment: 0
@@ -790,7 +790,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 421
-        y: 111
+        y: 128
         width: 14
         height: 14
       alignment: 0
@@ -808,13 +808,13 @@ TextureImporter:
       edges: []
       weights: []
     - serializedVersion: 2
-      name: Sprite_UI_0
+      name: UI_Icon_Heart
       rect:
         serializedVersion: 2
-        x: 454
-        y: 76
+        x: 436
+        y: 79
         width: 42
-        height: 38
+        height: 42
       alignment: 0
       pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
@@ -825,6 +825,138 @@ TextureImporter:
       bones: []
       spriteID: f126e6178373764478f54c3fef0e85ca
       internalID: -464407818
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_SmallPanel_Hp_Bar
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 111
+        width: 220
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 687e591ec64f37940acba888357d0f1c
+      internalID: -570888063
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_SmallIcon_Heart
+      rect:
+        serializedVersion: 2
+        x: 479
+        y: 79
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: c18bb46a523a8c34eaf829840df43a68
+      internalID: -77940337
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_SmallPanel_Hp_Liner
+      rect:
+        serializedVersion: 2
+        x: 133
+        y: 33
+        width: 6
+        height: 17
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 8, z: 0, w: 8}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 24ac6f50e4a8d9d4dbbe8a104d1815fc
+      internalID: -1016780495
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_SmallPanel_Mp_Bar
+      rect:
+        serializedVersion: 2
+        x: 0
+        y: 160
+        width: 220
+        height: 16
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4a9d575c453727141a067a43e2b52e1f
+      internalID: -217689469
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_SmallIcon_Mana
+      rect:
+        serializedVersion: 2
+        x: 479
+        y: 128
+        width: 20
+        height: 20
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cc85fd9c451824a4ca6f7fac4391b516
+      internalID: 172353472
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: UI_Icon_Mana
+      rect:
+        serializedVersion: 2
+        x: 436
+        y: 128
+        width: 42
+        height: 42
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b52cc9105f5ae794bac8aee3685e93b1
+      internalID: -270238541
       vertices: []
       indices: 
       edges: []
@@ -843,7 +975,6 @@ TextureImporter:
     spriteCustomMetadata:
       entries: []
     nameFileIdTable:
-      Sprite_UI_0: -464407818
       UI_Accessory: -489669675
       UI_Black: -293294935
       UI_Boots: 551306774
@@ -862,6 +993,8 @@ TextureImporter:
       UI_HpGem00: -1697776507
       UI_HpGem01: 1272958792
       UI_HpGem02: 918240941
+      UI_Icon_Heart: -464407818
+      UI_Icon_Mana: -270238541
       UI_Inventory_Panel_00: -1549992443
       UI_Inventory_Panel_01: 564234129
       UI_Inventory_Select: 1531219542
@@ -876,6 +1009,11 @@ TextureImporter:
       UI_Panel_Hp_InnerFrame: -1153200758
       UI_Panel_Hp_Liner: 2012484642
       UI_Panel_Mp_Bar: -1988150727
+      UI_SmallIcon_Heart: -77940337
+      UI_SmallIcon_Mana: 172353472
+      UI_SmallPanel_Hp_Bar: -570888063
+      UI_SmallPanel_Hp_Liner: -1016780495
+      UI_SmallPanel_Mp_Bar: -217689469
   mipmapLimitGroupName: 
   pSDRemoveMatte: 0
   userData: 
