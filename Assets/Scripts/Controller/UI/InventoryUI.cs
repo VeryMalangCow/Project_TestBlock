@@ -66,6 +66,8 @@ public class InventoryUI : MonoBehaviour
 
     #region Unity Lifecycle
 
+    public PlayerInventoryData InventoryData => PlayerController.Local != null ? PlayerController.Local.Data.inventory : null;
+
     private void Awake()
     {
         if (raycaster == null) raycaster = GetComponentInParent<GraphicRaycaster>();

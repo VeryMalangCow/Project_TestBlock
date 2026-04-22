@@ -11,10 +11,10 @@ public class InventoryEquipmentSlotUI : InventorySlotUI
     [SerializeField] private Image placeholderImage; // 아무것도 없을 때 보여줄 배경 아이콘 (투명도 조절용)
     [SerializeField] private TextMeshProUGUI itemNameText; // 장착 중인 아이템의 이름 표시
 
-    public override void UpdateSlot(PlayerInventorySlotData slot)
+    public override void UpdateSlot(PlayerInventorySlotData slot, bool force = false)
     {
         // 1. 기본 슬롯 로직 실행 (아이콘 갱신 등)
-        base.UpdateSlot(slot);
+        base.UpdateSlot(slot, force);
 
         // 2. 장비 전용 추가 로직
         if (slot.IsEmpty)

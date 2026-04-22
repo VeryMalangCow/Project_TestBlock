@@ -23,10 +23,42 @@ public class InventorySlotUI : MonoBehaviour
         ownerUI = ui;
         slotIndex = index;
         currentItemID = -2;
+        
+        // 이벤트 구독: 아이콘 로드가 완료되면 슬롯 갱신
+        ItemIconCacheManager.Instance.OnIconLoaded += HandleIconLoaded;
+        
         ClearSlot();
     }
 
-    public virtual void UpdateSlot(PlayerInventorySlotData slot)
+    private void OnDestroy()
+    {
+        if (ItemIconCacheManager.Instance != null)
+            ItemIconCacheManager.Instance.OnIconLoaded -= HandleIconLoaded;
+    }
+
+    private void HandleIconLoaded(int loadedItemID)
+    {
+        // 현재 이 슬롯이 표시하려는 아이템이 로드된 경우에만 갱신
+        if (currentItemID == loadedItemID)
+        {
+            if (ownerUI != null && ownerUI.InventoryData != null)
+            {
+                if (targetType == ItemType.None)
+                {
+                    UpdateSlot(ownerUI.InventoryData.GetSlot(slotIndex), true);
+                }
+                else
+                {
+                    var equipment = PlayerController.Local.Data.equipment;
+                    int typeID = equipment.GetEquipment(targetType);
+                    int itemID = ItemDataManager.Instance.FindItemIDByType(targetType, typeID);
+                    UpdateSlot(new PlayerInventorySlotData(itemID, itemID >= 0 ? 1 : 0), true);
+                }
+            }
+        }
+    }
+
+    public virtual void UpdateSlot(PlayerInventorySlotData slot, bool force = false)
     {
         int nextID = slot.IsEmpty ? -1 : slot.itemID;
 
@@ -37,9 +69,10 @@ public class InventorySlotUI : MonoBehaviour
             stackText.enabled = true;
         }
 
-        if (nextID == currentItemID) return;
+        // [Fix] force가 true면 ID가 같더라도 업데이트 진행 (아이콘 로드 대응)
+        if (!force && nextID == currentItemID) return;
 
-        // 2. ID가 바뀌었으므로 이미지 업데이트
+        // 2. ID 업데이트
         currentItemID = nextID;
 
         if (nextID == -1)

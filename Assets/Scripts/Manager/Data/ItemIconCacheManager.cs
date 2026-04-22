@@ -43,6 +43,12 @@ public class ItemIconCacheManager : PermanentSingleton<ItemIconCacheManager>
         placeholderTex.SetPixels(pColors);
         placeholderTex.Apply();
 
+        // [중요] 머티리얼에 Texture2DArray 연결
+        if (itemIconMaterial != null)
+        {
+            itemIconMaterial.SetTexture("_MainTexArray", iconArray);
+        }
+
         // 초기화: 모든 슬롯을 플레이스홀더로 채우고 LRU 리스트 구성
         for (int i = 0; i < CACHE_SIZE; i++)
         {
@@ -51,7 +57,17 @@ public class ItemIconCacheManager : PermanentSingleton<ItemIconCacheManager>
         }
     }
 
+    public event Action<int> OnIconLoaded;
+
     public Texture2DArray GetIconArray() => iconArray;
+
+    /// <summary>
+    /// 아이템 아이콘이 캐시에 로드되어 즉시 사용 가능한지 확인합니다.
+    /// </summary>
+    public bool IsIconReady(int itemId)
+    {
+        return itemId < 0 || itemToSlot.ContainsKey(itemId);
+    }
 
     /// <summary>
     /// 아이템 ID를 전달하면 해당 아이콘이 위치한 Texture2DArray의 슬롯 인덱스를 반환합니다.
@@ -94,6 +110,9 @@ public class ItemIconCacheManager : PermanentSingleton<ItemIconCacheManager>
 
                 int slot = AllocateSlot(itemId);
                 Graphics.CopyTexture(op.Result, 0, 0, iconArray, slot, 0);
+
+                // [신규] 로딩 완료 이벤트 발생
+                OnIconLoaded?.Invoke(itemId);
             }
             loadingHandles.Remove(itemId);
         };
