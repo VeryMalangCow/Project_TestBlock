@@ -22,6 +22,8 @@ public class ItemController : NetworkBehaviour
     [SerializeField] private SpriteRenderer spriteRenderer;
     [SerializeField] private Rigidbody2D rb;
 
+    private MaterialPropertyBlock mpb;
+
     // [Static Settings] 메모리 최적화를 위한 공통 설정값
     public static float SearchRadius = 5f;
     public static float SearchInterval = 0.2f;
@@ -42,13 +44,17 @@ public class ItemController : NetworkBehaviour
 
     #region Lifecycle
 
-    private UnityEngine.ResourceManagement.AsyncOperations.AsyncOperationHandle<Sprite> iconHandle;
-
     public override void OnNetworkSpawn()
     {
+        if (mpb == null) mpb = new MaterialPropertyBlock();
+
         // 서버/클라이언트 공통: 아이템 ID가 결정되면 스프라이트 업데이트
         itemID.OnValueChanged += (oldVal, newVal) => UpdateVisual(newVal);
         
+        // 이벤트 구독: 아이콘 로드 완료 시 시각적 갱신
+        if (ItemIconCacheManager.Instance != null)
+            ItemIconCacheManager.Instance.OnIconLoaded += HandleIconLoaded;
+
         // 초기 시각적 숨김 (ID가 설정될 때까지)
         if (spriteRenderer != null) spriteRenderer.enabled = false;
 
@@ -69,9 +75,15 @@ public class ItemController : NetworkBehaviour
         if (itemID.Value != -1) UpdateVisual(itemID.Value);
     }
 
+    private void HandleIconLoaded(int loadedID)
+    {
+        if (itemID.Value == loadedID) UpdateVisual(loadedID);
+    }
+
     public override void OnNetworkDespawn()
     {
-        ReleaseIcon();
+        if (ItemIconCacheManager.Instance != null)
+            ItemIconCacheManager.Instance.OnIconLoaded -= HandleIconLoaded;
 
         if (IsServer)
         {
@@ -90,15 +102,8 @@ public class ItemController : NetworkBehaviour
     public override void OnDestroy()
     {
         base.OnDestroy(); // 부모(NetworkBehaviour)의 정리 로직 실행
-        ReleaseIcon();
-    }
-
-    private void ReleaseIcon()
-    {
-        if (iconHandle.IsValid())
-        {
-            UnityEngine.AddressableAssets.Addressables.Release(iconHandle);
-        }
+        if (ItemIconCacheManager.Instance != null)
+            ItemIconCacheManager.Instance.OnIconLoaded -= HandleIconLoaded;
     }
 
     private void Update()
@@ -323,35 +328,21 @@ public class ItemController : NetworkBehaviour
     {
         if (id < 0 || spriteRenderer == null) return;
 
-        // [Optimized] 매번 어드레서블을 로드하는 대신 중앙 캐시 사용 (0프레임 로딩)
-        Sprite icon = ItemDataManager.Instance.GetItemIcon(id);
-        if (icon != null)
+        // [Optimized] Texture2DArray 캐시 인덱스 가져오기 (48x48 규격 사용)
+        int sliceIdx = ItemIconCacheManager.Instance.GetSlotIndex(id);
+        
+        // 머티리얼 설정 (World/ItemArrayBatch 셰이더 사용 머티리얼 필요)
+        if (spriteRenderer.sharedMaterial == null || spriteRenderer.sharedMaterial.shader.name != "World/ItemArrayBatch")
         {
-            spriteRenderer.sprite = icon;
-            spriteRenderer.enabled = true; // [Added] 아이콘이 준비되었을 때만 렌더러 활성화
+            // 인스펙터에서 미리 할당해두는 것을 권장하지만, 없을 경우를 대비해 매니저의 머티리얼 활용 고려 가능
+            // 여기서는 MPB만 업데이트합니다. (머티리얼은 프리팹에서 World/ItemArrayBatch로 설정되어 있어야 함)
         }
-        else
-        {
-            // 아직 로드되지 않은 경우 (드문 케이스)
-            StartCoroutine(RetryUpdateVisual(id));
-        }
-    }
 
-    private IEnumerator RetryUpdateVisual(int id)
-    {
-        int retries = 0;
-        while (retries < 5)
-        {
-            yield return new WaitForSeconds(0.2f);
-            Sprite icon = ItemDataManager.Instance.GetItemIcon(id);
-            if (icon != null)
-            {
-                spriteRenderer.sprite = icon;
-                spriteRenderer.enabled = true; // [Added] 지연 로딩 시에도 활성화
-                yield break;
-            }
-            retries++;
-        }
+        spriteRenderer.GetPropertyBlock(mpb);
+        mpb.SetFloat("_SliceIndex", sliceIdx);
+        spriteRenderer.SetPropertyBlock(mpb);
+
+        spriteRenderer.enabled = (sliceIdx >= 0);
     }
 
     #endregion

@@ -23,16 +23,19 @@ public class PlayerVisuals : MonoBehaviour
 
     [Header("### Layers")]
     [SerializeField] private List<VisualLayer> layers = new List<VisualLayer>();
-    [SerializeField] private SpriteRenderer heldItemRenderer; // [New] 손에 들고 있는 아이템 표시용 렌더러
+    [SerializeField] private SpriteRenderer heldItemRenderer; 
 
-    [Header("### Held Item Offset Settings (PPU 16)")]
-    [SerializeField] private Vector2 baseHeldItemPos = new Vector2(0.25f, -0.125f); // 기본 손 위치 (오른쪽 4px, 아래 2px 정도 가정)
-    [SerializeField] private Vector2[] heldItemFrameOffsets = new Vector2[11]; // 0:Idle, 1-8:Walk, 9:Jump, 10:Dash
+    [Header("### Held Item Settings")]
+    [SerializeField] private Vector2 baseHeldItemPos = new Vector2(0.25f, -0.125f); 
+    [SerializeField] private Vector2[] heldItemFrameOffsets = new Vector2[11]; 
 
     [Header("### Animation Settings")]
     [SerializeField] private float walkAnimSpeedMultiplier = 2.5f;
     private float walkCycleTime;
     private int currentFrameIndex = -1;
+
+    private MaterialPropertyBlock heldItemMPB;
+    private int currentHeldItemID = -2;
 
     #endregion
 
@@ -42,6 +45,21 @@ public class PlayerVisuals : MonoBehaviour
     {
         // Load static body sprites
         SetBody();
+
+        heldItemMPB = new MaterialPropertyBlock();
+        if (ItemHeldCacheManager.Instance != null)
+            ItemHeldCacheManager.Instance.OnHeldIconLoaded += HandleHeldIconLoaded;
+    }
+
+    private void OnDestroy()
+    {
+        if (ItemHeldCacheManager.Instance != null)
+            ItemHeldCacheManager.Instance.OnHeldIconLoaded -= HandleHeldIconLoaded;
+    }
+
+    private void HandleHeldIconLoaded(int loadedID)
+    {
+        if (currentHeldItemID == loadedID) ApplyHeldItemVisuals(loadedID);
     }
 
     #endregion
@@ -252,18 +270,33 @@ public class PlayerVisuals : MonoBehaviour
 
     private void UpdateHeldItemTransform(int frameIndex)
     {
-        if (heldItemRenderer == null) return;
+        if (heldItemRenderer == null || currentHeldItemID < 0) return;
 
-        Vector2 offset = (frameIndex >= 0 && frameIndex < heldItemFrameOffsets.Length) 
+        ItemData data = ItemDataManager.Instance.GetItem(currentHeldItemID);
+        if (data == null) return;
+
+        // [New] 타입별 레지스트리에서 설정값 가져오기
+        var settings = HeldItemVisualRegistry.GetSettings(data.type);
+
+        Vector2 animOffset = (frameIndex >= 0 && frameIndex < heldItemFrameOffsets.Length) 
             ? heldItemFrameOffsets[frameIndex] 
             : Vector2.zero;
 
-        // [Fix] 픽셀 단위(1/16 = 0.0625)로 정확히 떨어지도록 계산하여 떨림 방지
-        float posX = (baseHeldItemPos.x + offset.x) * (IsFlipped ? -1f : 1f);
-        float posY = baseHeldItemPos.y + offset.y;
+        // 1. 기본 애니메이션 위치 계산
+        float posX = (baseHeldItemPos.x + animOffset.x) * (IsFlipped ? -1f : 1f);
+        float posY = baseHeldItemPos.y + animOffset.y;
 
-        // [Fix] Z축에 미세한 오프셋(-0.01f)을 주어 몸통 레이어와의 Z-Fighting(떨림) 방지
-        heldItemRenderer.transform.localPosition = new Vector3(posX, posY, 0f);
+        // 2. [Pivot Logic] 64x64 캔버스의 (0,0) 정렬 기준 계산
+        // 캔버스의 왼쪽 아래가 (0,0)이므로, 피벗값만큼 오브젝트를 밀어줍니다.
+        // 유니티 SpriteRenderer의 기본 피벗(Center) 기준(-2.0, -2.0)에서 오프셋 계산
+        float pivotOffsetX = (settings.pivot.x - 32f) / 16f * (IsFlipped ? 1f : -1f);
+        float pivotOffsetY = -(settings.pivot.y - 32f) / 16f;
+
+        heldItemRenderer.transform.localPosition = new Vector3(posX - pivotOffsetX, posY + pivotOffsetY, -0.01f);
+        
+        // 3. [Rotation Logic] 
+        float finalRot = settings.rotation * (IsFlipped ? -1f : 1f);
+        heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, finalRot);
     }
 
     public void SetFlip(bool flipX)
@@ -277,10 +310,9 @@ public class PlayerVisuals : MonoBehaviour
             }
         }
 
-        // [New] 들고 있는 아이템도 플립 및 위치 적용
+        // [New] 들고 있는 아이템도 위치 및 회전 재계산
         if (heldItemRenderer != null)
         {
-            heldItemRenderer.flipX = flipX;
             UpdateHeldItemTransform(currentFrameIndex);
         }
     }
@@ -289,28 +321,48 @@ public class PlayerVisuals : MonoBehaviour
     {
         if (heldItemRenderer == null) return;
 
+        if (itemID == currentHeldItemID) 
+        {
+            // 이미 같은 아이템이면 렌더러 상태만 확인
+            if (itemID != -1) heldItemRenderer.enabled = true;
+            return;
+        }
+
+        currentHeldItemID = itemID;
+
         if (itemID == -1)
         {
             heldItemRenderer.enabled = false;
-            heldItemRenderer.sprite = null;
         }
         else
         {
-            Sprite icon = ItemDataManager.Instance.GetItemIcon(itemID);
-            if (icon != null)
-            {
-                heldItemRenderer.sprite = icon;
-                heldItemRenderer.enabled = true;
-                heldItemRenderer.color = Color.white;
-                
-                // [New] 아이템이 바뀔 때 위치도 강제 갱신
-                UpdateHeldItemTransform(currentFrameIndex);
-            }
-            else
-            {
-                heldItemRenderer.enabled = false;
-            }
+            heldItemRenderer.enabled = true; // 아이템이 있으면 일단 켬
+            ApplyHeldItemVisuals(itemID);
         }
+    }
+
+    private void ApplyHeldItemVisuals(int itemID)
+    {
+        if (heldItemRenderer == null) return;
+
+        int sliceIdx = ItemHeldCacheManager.Instance.GetSlotIndex(itemID);
+        
+        // 머티리얼 설정
+        if (heldItemRenderer.sharedMaterial == null || heldItemRenderer.sharedMaterial.shader.name != "World/ItemArrayBatch")
+        {
+            heldItemRenderer.sharedMaterial = ItemHeldCacheManager.Instance.ItemHeldMaterial;
+        }
+
+        if (heldItemMPB == null) heldItemMPB = new MaterialPropertyBlock();
+
+        heldItemRenderer.GetPropertyBlock(heldItemMPB);
+        heldItemMPB.SetFloat("_SliceIndex", sliceIdx);
+        heldItemRenderer.SetPropertyBlock(heldItemMPB);
+
+        // [Key] 인덱스가 로드 완료(>=0)된 경우에만 최종적으로 보이게 함
+        heldItemRenderer.enabled = (sliceIdx >= 0);
+        
+        UpdateHeldItemTransform(currentFrameIndex);
     }
 
     public bool IsFlipped { get; private set; }

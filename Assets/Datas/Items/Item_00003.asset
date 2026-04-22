@@ -18,7 +18,9 @@ MonoBehaviour:
   maxStack: 999
   typeID: 3
   type: 1
-  useTime: 0.2
+  hasHeldSprite: 0
+  heldPivot: {x: 0, y: 0}
+  heldRotation: 0
   iconReference:
     m_AssetGUID: bdbff023e520a1145a0fe4c0d94a687c
     m_SubObjectName: 
