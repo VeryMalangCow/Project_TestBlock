@@ -24,19 +24,19 @@ public static class HeldItemVisualRegistry
         {
             case ItemType.Block:
                 // 블럭은 보통 16x16 아이콘이 (0,0)에 있으므로 손잡이를 (8,8) 중앙으로 잡음
-                return new HeldSettings(8f, 8f, 0f);
+                return new HeldSettings(40f, 24f, 0f);
 
             case ItemType.Sword:
                 // 검은 왼쪽 하단(4,4) 정도를 손잡이로 잡고 45도 기울임
-                return new HeldSettings(4f, 4f, -45f);
+                return new HeldSettings(56f, 56f, -90f);
 
             case ItemType.Tool:
                 // 곡괭이/도구는 손잡이 위치를 잡고 0도 유지 (애니메이션에서 흔듦)
-                return new HeldSettings(6f, 6f, 0f);
+                return new HeldSettings(32f, 32f, 0f);
 
             case ItemType.Consumable:
                 // 소비템(물약 등)은 하단 중앙
-                return new HeldSettings(8f, 4f, 0f);
+                return new HeldSettings(32f, 32f, 0f);
 
             case ItemType.Helmet:
             case ItemType.Chestplate:
@@ -44,10 +44,10 @@ public static class HeldItemVisualRegistry
             case ItemType.Boots:
             case ItemType.Jetbag:
                 // 장비류를 손에 들었을 때의 기본값
-                return new HeldSettings(8f, 8f, 0f);
+                return new HeldSettings(40f, 24f, 0f);
 
             default:
-                return new HeldSettings(8f, 8f, 0f);
+                return new HeldSettings(40f, 24f, 0f);
         }
     }
 }

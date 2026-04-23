@@ -323,9 +323,12 @@ public class PlayerVisuals : MonoBehaviour
             }
         }
 
-        // [New] 들고 있는 아이템도 위치 및 회전 재계산
+        // [Fix] 들고 있는 아이템 렌더러에도 좌우 반전 적용
         if (heldItemRenderer != null)
         {
+            heldItemRenderer.flipX = flipX;
+            
+            // 위치 및 회전 재계산
             UpdateHeldItemTransform(currentFrameIndex);
         }
     }
