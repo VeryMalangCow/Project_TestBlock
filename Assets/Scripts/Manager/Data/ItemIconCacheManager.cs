@@ -13,6 +13,8 @@ public class ItemIconCacheManager : PermanentSingleton<ItemIconCacheManager>
     [SerializeField] private Texture2DArray iconArray;
     [SerializeField] private Material itemIconMaterial; // UI에서 공유할 머티리얼
     
+    public Texture2DArray IconArray => iconArray;
+
     // Key: ItemID, Value: SlotIndex
     private Dictionary<int, int> itemToSlot = new Dictionary<int, int>();
     private Dictionary<int, int> slotToItem = new Dictionary<int, int>();
@@ -104,14 +106,19 @@ public class ItemIconCacheManager : PermanentSingleton<ItemIconCacheManager>
         {
             if (op.Status == AsyncOperationStatus.Succeeded)
             {
-                // 원본 이미지 크기 체크 (48x48이어야 Graphics.CopyTexture 가능)
-                if (op.Result.width != ICON_SIZE || op.Result.height != ICON_SIZE)
-                {
-                    Debug.LogWarning($"[ItemIconCache] Icon {itemId} size mismatch! Expected {ICON_SIZE}x{ICON_SIZE}, got {op.Result.width}x{op.Result.height}. Please check Converter.");
-                }
-
                 int slot = AllocateSlot(itemId);
-                Graphics.CopyTexture(op.Result, 0, 0, iconArray, slot, 0);
+                Texture2D source = op.Result;
+
+                // [Fix] Graphics.CopyTexture는 규격이 일치해야 함. RenderTexture를 통한 안전한 복사 수행.
+                RenderTexture rt = RenderTexture.GetTemporary(ICON_SIZE, ICON_SIZE, 0, RenderTextureFormat.ARGB32);
+                RenderTexture.active = rt;
+                GL.Clear(true, true, Color.clear);
+                
+                Graphics.Blit(source, rt);
+                Graphics.CopyTexture(rt, 0, 0, 0, 0, ICON_SIZE, ICON_SIZE, iconArray, slot, 0, 0, 0);
+
+                RenderTexture.active = null;
+                RenderTexture.ReleaseTemporary(rt);
 
                 // [신규] 로딩 완료 이벤트 발생
                 OnIconLoaded?.Invoke(itemId);

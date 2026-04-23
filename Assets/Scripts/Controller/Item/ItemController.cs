@@ -331,17 +331,29 @@ public class ItemController : NetworkBehaviour
         // [Optimized] Texture2DArray 캐시 인덱스 가져오기 (48x48 규격 사용)
         int sliceIdx = ItemIconCacheManager.Instance.GetSlotIndex(id);
         
-        // 머티리얼 설정 (World/ItemArrayBatch 셰이더 사용 머티리얼 필요)
+        // 1. 머티리얼 및 텍스처 배열 유효성 확인
+        // (프리펩의 머티리얼이 World/ItemArrayBatch 셰이더를 사용해야 함)
         if (spriteRenderer.sharedMaterial == null || spriteRenderer.sharedMaterial.shader.name != "World/ItemArrayBatch")
         {
-            // 인스펙터에서 미리 할당해두는 것을 권장하지만, 없을 경우를 대비해 매니저의 머티리얼 활용 고려 가능
-            // 여기서는 MPB만 업데이트합니다. (머티리얼은 프리팹에서 World/ItemArrayBatch로 설정되어 있어야 함)
+            // ItemIconCacheManager에서 제공하는 공통 아이콘 머티리얼 사용 (있을 경우)
+            // 여기서는 일단 기존 머티리얼을 유지하되 MPB로 텍스처를 주입합니다.
         }
 
+        if (mpb == null) mpb = new MaterialPropertyBlock();
         spriteRenderer.GetPropertyBlock(mpb);
-        mpb.SetFloat("_SliceIndex", sliceIdx);
+        
+        // [Important] 텍스처 배열을 MPB로 직접 주입하여 머티리얼 인스턴스 문제를 방지
+        Texture2DArray iconArray = ItemIconCacheManager.Instance.IconArray;
+        if (iconArray != null)
+        {
+            mpb.SetTexture("_MainTexArray", iconArray);
+        }
+
+        // 2. 슬라이스 인덱스 설정
+        mpb.SetFloat("_SliceIndex", (float)sliceIdx);
         spriteRenderer.SetPropertyBlock(mpb);
 
+        // [Key] 이미지가 로드되었을 때만 렌더러를 켬
         spriteRenderer.enabled = (sliceIdx >= 0);
     }
 
