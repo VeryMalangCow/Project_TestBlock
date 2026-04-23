@@ -24,10 +24,11 @@ public class PlayerVisuals : MonoBehaviour
     [Header("### Layers")]
     [SerializeField] private List<VisualLayer> layers = new List<VisualLayer>();
     [SerializeField] private SpriteRenderer heldItemRenderer; 
+    [SerializeField] private Transform upperBodyContainer; // [New] 상체 및 아이템 통합 제어용 컨테이너
 
     [Header("### Held Item Settings")]
     [SerializeField] private Vector2 baseHeldItemPos = new Vector2(0.25f, -0.125f); 
-    [SerializeField] private Vector2[] heldItemFrameOffsets = new Vector2[11]; 
+    [SerializeField] private Vector2[] upperBodyPositions = new Vector2[11]; 
 
     [Header("### Animation Settings")]
     [SerializeField] private float walkAnimSpeedMultiplier = 2.5f;
@@ -201,14 +202,11 @@ public class PlayerVisuals : MonoBehaviour
         Sprite[] sheet = null;
         if (typeID == -1)
         {
-            // [Fix] Base 이미지가 존재하는 파츠만 로딩 시도 (Chestplate, Leggings 관련)
             bool hasBase = category.Contains("Chestplate") || category.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase);
-            
             if (hasBase)
             {
                 sheet = ResourceManager.Instance.GetArmorSprites(category, "Base");
             }
-            // Base가 없는 파츠(Helmet, Boots 등)는 sheet가 null인 상태로 유지되어 스프라이트가 비워짐
         }
         else
         {
@@ -217,7 +215,12 @@ public class PlayerVisuals : MonoBehaviour
 
         target.currentSheet = sheet;
         if (sheet == null && target.renderer != null) target.renderer.sprite = null;
-        else target.SetSprite(Mathf.Max(0, currentFrameIndex));
+        else 
+        {
+            // [Fix] 상체 레이어는 항상 0번 프레임 사용 (동적 움직임은 Container가 처리)
+            int frame = IsUpperBodyLayer(layerName) ? 0 : Mathf.Max(0, currentFrameIndex);
+            target.SetSprite(frame);
+        }
     }
 
     private void UpdateHairVisibility()
@@ -274,11 +277,37 @@ public class PlayerVisuals : MonoBehaviour
     {
         foreach (var layer in layers)
         {
-            layer.SetSprite(frameIndex);
+            // 하체 레이어 (Leg, Leggings, Boots)만 프레임 교체 수행, 나머지는 항상 0번 고정
+            if (IsUpperBodyLayer(layer.name))
+            {
+                layer.SetSprite(0);
+            }
+            else
+            {
+                layer.SetSprite(frameIndex);
+            }
         }
 
-        // [New] 들고 있는 아이템의 위치를 프레임 오프셋에 맞춰 조정
+        // [핵심] 상체 컨테이너 위치 이동 (들썩임 연출)
+        if (upperBodyContainer != null)
+        {
+            Vector2 animOffset = (frameIndex >= 0 && frameIndex < upperBodyPositions.Length) 
+                ? upperBodyPositions[frameIndex] 
+                : Vector2.zero;
+            
+            // X축은 캐릭터 방향에 따라 반전, Y축은 그대로 적용
+            upperBodyContainer.localPosition = new Vector3(animOffset.x * (IsFlipped ? -1f : 1f), animOffset.y, 0);
+        }
+
         UpdateHeldItemTransform(frameIndex);
+    }
+
+    private bool IsUpperBodyLayer(string layerName)
+    {
+        // 하체 부위인 Leg, Leggings, Boots 제외한 모든 부위를 상체로 간주
+        return !(layerName.Equals("Leg", System.StringComparison.OrdinalIgnoreCase) || 
+                 layerName.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase) || 
+                 layerName.Equals("Boots", System.StringComparison.OrdinalIgnoreCase));
     }
 
     private void UpdateHeldItemTransform(int frameIndex)
@@ -288,26 +317,19 @@ public class PlayerVisuals : MonoBehaviour
         ItemData data = ItemDataManager.Instance.GetItem(currentHeldItemID);
         if (data == null) return;
 
-        // [New] 타입별 레지스트리에서 설정값 가져오기
         var settings = HeldItemVisualRegistry.GetSettings(data.type);
 
-        Vector2 animOffset = (frameIndex >= 0 && frameIndex < heldItemFrameOffsets.Length) 
-            ? heldItemFrameOffsets[frameIndex] 
-            : Vector2.zero;
+        // [Fix] 상체 컨테이너가 이미 들썩임(Bobbing)을 처리하므로, 아이템 본인은 기본 오프셋만 적용
+        float posX = baseHeldItemPos.x * (IsFlipped ? -1f : 1f);
+        float posY = baseHeldItemPos.y;
 
-        // 1. 기본 애니메이션 위치 계산
-        float posX = (baseHeldItemPos.x + animOffset.x) * (IsFlipped ? -1f : 1f);
-        float posY = baseHeldItemPos.y + animOffset.y;
-
-        // 2. [Pivot Logic] 64x64 캔버스의 (0,0) 정렬 기준 계산
-        // 캔버스의 왼쪽 아래가 (0,0)이므로, 피벗값만큼 오브젝트를 밀어줍니다.
-        // 유니티 SpriteRenderer의 기본 피벗(Center) 기준(-2.0, -2.0)에서 오프셋 계산
+        // 피벗 보정 계산
         float pivotOffsetX = (settings.pivot.x - 32f) / 16f * (IsFlipped ? 1f : -1f);
         float pivotOffsetY = -(settings.pivot.y - 32f) / 16f;
 
         heldItemRenderer.transform.localPosition = new Vector3(posX - pivotOffsetX, posY + pivotOffsetY, -0.01f);
         
-        // 3. [Rotation Logic] 
+        // 회전값 적용
         float finalRot = settings.rotation * (IsFlipped ? -1f : 1f);
         heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, finalRot);
     }
