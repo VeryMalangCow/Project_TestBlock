@@ -36,6 +36,7 @@ public class PlayerVisuals : MonoBehaviour
 
     private MaterialPropertyBlock heldItemMPB;
     private int currentHeldItemID = -2;
+    private bool isVisualsReady = false; // 시각화 준비 완료 여부
 
     #endregion
 
@@ -49,10 +50,22 @@ public class PlayerVisuals : MonoBehaviour
         heldItemMPB = new MaterialPropertyBlock();
         if (ItemHeldCacheManager.Instance != null)
             ItemHeldCacheManager.Instance.OnHeldIconLoaded += HandleHeldIconLoaded;
+            
+        // 초기에는 렌더러를 꺼둠 (에디터 기본 이미지 노출 방지)
+        if (heldItemRenderer != null) heldItemRenderer.enabled = false;
+        
+        isVisualsReady = true;
+
+        // [New] 만약 Init 전에 ID가 설정되었다면 지금 즉시 시각화 시작
+        if (currentHeldItemID >= 0)
+        {
+            ApplyHeldItemVisuals(currentHeldItemID);
+        }
     }
 
     private void OnDestroy()
     {
+        isVisualsReady = false;
         if (ItemHeldCacheManager.Instance != null)
             ItemHeldCacheManager.Instance.OnHeldIconLoaded -= HandleHeldIconLoaded;
     }
@@ -321,10 +334,15 @@ public class PlayerVisuals : MonoBehaviour
     {
         if (heldItemRenderer == null) return;
 
-        if (itemID == currentHeldItemID) 
+        // [Key] 시각화 준비가 안 되었으면 무시 (READY 상태에서 호출될 것임)
+        if (!isVisualsReady)
         {
-            // 이미 같은 아이템이면 렌더러 상태만 확인
-            if (itemID != -1) heldItemRenderer.enabled = true;
+            currentHeldItemID = itemID; 
+            return;
+        }
+
+        if (itemID == currentHeldItemID && itemID != -1) 
+        {
             return;
         }
 
@@ -336,30 +354,39 @@ public class PlayerVisuals : MonoBehaviour
         }
         else
         {
-            heldItemRenderer.enabled = true; // 아이템이 있으면 일단 켬
+            // 아이템이 있으면 일단 내부 로직 수행 (로드가 완료되면 켜짐)
             ApplyHeldItemVisuals(itemID);
         }
     }
 
     private void ApplyHeldItemVisuals(int itemID)
     {
-        if (heldItemRenderer == null) return;
+        if (heldItemRenderer == null || ItemHeldCacheManager.Instance == null) return;
 
         int sliceIdx = ItemHeldCacheManager.Instance.GetSlotIndex(itemID);
         
-        // 머티리얼 설정
+        // 1. 머티리얼 설정 및 텍스처 배열 유효성 확인
         if (heldItemRenderer.sharedMaterial == null || heldItemRenderer.sharedMaterial.shader.name != "World/ItemArrayBatch")
         {
             heldItemRenderer.sharedMaterial = ItemHeldCacheManager.Instance.ItemHeldMaterial;
         }
 
         if (heldItemMPB == null) heldItemMPB = new MaterialPropertyBlock();
-
         heldItemRenderer.GetPropertyBlock(heldItemMPB);
-        heldItemMPB.SetFloat("_SliceIndex", sliceIdx);
-        heldItemRenderer.SetPropertyBlock(heldItemMPB);
+        
+        // [Important] 텍스처 배열 주입
+        if (ItemHeldCacheManager.Instance.ItemHeldMaterial != null)
+        {
+            Texture2DArray heldArray = (Texture2DArray)ItemHeldCacheManager.Instance.ItemHeldMaterial.GetTexture("_MainTexArray");
+            if (heldArray != null) heldItemMPB.SetTexture("_MainTexArray", heldArray);
+        }
 
-        // [Key] 인덱스가 로드 완료(>=0)된 경우에만 최종적으로 보이게 함
+        // 2. 슬라이스 인덱스 설정 (로딩 중(-1)이면 셰이더에서 투명 처리)
+        heldItemMPB.SetFloat("_SliceIndex", (float)sliceIdx);
+        heldItemRenderer.SetPropertyBlock(heldItemMPB);
+        
+        // [Key] 이미지가 로드되었을 때만(sliceIdx >= 0) 렌더러를 켬
+        // 이로 인해 에디터의 빈 이미지가 노출되는 현상을 원천 차단함
         heldItemRenderer.enabled = (sliceIdx >= 0);
         
         UpdateHeldItemTransform(currentFrameIndex);

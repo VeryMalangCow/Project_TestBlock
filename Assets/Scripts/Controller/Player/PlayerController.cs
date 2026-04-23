@@ -307,6 +307,10 @@ public class PlayerController : NetworkBehaviour
         
         // 서버에 현재 들고 있는 아이템 ID 업데이트 요청
         UpdateHeldItemServerRpc(itemID);
+        
+        // [Fix] Owner는 네트워크 변수의 변경 여부와 상관없이 즉시 본인의 비주얼을 업데이트합니다.
+        // (값이 이미 0일 경우 OnValueChanged가 호출되지 않아 비주얼이 안 나타날 수 있기 때문)
+        if (visuals != null) visuals.SetHeldItem(itemID);
     }
 
     [ServerRpc]
@@ -358,6 +362,9 @@ public class PlayerController : NetworkBehaviour
             {
                 inventorySlotsSync[i] = playerData.inventory.GetSlot(i);
             }
+            
+            // [New] 서버가 데이터를 넣은 후 클라이언트(본인 포함)에게 동기화될 시간을 아주 잠깐 줍니다.
+            yield return new WaitForEndOfFrame();
         }
 
         // [Owner-Specific Logic]
@@ -386,7 +393,15 @@ public class PlayerController : NetworkBehaviour
             InventoryUI ui = Object.FindAnyObjectByType<InventoryUI>();
             if (ui != null) ui.RefreshUI();
 
-            // [New] 초기 들고 있는 아이템 동기화
+            // [Fix] 인벤토리가 비어있다면 잠시 기다림 (동기화 대기)
+            float inventoryWaitTime = 0;
+            while (playerData.inventory.GetSlot(selectedHotbarIndex).IsEmpty && inventoryWaitTime < 1.0f)
+            {
+                yield return new WaitForSeconds(0.1f);
+                inventoryWaitTime += 0.1f;
+            }
+
+            // 초기 들고 있는 아이템 동기화
             RefreshHeldItem();
         }
 
@@ -394,8 +409,9 @@ public class PlayerController : NetworkBehaviour
         if (visuals != null)
         {
             visuals.gameObject.SetActive(true);
-            visuals.Init();
+            visuals.Init(); // [Key] 여기서 isVisualsReady = true 및 렌더러 비활성화 처리됨
             
+            // 기본 외형 및 장비 초기화 (값만 설정)
             visuals.SetSkinColor(skinColorSync.Value);
             visuals.SetEyeColor(eyeColorSync.Value);
             visuals.SetHairColor(hairColorSync.Value);
@@ -407,9 +423,35 @@ public class PlayerController : NetworkBehaviour
             visuals.SetArmor("Jetbag", jetbagIdSync.Value);
         }
 
+        // [Final Stage] 모든 준비 완료
         debugStatus = "READY";
         if (rb != null) { rb.bodyType = RigidbodyType2D.Dynamic; rb.simulated = true; rb.gravityScale = 3f; }
         if (IsOwner && Camera.main != null) Camera.main.GetComponent<CameraController>()?.SetTarget(transform);
+
+        // [New] 캐릭터 로드가 완전히 끝난 후, 들고 있는 아이템 시각화 강제 실행
+        yield return new WaitForEndOfFrame(); // 시스템이 한 프레임 완전히 안정화될 때까지 대기
+
+        if (IsOwner)
+        {
+            // Owner는 인벤토리 데이터가 서버로부터 확실히 도착할 때까지 대기
+            float inventoryWait = 0;
+            while (playerData.inventory.GetSlot(selectedHotbarIndex).IsEmpty && inventoryWait < 2.0f)
+            {
+                yield return new WaitForSeconds(0.1f);
+                inventoryWait += 0.1f;
+            }
+            
+            // 인벤토리가 비어있지 않거나 타임아웃 되면 갱신 실행
+            RefreshHeldItem(); 
+        }
+        else
+        {
+            // Proxy(타인)는 서버에서 이미 동기화된 값을 즉시 시각화에 적용
+            if (heldItemIdSync.Value != -1)
+            {
+                visuals.SetHeldItem(heldItemIdSync.Value);
+            }
+        }
     }
 
     public void SyncInventoryToNetwork()
