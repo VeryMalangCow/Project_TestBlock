@@ -111,6 +111,7 @@ public class PlayerMovement : MonoBehaviour
         float dir = controller.IsDashing ? controller.DashDirection : (input.x != 0 ? Mathf.Sign(input.x) : 0);
         if (dir == 0) return;
 
+        // 1. 등반 대상(발밑 블럭) 확인
         Vector2 origin = new Vector2(col.bounds.center.x, col.bounds.min.y + 0.1f);
         Vector2 direction = new Vector2(dir, 0);
         float distance = (col.size.x / 2f) + stepCheckDistance;
@@ -118,9 +119,31 @@ public class PlayerMovement : MonoBehaviour
         RaycastHit2D hitLower = Physics2D.Raycast(origin, direction, distance, groundLayer);
         if (hitLower.collider != null)
         {
-            Vector2 upperOrigin = origin + new Vector2(0, stepHeight);
-            RaycastHit2D hitUpper = Physics2D.Raycast(upperOrigin, direction, distance, groundLayer);
-            if (hitUpper.collider == null) rb.position += new Vector2(0, 0.25f);
+            // 2. 등반 가능 여부 및 사각지대 없는 전면 공간 검사 (Full Frontal Scan)
+            // 검사 범위: 등반할 블럭 바로 위(1.1)부터 캐릭터가 올라갔을 때의 머리 끝 지점 근처(4.9)까지
+            float upStepAmount = 0.3f;
+            float forwardOffset = dir * 0.15f; 
+            
+            // 수직 기둥의 높이 계산 (3.7 - 1.1 = 2.6)
+            float columnHeight = 2.6f;
+            Vector2 checkSize = new Vector2(col.size.x * 0.85f, columnHeight);
+            
+            // 기둥의 중심점 계산: 발바닥(min.y) 기준으로 1.1에서 4.9 사이의 중간 지점
+            // (1.1 + 3.7) / 2 = 2.4
+            Vector2 checkCenter = new Vector2(col.bounds.center.x + forwardOffset, col.bounds.min.y + 2.4f + upStepAmount);
+            
+            Collider2D obstacle = Physics2D.OverlapBox(checkCenter, checkSize, 0f, groundLayer);
+            
+            // 3. 기둥 안에 장애물이 전혀 없을 때만 등반 실행
+            if (obstacle == null)
+            {
+                rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
+                rb.position += new Vector2(dir * 0.05f, upStepAmount);
+                
+                isGrounded = true;
+                controller.OnGroundedChanged(true);
+            }
+            // else: 높이 2, 3 어디든 블럭이 하나라도 걸리면 차단 (사각지대 해결)
         }
     }
 
