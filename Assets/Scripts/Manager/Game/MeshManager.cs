@@ -138,7 +138,14 @@ public class MeshManager : Singleton<MeshManager>
 
     private void LateUpdate()
     {
-        // Adaptive Build Speed
+        // 0. Move redrawQueue to pendingDrawQueue FIRST to handle new requests in the same frame
+        if (redrawQueue.Count > 0)
+        {
+            foreach (var coord in redrawQueue) EnqueueChunkBuild(coord);
+            redrawQueue.Clear();
+        }
+
+        // 1. Adaptive Build Speed
         int currentMaxBuilds = baseMaxChunkBuilds;
         if (pendingDrawQueue.Count > emergencyBuildThreshold)
             currentMaxBuilds = baseMaxChunkBuilds + (pendingDrawQueue.Count / 5);
@@ -171,12 +178,6 @@ public class MeshManager : Singleton<MeshManager>
                 UpdateChunkCollider(coord.x, coord.y);
             
             processedCollider++;
-        }
-
-        if (redrawQueue.Count > 0)
-        {
-            foreach (var coord in redrawQueue) EnqueueChunkBuild(coord);
-            redrawQueue.Clear();
         }
     }
 

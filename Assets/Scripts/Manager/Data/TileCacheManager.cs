@@ -16,8 +16,6 @@ public class TileCacheManager : PermanentSingleton<TileCacheManager>
     private Dictionary<int, int> slotToKey = new Dictionary<int, int>();
     private List<int> lruList = new List<int>(); // Least Recently Used eviction
     
-    private Dictionary<int, AsyncOperationHandle<Texture2D>> loadingHandles = new Dictionary<int, AsyncOperationHandle<Texture2D>>();
-    
     // Placeholder (Loading/Error)
     private Texture2D placeholderTex;
 
@@ -61,31 +59,41 @@ public class TileCacheManager : PermanentSingleton<TileCacheManager>
             return slot;
         }
 
-        // Not in cache, start loading
-        RequestTileLoad(tileId, variation);
-        return -1; // -1 means loading/not ready
+        // Not in cache, start Synchronous loading
+        return LoadTileSync(tileId, variation);
     }
 
-    private void RequestTileLoad(int tileId, int variation)
+    private int LoadTileSync(int tileId, int variation)
     {
         int key = (tileId << 2) | variation;
-        if (loadingHandles.ContainsKey(key)) return;
-
         string address = $"TileAtlas_{tileId:D4}_{variation}";
-        var handle = Addressables.LoadAssetAsync<Texture2D>(address);
-        loadingHandles[key] = handle;
 
-        handle.Completed += (op) =>
+        try
         {
-            if (op.Status == AsyncOperationStatus.Succeeded)
+            var handle = Addressables.LoadAssetAsync<Texture2D>(address);
+            Texture2D tex = handle.WaitForCompletion();
+
+            if (handle.Status == AsyncOperationStatus.Succeeded && tex != null)
             {
                 int slot = AllocateSlot(key);
-                Graphics.CopyTexture(op.Result, 0, 0, cacheArray, slot, 0);
-                // We keep the handle or let Addressables cache it? 
-                // For now, we don't release immediately to avoid flickering.
+                Graphics.CopyTexture(tex, 0, 0, cacheArray, slot, 0);
+                
+                // Note: We don't release the handle here to ensure the texture stays in memory.
+                // Addressables will handle overall memory management.
+                return slot;
             }
-            loadingHandles.Remove(key);
-        };
+            else
+            {
+                Debug.LogWarning($"[TileCacheManager] Failed to load tile sync: {address}");
+                if (handle.IsValid()) Addressables.Release(handle);
+                return 0; // Fallback to slot 0 (Placeholder)
+            }
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogError($"[TileCacheManager] Error sync-loading tile {address}: {e.Message}");
+            return 0; // Fallback to slot 0
+        }
     }
 
     private int AllocateSlot(int key)
