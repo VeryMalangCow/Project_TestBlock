@@ -49,6 +49,36 @@ public class PlayerController : NetworkBehaviour
     private Vector3 lastPosition;
     private float proxySpeedX;
 
+    // [New] Item Use Delay
+    private float itemUseDelayTimer = 0f;
+    public float ItemUseDelayTimer => itemUseDelayTimer;
+
+    // [Server-Only] Anti-Cheat Cooldown
+    private float serverLastActionTime = 0f;
+
+    #endregion
+
+    #region Helper Methods
+
+    public float GetItemUseDelay(ItemType type)
+    {
+        switch (type)
+        {
+            case ItemType.Block: return 0.2f;
+            case ItemType.Helmet:
+            case ItemType.Chestplate:
+            case ItemType.Leggings:
+            case ItemType.Boots:
+            case ItemType.Jetbag:
+                return 2.0f;
+            case ItemType.Consumable: return 0.5f;
+            case ItemType.Sword:
+            case ItemType.Tool:
+                return 0.4f;
+            default: return 0.2f;
+        }
+    }
+
     #endregion
 
     #region Network Sync Variables
@@ -155,7 +185,7 @@ public class PlayerController : NetworkBehaviour
                 var action = playerMap.FindAction(actionName);
                 if (action != null)
                 {
-                    action.performed += _ => { if (IsOwner) { selectedHotbarIndex = index; RefreshHeldItem(); } };
+                    action.performed += _ => { if (IsOwner && itemUseDelayTimer <= 0) { selectedHotbarIndex = index; RefreshHeldItem(); } };
                     action.Enable();
                     hotbarActions[i] = action;
                 }
@@ -218,7 +248,7 @@ public class PlayerController : NetworkBehaviour
 
     private void OnScrollPerformed(InputAction.CallbackContext ctx)
     {
-        if (!IsOwner) return;
+        if (!IsOwner || itemUseDelayTimer > 0) return;
         float scroll = ctx.ReadValue<Vector2>().y;
         if (Mathf.Abs(scroll) > 0.1f)
         {
@@ -499,6 +529,8 @@ public class PlayerController : NetworkBehaviour
         }
 
         // Owner Input & Timers
+        if (itemUseDelayTimer > 0) itemUseDelayTimer -= Time.deltaTime;
+
         lastPosition = transform.position; // Keep track for consistency
         moveInput = moveAction.ReadValue<Vector2>();
         moveInputSync.Value = moveInput;
@@ -559,19 +591,69 @@ public class PlayerController : NetworkBehaviour
 
     private void OnInteract00Performed(InputAction.CallbackContext ctx)
     {
-        if (!IsOwner) return;
-        if (IsPointerOverUI()) return; // [Fix] 수동 레이캐스트로 UI 체크
-        interaction.UseItem(0, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
+        if (!IsOwner || itemUseDelayTimer > 0) return;
+        if (IsPointerOverUI()) return;
+
+        var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
+        if (!slot.IsEmpty)
+        {
+            var itemData = ItemDataManager.Instance.GetItem(slot.itemID);
+            if (itemData != null) itemUseDelayTimer = GetItemUseDelay(itemData.type);
+        }
+
+        Vector2 screenPos = pointAction.ReadValue<Vector2>();
+        Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+        interaction.UseItem(0, selectedHotbarIndex, worldPos);
     }
 
     private void OnInteract01Performed(InputAction.CallbackContext ctx)
     {
-        if (!IsOwner) return;
-        if (IsPointerOverUI()) return; // [Fix] 수동 레이캐스트로 UI 체크
-        interaction.UseItem(1, selectedHotbarIndex, pointAction.ReadValue<Vector2>());
+        if (!IsOwner || itemUseDelayTimer > 0) return;
+        if (IsPointerOverUI()) return;
+
+        var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
+        if (!slot.IsEmpty)
+        {
+            var itemData = ItemDataManager.Instance.GetItem(slot.itemID);
+            if (itemData != null) itemUseDelayTimer = GetItemUseDelay(itemData.type);
+        }
+
+        Vector2 screenPos = pointAction.ReadValue<Vector2>();
+        Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+        interaction.UseItem(1, selectedHotbarIndex, worldPos);
     }
 
-    [ServerRpc] public void UpdateBlockServerRpc(int x, int y, int id) { MapManager.Instance.SetBlock(x, y, id); }
+    [ServerRpc]
+    public void PlaceBlockServerRpc(int x, int y, int itemID, int hotbarIndex)
+    {
+        // 1. Cooldown Check
+        ItemData itemData = ItemDataManager.Instance.GetItem(itemID);
+        float delay = itemData != null ? GetItemUseDelay(itemData.type) : 0.2f;
+        if (Time.time - serverLastActionTime < delay - 0.05f) return;
+
+        // 2. Distance Check (Server-side)
+        Vector2 playerPos = transform.position;
+        if (Mathf.Abs(x + 0.5f - playerPos.x) > 8.5f || Mathf.Abs(y + 0.5f - playerPos.y) > 6.5f) return;
+
+        // 3. Adjacency Check
+        if (MapManager.Instance.IsBlockActive(x, y)) return;
+        bool hasNeighbor = MapManager.Instance.IsBlockActive(x + 1, y) ||
+                           MapManager.Instance.IsBlockActive(x - 1, y) ||
+                           MapManager.Instance.IsBlockActive(x, y + 1) ||
+                           MapManager.Instance.IsBlockActive(x, y - 1);
+        if (!hasNeighbor) return;
+
+        // 4. Inventory Validation & Consumption
+        var slot = playerData.inventory.GetSlot(hotbarIndex);
+        if (slot.IsEmpty || slot.itemID != itemID) return;
+
+        if (playerData.inventory.RemoveItemFromSlot(hotbarIndex, 1))
+        {
+            serverLastActionTime = Time.time;
+            MapManager.Instance.SetBlock(x, y, itemID);
+            SyncInventoryToNetwork();
+        }
+    }
 
     [ServerRpc]
     public void InteractSlotServerRpc(int index, int buttonIndex, bool isModifier)

@@ -21,27 +21,47 @@ public class PlayerInteraction : MonoBehaviour
         itemDropPrefab = dropPrefab;
     }
 
-    public void UseItem(int buttonIndex, int selectedHotbarIndex, Vector2 screenPos)
+    public void UseItem(int buttonIndex, int selectedHotbarIndex, Vector2 mouseWorldPos)
     {
         if (controller.Data == null || controller.Data.inventory == null) return;
         
         PlayerInventorySlotData selectedSlot = controller.Data.inventory.GetSlot(selectedHotbarIndex);
         if (selectedSlot.IsEmpty) return;
 
-        // [Logic] 현재는 블록 설치 테스트만 구현됨
-        if (selectedSlot.itemID >= 0)
+        ItemData itemData = ItemDataManager.Instance.GetItem(selectedSlot.itemID);
+        if (itemData == null) return;
+
+        // Block Placement Logic (Left Click Only)
+        if (itemData.type == ItemType.Block && buttonIndex == 0)
         {
-            UpdateBlock(selectedSlot.itemID, screenPos);
+            TryPlaceBlock(selectedHotbarIndex, selectedSlot.itemID, mouseWorldPos);
         }
     }
 
-    private void UpdateBlock(int id, Vector2 screenPos)
+    private void TryPlaceBlock(int hotbarIndex, int itemID, Vector2 mouseWorldPos)
     {
-        if (MapManager.Instance == null || Camera.main == null) return;
-        Vector3 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-        if (Vector2.Distance(transform.position, worldPos) > interactRange) return;
-        
-        controller.UpdateBlockServerRpc(Mathf.FloorToInt(worldPos.x), Mathf.FloorToInt(worldPos.y), id);
+        int wx = Mathf.FloorToInt(mouseWorldPos.x);
+        int wy = Mathf.FloorToInt(mouseWorldPos.y);
+
+        // 1. Distance Check (Horizontal 8, Vertical 6)
+        Vector2 playerPos = transform.position;
+        float diffX = Mathf.Abs(mouseWorldPos.x - playerPos.x);
+        float diffY = Mathf.Abs(mouseWorldPos.y - playerPos.y);
+
+        if (diffX > 8f || diffY > 6f) return;
+
+        // 2. Adjacency & Empty Check
+        if (MapManager.Instance.IsBlockActive(wx, wy)) return;
+
+        bool hasNeighbor = MapManager.Instance.IsBlockActive(wx + 1, wy) ||
+                           MapManager.Instance.IsBlockActive(wx - 1, wy) ||
+                           MapManager.Instance.IsBlockActive(wx, wy + 1) ||
+                           MapManager.Instance.IsBlockActive(wx, wy - 1);
+
+        if (!hasNeighbor) return;
+
+        // 3. Request Server to place block and consume item
+        controller.PlaceBlockServerRpc(wx, wy, itemID, hotbarIndex);
     }
 
     public void HandleDropItem(int id, int count, float lookDir)

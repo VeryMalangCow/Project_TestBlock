@@ -357,6 +357,27 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
     #region Utility
 
+    public BlockData GetBlock(int worldX, int worldY)
+    {
+        if (activeMapData == null) return default;
+        int size = ChunkData.Size;
+
+        int cx = Mathf.FloorToInt((float)worldX / size);
+        int cy = Mathf.FloorToInt((float)worldY / size);
+        int lx = worldX - (cx * size);
+        int ly = worldY - (cy * size);
+
+        if (cx < 0 || cx >= activeMapData.mapSize.x || cy < 0 || cy >= activeMapData.mapSize.y) return default;
+
+        ChunkData chunk = activeMapData.chunks[cx, cy];
+        return chunk.blocks[ChunkData.GetIndex(lx, ly)];
+    }
+
+    public bool IsBlockActive(int worldX, int worldY)
+    {
+        return GetBlock(worldX, worldY).isActive;
+    }
+
     public Vector2 GetSurfacePosition(float ratioX)
     {
         if (activeMapData == null) return Vector2.zero;

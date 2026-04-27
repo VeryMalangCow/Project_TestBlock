@@ -110,4 +110,29 @@ public class PlayerInventoryData
             OnInventoryChanged?.Invoke(index, slots[index]);
         }
     }
+
+    /// <summary>
+    /// Removes a specific count from a slot.
+    /// Returns true if removal was successful.
+    /// </summary>
+    public bool RemoveItemFromSlot(int index, int count)
+    {
+        if (index < 0 || index >= slots.Length) return false;
+        if (slots[index].IsEmpty || slots[index].stackCount < count) return false;
+
+        var updatedSlot = slots[index];
+        updatedSlot.stackCount -= count;
+
+        if (updatedSlot.stackCount <= 0)
+        {
+            slots[index] = new PlayerInventorySlotData(-1, 0);
+        }
+        else
+        {
+            slots[index] = updatedSlot;
+        }
+
+        OnInventoryChanged?.Invoke(index, slots[index]);
+        return true;
+    }
 }
