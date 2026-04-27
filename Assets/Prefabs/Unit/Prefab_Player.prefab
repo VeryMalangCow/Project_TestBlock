@@ -145,7 +145,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 3836181582
+  GlobalObjectIdHash: 4087358549
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -203,6 +203,10 @@ MonoBehaviour:
   groundCheckRadius: 0.25
   stepHeight: 1.1
   stepCheckDistance: 0.1
+  stepUpAmount: 0.3
+  climbCheckMinY: 1.1
+  climbCheckMaxY: 3.7
+  climbCheckWidthPercent: 0.85
 --- !u!114 &6624281061998066826
 MonoBehaviour:
   m_ObjectHideFlags: 0

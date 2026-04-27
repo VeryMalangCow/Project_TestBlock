@@ -26,6 +26,19 @@ public class PlayerMovement : MonoBehaviour
     [SerializeField] private float stepHeight = 1.1f; 
     [SerializeField] private float stepCheckDistance = 0.1f;
 
+    [Header("### Step Climb Settings")]
+    [Tooltip("자동 등반 시 캐릭터를 수직으로 이동시킬 거리입니다. (추천: 0.3)")]
+    [SerializeField] private float stepUpAmount = 0.3f;
+
+    [Tooltip("장애물 검사 기둥의 시작 높이입니다. 발바닥 기준이며, 등반할 블럭과의 충돌을 피하기 위해 1.1f 이상을 권장합니다.")]
+    [SerializeField] private float climbCheckMinY = 1.1f;
+
+    [Tooltip("장애물 검사 기둥의 끝 높이입니다. 발바닥 기준이며, 캐릭터가 올라간 후의 머리 높이(약 5.0)를 고려하여 설정합니다. (추천: 4.9)")]
+    [SerializeField] private float climbCheckMaxY = 3.7f;
+
+    [Tooltip("검사 영역의 가로 폭 비율입니다. 1.0은 캐릭터 콜라이더 폭과 같으며, 벽면에 너무 민감하게 걸리지 않도록 0.8~0.9 범위를 권장합니다.")]
+    [SerializeField] private float climbCheckWidthPercent = 0.85f;
+
     private float dashTimeLeft;
     private float dashCooldownTimer;
     private bool isGrounded;
@@ -120,17 +133,16 @@ public class PlayerMovement : MonoBehaviour
         if (hitLower.collider != null)
         {
             // 2. 등반 가능 여부 및 사각지대 없는 전면 공간 검사 (Full Frontal Scan)
-            // 검사 범위: 등반할 블럭 바로 위(1.1)부터 캐릭터가 올라갔을 때의 머리 끝 지점 근처(4.9)까지
-            float upStepAmount = 0.3f;
             float forwardOffset = dir * 0.15f; 
             
-            // 수직 기둥의 높이 계산 (3.7 - 1.1 = 2.6)
-            float columnHeight = 2.6f;
-            Vector2 checkSize = new Vector2(col.size.x * 0.85f, columnHeight);
+            // 인스펙터 설정값 기반 수직 기둥의 높이 및 중심 계산
+            float columnHeight = climbCheckMaxY - climbCheckMinY;
+            float centerOffsetY = (climbCheckMaxY + climbCheckMinY) / 2f;
             
-            // 기둥의 중심점 계산: 발바닥(min.y) 기준으로 1.1에서 4.9 사이의 중간 지점
-            // (1.1 + 3.7) / 2 = 2.4
-            Vector2 checkCenter = new Vector2(col.bounds.center.x + forwardOffset, col.bounds.min.y + 2.4f + upStepAmount);
+            Vector2 checkSize = new Vector2(col.size.x * climbCheckWidthPercent, columnHeight);
+            
+            // 기둥의 중심점 계산: 발바닥(min.y) 기준으로 설정된 중심 오프셋 적용
+            Vector2 checkCenter = new Vector2(col.bounds.center.x + forwardOffset, col.bounds.min.y + centerOffsetY + stepUpAmount);
             
             Collider2D obstacle = Physics2D.OverlapBox(checkCenter, checkSize, 0f, groundLayer);
             
@@ -138,12 +150,11 @@ public class PlayerMovement : MonoBehaviour
             if (obstacle == null)
             {
                 rb.linearVelocity = new Vector2(rb.linearVelocity.x, 0f);
-                rb.position += new Vector2(dir * 0.05f, upStepAmount);
+                rb.position += new Vector2(dir * 0.05f, stepUpAmount);
                 
                 isGrounded = true;
                 controller.OnGroundedChanged(true);
             }
-            // else: 높이 2, 3 어디든 블럭이 하나라도 걸리면 차단 (사각지대 해결)
         }
     }
 
