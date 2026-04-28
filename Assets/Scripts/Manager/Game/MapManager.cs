@@ -150,15 +150,19 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         RequestChunkServerRpc(cx, cy);
     }
 
-    [ServerRpc()]
+    [ServerRpc(RequireOwnership = false)]
     private void RequestChunkServerRpc(int cx, int cy, ServerRpcParams rpcParams = default)
     {
         if (activeMapData == null) return;
         if (cx < 0 || cy < 0 || cx >= activeMapData.mapSize.x || cy >= activeMapData.mapSize.y) return;
 
+        ulong clientId = rpcParams.Receive.SenderClientId;
+        // Debug.Log($"[MapManager-Server] Received Chunk Request: ({cx}, {cy}) from Client: {clientId}");
+
         ChunkData chunk = activeMapData.chunks[cx, cy];
         
         List<int> compressedBlocks = new List<int>();
+        // ... (Compression logic remains same)
         if (chunk.blocks.Length > 0)
         {
             int currentId = chunk.blocks[0].id;
@@ -212,16 +216,18 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         }
 
         DeliverChunkClientRpc(cx, cy, compressedBlocks.ToArray(), compressedLights.ToArray(), 
-            new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { rpcParams.Receive.SenderClientId } } });
+            new ClientRpcParams { Send = new ClientRpcSendParams { TargetClientIds = new[] { clientId } } });
     }
 
     [ClientRpc]
     private void DeliverChunkClientRpc(int cx, int cy, int[] compressedBlocks, int[] compressedLights, ClientRpcParams clientRpcParams = default)
     {
-        if (IsServer) return;
+        // Debug.Log($"[MapManager-Client] Received Chunk Data: ({cx}, {cy}). IsServer: {IsServer}");
+        if (IsServer && !IsHost) return; // Dedicated server bypass
         if (activeMapData == null) return;
 
         ChunkData chunk = activeMapData.chunks[cx, cy];
+        if (chunk.isSynced) return; // Already synced
 
         int bIdx = 0;
         for (int i = 0; i < compressedBlocks.Length; i += 4)

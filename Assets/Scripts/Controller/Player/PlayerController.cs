@@ -643,7 +643,12 @@ public class PlayerController : NetworkBehaviour
                            MapManager.Instance.IsBlockActive(x, y - 1);
         if (!hasNeighbor) return;
 
-        // 4. Inventory Validation & Consumption
+        // 4. Player Overlap Check
+        Vector2 checkPos = new Vector2(x + 0.5f, y + 0.5f);
+        Collider2D playerCol = Physics2D.OverlapBox(checkPos, Vector2.one, 0f, LayerMask.GetMask("Player"));
+        if (playerCol != null) return;
+
+        // 5. Inventory Validation & Consumption
         var slot = playerData.inventory.GetSlot(hotbarIndex);
         if (slot.IsEmpty || slot.itemID != itemID) return;
 

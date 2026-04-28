@@ -242,14 +242,19 @@ public class MeshManager : Singleton<MeshManager>
     private void UpdateSlidingWindow()
     {
         if (MapManager.Instance == null || MapManager.Instance.activeMapData == null) return;
-        if (NetworkManager.Singleton == null || !NetworkManager.Singleton.IsClient) return;
+        
+        // [Fix] NetworkManager check: Host is both Server and Client.
+        if (NetworkManager.Singleton == null) return;
+        bool isNetworkingActive = NetworkManager.Singleton.IsServer || NetworkManager.Singleton.IsClient;
+        if (!isNetworkingActive) return;
+
         if (targetTransform == null) return;
 
         // 1. Frequency Control
         if (Time.time - lastUpdateTime < updateInterval) return;
         lastUpdateTime = Time.time;
 
-        // 2. Check for Significant Movement
+        // 2. Check for Significant Movement or Initial Request
         Vector3 currentPos = targetTransform.position;
         if (lastRequiredChunks.Count > 0 && Vector3.Distance(currentPos, lastTargetPosition) <= moveThreshold) return;
         lastTargetPosition = currentPos;
@@ -258,12 +263,16 @@ public class MeshManager : Singleton<MeshManager>
         currentRequiredChunks.Clear();
         MapData data = MapManager.Instance.activeMapData;
 
+        // [Safety] Ensure view distance is valid
+        int distX = Mathf.Max(viewDistanceX, 1);
+        int distY = Mathf.Max(viewDistanceY, 1);
+
         int cx = Mathf.FloorToInt(currentPos.x / ChunkData.ChunkSize.x);
         int cy = Mathf.FloorToInt(currentPos.y / ChunkData.ChunkSize.y);
 
-        for (int x = -viewDistanceX; x <= viewDistanceX; x++)
+        for (int x = -distX; x <= distX; x++)
         {
-            for (int y = -viewDistanceY; y <= viewDistanceY; y++)
+            for (int y = -distY; y <= distY; y++)
             {
                 Vector2Int coord = new Vector2Int(cx + x, cy + y);
                 if (coord.x >= 0 && coord.x < data.mapSize.x &&
@@ -275,7 +284,7 @@ public class MeshManager : Singleton<MeshManager>
         }
 
         // 4. Apply Changes
-        if (!currentRequiredChunks.SetEquals(lastRequiredChunks))
+        if (currentRequiredChunks.Count > 0 && !currentRequiredChunks.SetEquals(lastRequiredChunks))
         {
             RefreshChunksMultitarget(currentRequiredChunks);
             lastRequiredChunks.Clear();
