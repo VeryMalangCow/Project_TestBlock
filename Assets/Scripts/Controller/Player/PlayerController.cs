@@ -400,6 +400,16 @@ public class PlayerController : NetworkBehaviour
 
         HandleContinuousInteraction();
 
+        // [New] Update Block Placement Preview
+        if (playerData != null && playerData.inventory != null)
+        {
+            var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
+            int heldItemID = slot.IsEmpty ? -1 : slot.itemID;
+            Vector2 screenPos = pointAction.ReadValue<Vector2>();
+            Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+            interaction.UpdatePlacementPreview(heldItemID, worldPos, IsPointerOverUI());
+        }
+
         lastPosition = transform.position;
         moveInput = moveAction.ReadValue<Vector2>();
         moveInputSync.Value = moveInput;
