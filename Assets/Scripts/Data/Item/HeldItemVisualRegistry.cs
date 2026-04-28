@@ -24,7 +24,7 @@ public static class HeldItemVisualRegistry
         {
             case ItemType.Block:
                 // 블럭은 보통 16x16 아이콘이 (0,0)에 있으므로 손잡이를 (8,8) 중앙으로 잡음
-                return new HeldSettings(40f, 24f, 0f);
+                return new HeldSettings(18f, 32f, 0f);
 
             case ItemType.Sword:
                 // 검은 왼쪽 하단(4,4) 정도를 손잡이로 잡고 45도 기울임

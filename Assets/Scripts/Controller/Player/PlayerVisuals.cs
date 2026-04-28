@@ -24,7 +24,7 @@ public class PlayerVisuals : MonoBehaviour
     [Header("### Layers")]
     [SerializeField] private List<VisualLayer> layers = new List<VisualLayer>();
     [SerializeField] private SpriteRenderer heldItemRenderer; 
-    [SerializeField] private Transform upperBodyContainer; // [New] 상체 및 아이템 통합 제어용 컨테이너
+    [SerializeField] private Transform upperBodyContainer; 
 
     [Header("### Held Item Settings")]
     [SerializeField] private Vector2 baseHeldItemPos = new Vector2(0.25f, -0.125f); 
@@ -35,9 +35,23 @@ public class PlayerVisuals : MonoBehaviour
     private float walkCycleTime;
     private int currentFrameIndex = -1;
 
+    [Header("### Item Use Animation")]
+    [SerializeField] private Transform itemUseRotationRoot; 
+    [SerializeField] private float blockSwingOffset = 15f; 
+    [SerializeField] private float rotationReturnSpeed = 15f; 
+    
+    private bool isUsingItem = false;
+    private float targetBaseAngle = 0f;
+    private float currentSwingOffset = 0f;
+    private float swingLerpTime = 0f;
+    private int swingPhase = 0; 
+    private float itemUseDuration = 0.2f;
+
     private MaterialPropertyBlock heldItemMPB;
     private int currentHeldItemID = -2;
-    private bool isVisualsReady = false; // 시각화 준비 완료 여부
+    private bool isVisualsReady = false; 
+
+    public bool IsFlipped { get; private set; }
 
     #endregion
 
@@ -45,23 +59,15 @@ public class PlayerVisuals : MonoBehaviour
 
     public void Init()
     {
-        // Load static body sprites
         SetBody();
-
         heldItemMPB = new MaterialPropertyBlock();
         if (ItemHeldCacheManager.Instance != null)
             ItemHeldCacheManager.Instance.OnHeldIconLoaded += HandleHeldIconLoaded;
             
-        // 초기에는 렌더러를 꺼둠 (에디터 기본 이미지 노출 방지)
         if (heldItemRenderer != null) heldItemRenderer.enabled = false;
-        
         isVisualsReady = true;
 
-        // [New] 만약 Init 전에 ID가 설정되었다면 지금 즉시 시각화 시작
-        if (currentHeldItemID >= 0)
-        {
-            ApplyHeldItemVisuals(currentHeldItemID);
-        }
+        if (currentHeldItemID >= 0) ApplyHeldItemVisuals(currentHeldItemID);
     }
 
     private void OnDestroy()
@@ -84,26 +90,19 @@ public class PlayerVisuals : MonoBehaviour
 
     public void SetBody()
     {
-        // 1. Load Skin Parts (Always Visible)
         foreach (string part in skinParts)
         {
             Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(part, 0);
             if (sheet == null) continue;
 
             VisualLayer target = layers.Find(l => l.name.Equals(part, System.StringComparison.OrdinalIgnoreCase));
-            if (target != null)
-            {
-                target.currentSheet = sheet;
-                target.SetSprite(0);
-            }
+            if (target != null) { target.currentSheet = sheet; target.SetSprite(0); }
         }
 
-        // 2. Load Static Parts (Eye, Pupil, Hair - Always Visible)
         SetStaticPart("Eye", "Eye", 0);
         SetStaticPart("Pupil", "Pupil", 0);
         SetHair(0); 
 
-        // 3. Load Initial Equipment Bases (Clothes, Leggings)
         SetArmor("Clothes", -1);
         SetArmor("Leggings", -1);
     }
@@ -113,26 +112,13 @@ public class PlayerVisuals : MonoBehaviour
         VisualLayer target = layers.Find(l => l.name.Equals(layerName, System.StringComparison.OrdinalIgnoreCase));
         if (target == null) return;
 
-        if (id == -1)
-        {
-            target.currentSheet = null;
-            if (target.renderer != null) target.renderer.sprite = null;
-            return;
-        }
+        if (id == -1) { target.currentSheet = null; if (target.renderer != null) target.renderer.sprite = null; return; }
 
         Sprite[] sheet = ResourceManager.Instance.GetBodyPartSprites(resourcePath, id);
-        if (sheet != null)
-        {
-            target.currentSheet = sheet;
-            target.SetSprite(0);
-        }
+        if (sheet != null) { target.currentSheet = sheet; target.SetSprite(0); }
     }
 
-    public void SetHair(int styleIndex)
-    {
-        SetStaticPart("Hair", "Hair", styleIndex);
-        UpdateHairVisibility();
-    }
+    public void SetHair(int styleIndex) { SetStaticPart("Hair", "Hair", styleIndex); UpdateHairVisibility(); }
 
     public void SetSkinColor(Color color)
     {
@@ -157,38 +143,24 @@ public class PlayerVisuals : MonoBehaviour
 
     public void SetArmor(string category, int typeID)
     {
-        // Chestplate is special: 3 parts (Body, ArmFront, ArmBack)
         if (category.Equals("Clothes", System.StringComparison.OrdinalIgnoreCase) || 
             category.Equals("Chestplate", System.StringComparison.OrdinalIgnoreCase))
         {
-            SetChestplate(typeID);
-            return;
+            SetChestplate(typeID); return;
         }
 
-        // Regular equipment mapping
         string layerName = category;
-        
-        // [Fix] 명칭 변환 예외 처리 (Heads -> Helmet) 및 복수형 유지
-        if (category.Equals("Heads", System.StringComparison.OrdinalIgnoreCase)) 
-            layerName = "Helmet";
-        else if (category.Equals("Jetbag", System.StringComparison.OrdinalIgnoreCase))
-            layerName = "Jetbag";
-        else if (category.Equals("Boots", System.StringComparison.OrdinalIgnoreCase))
-            layerName = "Boots";
-        else if (category.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase))
-            layerName = "Leggings";
+        if (category.Equals("Heads", System.StringComparison.OrdinalIgnoreCase)) layerName = "Helmet";
+        else if (category.Equals("Jetbag", System.StringComparison.OrdinalIgnoreCase)) layerName = "Jetbag";
+        else if (category.Equals("Boots", System.StringComparison.OrdinalIgnoreCase)) layerName = "Boots";
+        else if (category.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase)) layerName = "Leggings";
         
         ApplyArmorToLayer(layerName, category, typeID);
-
-        if (layerName.Equals("Helmet", System.StringComparison.OrdinalIgnoreCase))
-        {
-            UpdateHairVisibility();
-        }
+        if (layerName.Equals("Helmet", System.StringComparison.OrdinalIgnoreCase)) UpdateHairVisibility();
     }
 
     private void SetChestplate(int typeID)
     {
-        // 3-part set loading
         ApplyArmorToLayer("Chestplate", "Chestplate", typeID);
         ApplyArmorToLayer("ChestplateArmFront", "ChestplateArmFront", typeID);
         ApplyArmorToLayer("ChestplateArmBack", "ChestplateArmBack", typeID);
@@ -203,31 +175,19 @@ public class PlayerVisuals : MonoBehaviour
         if (typeID == -1)
         {
             bool hasBase = category.Contains("Chestplate") || category.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase);
-            if (hasBase)
-            {
-                sheet = ResourceManager.Instance.GetArmorSprites(category, "Base");
-            }
+            if (hasBase) sheet = ResourceManager.Instance.GetArmorSprites(category, "Base");
         }
-        else
-        {
-            sheet = ResourceManager.Instance.GetArmorSprites(category, typeID);
-        }
+        else sheet = ResourceManager.Instance.GetArmorSprites(category, typeID);
 
         target.currentSheet = sheet;
         if (sheet == null && target.renderer != null) target.renderer.sprite = null;
-        else 
-        {
-            // [Fix] 상체 레이어는 항상 0번 프레임 사용 (동적 움직임은 Container가 처리)
-            int frame = IsUpperBodyLayer(layerName) ? 0 : Mathf.Max(0, currentFrameIndex);
-            target.SetSprite(frame);
-        }
+        else { int frame = IsUpperBodyLayer(layerName) ? 0 : Mathf.Max(0, currentFrameIndex); target.SetSprite(frame); }
     }
 
     private void UpdateHairVisibility()
     {
         VisualLayer helmetLayer = layers.Find(l => l.name.Equals("Helmet", System.StringComparison.OrdinalIgnoreCase));
         VisualLayer hairLayer = layers.Find(l => l.name.Equals("Hair", System.StringComparison.OrdinalIgnoreCase));
-
         if (hairLayer != null && hairLayer.renderer != null)
         {
             bool hasHelmet = helmetLayer != null && helmetLayer.currentSheet != null;
@@ -241,62 +201,77 @@ public class PlayerVisuals : MonoBehaviour
 
     public void UpdateVisuals(float horizontalVelocity, bool isGrounded, bool isDashing)
     {
-        int targetFrame = 0;
+        UpdateItemUseAnimation();
 
-        if (isDashing)
-        {
-            targetFrame = 10;
-        }
-        else if (!isGrounded)
-        {
-            targetFrame = 9;
-        }
+        int targetFrame = 0;
+        if (isDashing) targetFrame = 10;
+        else if (!isGrounded) targetFrame = 9;
         else
         {
             float absVelocityX = Mathf.Abs(horizontalVelocity);
-            if (absVelocityX > 0.1f)
-            {
-                walkCycleTime += Time.deltaTime * absVelocityX * walkAnimSpeedMultiplier;
-                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8);
-            }
-            else
-            {
-                targetFrame = 0;
-                walkCycleTime = 0;
-            }
+            if (absVelocityX > 0.1f) { walkCycleTime += Time.deltaTime * absVelocityX * walkAnimSpeedMultiplier; targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8); }
+            else { targetFrame = 0; walkCycleTime = 0; }
         }
 
-        if (currentFrameIndex != targetFrame)
+        if (currentFrameIndex != targetFrame) { currentFrameIndex = targetFrame; SyncAnimation(currentFrameIndex); }
+    }
+
+    private void UpdateItemUseAnimation()
+    {
+        Transform targetRoot = itemUseRotationRoot != null ? itemUseRotationRoot : upperBodyContainer;
+        if (targetRoot == null) return;
+
+        float finalRotation = 0f;
+
+        if (isUsingItem)
         {
-            currentFrameIndex = targetFrame;
-            SyncAnimation(currentFrameIndex);
+            swingLerpTime += Time.deltaTime / itemUseDuration;
+            if (swingLerpTime >= 1f) { swingLerpTime = 0f; swingPhase = 1 - swingPhase; }
+
+            float startOffset = (swingPhase == 0) ? -blockSwingOffset : blockSwingOffset;
+            float endOffset = (swingPhase == 0) ? blockSwingOffset : -blockSwingOffset;
+            
+            float t = Mathf.SmoothStep(0, 1, swingLerpTime);
+            currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
+
+            // [New Scale.x Logic] 로컬 좌표계가 이미 반전되어 있으므로 추가적인 각도 뒤집기가 필요 없습니다.
+            // 단, 타겟 각도 자체가 플레이어가 바라보는 방향 기준이어야 합니다.
+            finalRotation = targetBaseAngle + currentSwingOffset;
         }
+        else
+        {
+            currentSwingOffset = Mathf.Lerp(currentSwingOffset, 0, Time.deltaTime * rotationReturnSpeed);
+            finalRotation = currentSwingOffset; 
+        }
+
+        targetRoot.localRotation = Quaternion.Euler(0, 0, finalRotation);
+    }
+
+    public void StartItemUseAnimation(float targetAngle, float duration)
+    {
+        isUsingItem = true;
+        targetBaseAngle = targetAngle;
+        itemUseDuration = duration;
+    }
+
+    public void StopItemUseAnimation()
+    {
+        isUsingItem = false;
     }
 
     public void SyncAnimation(int frameIndex)
     {
         foreach (var layer in layers)
         {
-            // 하체 레이어 (Leg, Leggings, Boots)만 프레임 교체 수행, 나머지는 항상 0번 고정
-            if (IsUpperBodyLayer(layer.name))
-            {
-                layer.SetSprite(0);
-            }
-            else
-            {
-                layer.SetSprite(frameIndex);
-            }
+            if (IsUpperBodyLayer(layer.name)) layer.SetSprite(0);
+            else layer.SetSprite(frameIndex);
         }
 
-        // [핵심] 상체 컨테이너 위치 이동 (들썩임 연출)
         if (upperBodyContainer != null)
         {
-            Vector2 animOffset = (frameIndex >= 0 && frameIndex < upperBodyPositions.Length) 
-                ? upperBodyPositions[frameIndex] 
-                : Vector2.zero;
-            
-            // X축은 캐릭터 방향에 따라 반전, Y축은 그대로 적용
-            upperBodyContainer.localPosition = new Vector3(animOffset.x * (IsFlipped ? -1f : 1f), animOffset.y, 0);
+            Vector2 animOffset = (frameIndex >= 0 && frameIndex < upperBodyPositions.Length) ? upperBodyPositions[frameIndex] : Vector2.zero;
+            // [New Scale.x Logic] IsFlipped에 따른 수동 오프셋 계산이 필요 없어집니다.
+            upperBodyContainer.localPosition = new Vector3(animOffset.x, animOffset.y, 0);
         }
 
         UpdateHeldItemTransform(frameIndex);
@@ -304,7 +279,6 @@ public class PlayerVisuals : MonoBehaviour
 
     private bool IsUpperBodyLayer(string layerName)
     {
-        // 하체 부위인 Leg, Leggings, Boots 제외한 모든 부위를 상체로 간주
         return !(layerName.Equals("Leg", System.StringComparison.OrdinalIgnoreCase) || 
                  layerName.Equals("Leggings", System.StringComparison.OrdinalIgnoreCase) || 
                  layerName.Equals("Boots", System.StringComparison.OrdinalIgnoreCase));
@@ -313,111 +287,65 @@ public class PlayerVisuals : MonoBehaviour
     private void UpdateHeldItemTransform(int frameIndex)
     {
         if (heldItemRenderer == null || currentHeldItemID < 0) return;
-
         ItemData data = ItemDataManager.Instance.GetItem(currentHeldItemID);
         if (data == null) return;
-
         var settings = HeldItemVisualRegistry.GetSettings(data.type);
 
-        // [Fix] 상체 컨테이너가 이미 들썩임(Bobbing)을 처리하므로, 아이템 본인은 기본 오프셋만 적용
-        float posX = baseHeldItemPos.x * (IsFlipped ? -1f : 1f);
+        // [New Scale.x Logic] 좌우 반전 보정이 불필요해져 기본 값만 적용합니다.
+        float posX = baseHeldItemPos.x;
         float posY = baseHeldItemPos.y;
-
-        // 피벗 보정 계산
-        float pivotOffsetX = (settings.pivot.x - 32f) / 16f * (IsFlipped ? 1f : -1f);
+        float pivotOffsetX = (settings.pivot.x - 32f) / 16f;
         float pivotOffsetY = -(settings.pivot.y - 32f) / 16f;
 
         heldItemRenderer.transform.localPosition = new Vector3(posX - pivotOffsetX, posY + pivotOffsetY, -0.01f);
-        
-        // 회전값 적용
-        float finalRot = settings.rotation * (IsFlipped ? -1f : 1f);
-        heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, finalRot);
+        heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, settings.rotation);
     }
 
     public void SetFlip(bool flipX)
     {
         IsFlipped = flipX;
-        foreach (var layer in layers)
-        {
-            if (layer.renderer != null)
-            {
-                layer.renderer.flipX = flipX;
-            }
-        }
+        
+        // [New Scale.x Logic] 렌더러 flipX 대신 오브젝트 자체의 Scale을 조절합니다.
+        transform.localScale = new Vector3(flipX ? -1f : 1f, 1f, 1f);
 
-        // [Fix] 들고 있는 아이템 렌더러에도 좌우 반전 적용
-        if (heldItemRenderer != null)
-        {
-            heldItemRenderer.flipX = flipX;
-            
-            // 위치 및 회전 재계산
-            UpdateHeldItemTransform(currentFrameIndex);
-        }
+        // 기존 렌더러들의 flipX는 초기화합니다.
+        foreach (var layer in layers) if (layer.renderer != null) layer.renderer.flipX = false;
+        if (heldItemRenderer != null) heldItemRenderer.flipX = false;
     }
 
     public void SetHeldItem(int itemID)
     {
         if (heldItemRenderer == null) return;
-
-        // [Key] 시각화 준비가 안 되었으면 무시 (READY 상태에서 호출될 것임)
-        if (!isVisualsReady)
-        {
-            currentHeldItemID = itemID; 
-            return;
-        }
-
-        if (itemID == currentHeldItemID && itemID != -1) 
-        {
-            return;
-        }
+        if (!isVisualsReady) { currentHeldItemID = itemID; return; }
+        if (itemID == currentHeldItemID && itemID != -1) return;
 
         currentHeldItemID = itemID;
-
-        if (itemID == -1)
-        {
-            heldItemRenderer.enabled = false;
-        }
-        else
-        {
-            // 아이템이 있으면 일단 내부 로직 수행 (로드가 완료되면 켜짐)
-            ApplyHeldItemVisuals(itemID);
-        }
+        if (itemID == -1) heldItemRenderer.enabled = false;
+        else ApplyHeldItemVisuals(itemID);
     }
 
     private void ApplyHeldItemVisuals(int itemID)
     {
         if (heldItemRenderer == null || ItemHeldCacheManager.Instance == null) return;
-
         int sliceIdx = ItemHeldCacheManager.Instance.GetSlotIndex(itemID);
         
-        // 1. 머티리얼 설정 및 텍스처 배열 유효성 확인
         if (heldItemRenderer.sharedMaterial == null || heldItemRenderer.sharedMaterial.shader.name != "World/ItemArrayBatch")
-        {
             heldItemRenderer.sharedMaterial = ItemHeldCacheManager.Instance.ItemHeldMaterial;
-        }
 
         if (heldItemMPB == null) heldItemMPB = new MaterialPropertyBlock();
         heldItemRenderer.GetPropertyBlock(heldItemMPB);
         
-        // [Important] 텍스처 배열 주입
         if (ItemHeldCacheManager.Instance.ItemHeldMaterial != null)
         {
             Texture2DArray heldArray = (Texture2DArray)ItemHeldCacheManager.Instance.ItemHeldMaterial.GetTexture("_MainTexArray");
             if (heldArray != null) heldItemMPB.SetTexture("_MainTexArray", heldArray);
         }
 
-        // 2. 슬라이스 인덱스 설정 (로딩 중(-1)이면 셰이더에서 투명 처리)
         heldItemMPB.SetFloat("_SliceIndex", (float)sliceIdx);
         heldItemRenderer.SetPropertyBlock(heldItemMPB);
-        
-        // [Key] 이미지가 로드되었을 때만(sliceIdx >= 0) 렌더러를 켬
-        // 이로 인해 에디터의 빈 이미지가 노출되는 현상을 원천 차단함
         heldItemRenderer.enabled = (sliceIdx >= 0);
-        
         UpdateHeldItemTransform(currentFrameIndex);
     }
-
-    public bool IsFlipped { get; private set; }
 
     #endregion
 }

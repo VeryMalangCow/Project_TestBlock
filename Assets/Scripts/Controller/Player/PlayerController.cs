@@ -456,15 +456,59 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleContinuousInteraction()
     {
-        // 1. 기본 조건 체크 (Owner 여부, 준비 완료 상태, 딜레이 타이머)
-        if (!IsOwner || debugStatus != "READY" || itemUseDelayTimer > 0) return;
+        // 1. 기본 조건 체크 (Owner 여부, 준비 완료 상태)
+        if (!IsOwner || debugStatus != "READY") 
+        {
+            if (visuals != null) visuals.StopItemUseAnimation();
+            return;
+        }
 
-        // 2. UI 위에 있을 때는 월드 상호작용 무시
-        if (IsPointerOverUI()) return;
+        // 2. UI 위에 있거나 딜레이 중일 때 (딜레이 중에도 누르고는 있을 수 있으므로 애니메이션 유지 여부 판단)
+        bool isInteracting = !IsPointerOverUI() && (interactAction.IsPressed() || interact01Action.IsPressed());
+        
+        if (!isInteracting)
+        {
+            if (visuals != null) visuals.StopItemUseAnimation();
+            return;
+        }
 
-        // 3. 버튼 누름 상태에 따른 상호작용 실행 (0: 왼쪽, 1: 오른쪽)
-        if (interactAction.IsPressed()) PerformWorldInteraction(0);
-        else if (interact01Action.IsPressed()) PerformWorldInteraction(1);
+        // 3. 마우스 각도 계산 (애니메이션용)
+        Vector2 screenPos = pointAction.ReadValue<Vector2>();
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+        Vector2 dir = (mouseWorldPos - transform.position).normalized;
+        float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+
+        // [New Scale.x Logic] 
+        // 0도가 정면(오른쪽)이 되도록 보정하고, 왼쪽을 볼 때는 각도를 반전시킵니다.
+        if (IsFlipped)
+        {
+            // 왼쪽을 보고 있을 때 (Scale.x = -1)
+            // 실제 월드 각도가 180도일 때 캐릭터 기준으로는 0도가 되어야 함
+            targetAngle = 180f - targetAngle;
+        }
+        
+        // 블록 설치 애니메이션은 아래를 향한 상태(기존 0도)가 기준이므로 
+        // 90도를 더해 마우스 방향과 일치시킵니다.
+        targetAngle += 90f; 
+
+        // 4. 애니메이션 시작/갱신 요청
+        var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
+        if (!slot.IsEmpty)
+        {
+            var itemData = ItemDataManager.Instance.GetItem(slot.itemID);
+            if (itemData != null)
+            {
+                float duration = GetItemUseDelay(itemData.type);
+                visuals.StartItemUseAnimation(targetAngle, duration);
+            }
+        }
+
+        // 5. 실제 상호작용 실행 (타이머 체크)
+        if (itemUseDelayTimer <= 0)
+        {
+            if (interactAction.IsPressed()) PerformWorldInteraction(0);
+            else if (interact01Action.IsPressed()) PerformWorldInteraction(1);
+        }
     }
 
     private void PerformWorldInteraction(int buttonIndex)
@@ -480,7 +524,7 @@ public class PlayerController : NetworkBehaviour
         // 딜레이 설정
         itemUseDelayTimer = GetItemUseDelay(itemData.type);
 
-        // 월드 좌표 계산
+        // 월드 좌표 계산 (애니메이션에서 쓴 값을 재활용해도 됨)
         Vector2 screenPos = pointAction.ReadValue<Vector2>();
         Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
 
