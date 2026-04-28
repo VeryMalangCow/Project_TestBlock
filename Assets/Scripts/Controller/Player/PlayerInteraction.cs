@@ -66,7 +66,7 @@ public class PlayerInteraction : MonoBehaviour
         if (playerCol != null) return;
 
         // 4. Request Server to place block and consume item
-        controller.PlaceBlockServerRpc(wx, wy, itemID, hotbarIndex);
+        controller.PlaceBlockRpc(wx, wy, itemID, hotbarIndex);
     }
 
     public void HandleDropItem(int id, int count, float lookDir)

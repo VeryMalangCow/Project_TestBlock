@@ -370,7 +370,7 @@ public class InventoryUI : MonoBehaviour
         if (!isInventoryOpen || PlayerController.Local == null) return;
         
         bool isModifierPressed = modifierAction != null && modifierAction.IsPressed();
-        PlayerController.Local.InteractSlotServerRpc(index, buttonIndex, isModifierPressed);
+        PlayerController.Local.InteractSlotRpc(index, buttonIndex, isModifierPressed);
     }
 
     public void OnEquipmentSlotClicked(int index, int buttonIndex)
@@ -378,7 +378,7 @@ public class InventoryUI : MonoBehaviour
         if (!isInventoryOpen || PlayerController.Local == null || index < 0 || index >= equipmentSlots.Count) return;
 
         bool isModifierPressed = modifierAction != null && modifierAction.IsPressed();
-        PlayerController.Local.InteractEquipmentSlotServerRpc(equipmentSlots[index].TargetType, buttonIndex, isModifierPressed);
+        PlayerController.Local.InteractEquipmentSlotRpc(equipmentSlots[index].TargetType, buttonIndex, isModifierPressed);
     }
 
     private void RequestDropItem()
@@ -391,7 +391,7 @@ public class InventoryUI : MonoBehaviour
         Debug.Log($"[InventoryUI-Client] Requesting Drop: ItemID {ghostData.itemID}, Count {ghostData.stackCount}");
         
         float lookDir = PlayerController.Local.IsFlipped ? -1f : 1f;
-        PlayerController.Local.DropItemServerRpc(ghostData.itemID, ghostData.stackCount, lookDir);
+        PlayerController.Local.DropItemRpc(ghostData.itemID, ghostData.stackCount, lookDir);
     }
 
     #endregion
