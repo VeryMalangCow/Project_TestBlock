@@ -26,32 +26,32 @@ public class SpriteProcessor : Editor
 
     [MenuItem("Tools/Project/Sprite Processor/Tile")]
     public static void ProcessSpritesForTile()
-        => ProcessTileTexture("Tiles", "Tile", new Texture2DElement(256, true, new Vector2Int(16, 16), new Vector2(8, 8)));
+        => ProcessTileTexture("Tiles", "Tile", new Texture2DElement(256, true, new Vector2Int(16, 16), new Vector2(8, 8)), true);
 
     [MenuItem("Tools/Project/Sprite Processor/Platform")]
     public static void ProcessSpritesForPlatform()
-        => ProcessTileTexture("Platforms", "Platform", new Texture2DElement(128, false, new Vector2Int(16, 16), new Vector2(8, 8)));
+        => ProcessTileTexture("Platforms", "Platform", new Texture2DElement(128, false, new Vector2Int(16, 16), new Vector2(8, 8)), true);
 
     [MenuItem("Tools/Project/Sprite Processor/Torch")]
     public static void ProcessSpritesForTouch()
-        => ProcessTileTexture("Torches", "Torch", new Texture2DElement(64, false, new Vector2Int(16, 16), new Vector2(8, 8)));
+        => ProcessTileTexture("Torches", "Torch", new Texture2DElement(64, false, new Vector2Int(16, 16), new Vector2(8, 8)), true);
 
     [MenuItem("Tools/Project/Sprite Processor/Tree")]
     public static void ProcessSpritesForTree()
-        => ProcessTileTexture("Trees", "Tree", new Texture2DElement(256, false, new Vector2Int(57, 150), new Vector2(28.5f, 9)));
+        => ProcessTileTexture("Trees", "Tree", new Texture2DElement(256, false, new Vector2Int(57, 150), new Vector2(28.5f, 9)), true);
 
 
     [MenuItem("Tools/Project/Sprite Processor/Body")]
     public static void ProcessSpritesForBody()
-        => ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16));
+        => ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16), false);
     
 
     [MenuItem("Tools/Project/Sprite Processor/Armor")]
     public static void ProcessSpritesForArmor()
-        => ProcessTileTexture("Armors", "Armor", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16));
+        => ProcessTileTexture("Armors", "Armor", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16), false);
     
 
-    private static void ProcessTileTexture(string fileName, string debugName, Texture2DElement texture2DElement)
+    private static void ProcessTileTexture(string fileName, string debugName, Texture2DElement texture2DElement, bool alphaIsTransparency)
     {
         string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { "Assets/Sprites/" + fileName });
         int count = 0;
@@ -59,7 +59,7 @@ public class SpriteProcessor : Editor
         foreach (string guid in guids)
         {
             string path = AssetDatabase.GUIDToAssetPath(guid);
-            ProcessTileTexture(path, texture2DElement);
+            ProcessTileTexture(path, texture2DElement, alphaIsTransparency);
             count++;
         }
 
@@ -69,7 +69,7 @@ public class SpriteProcessor : Editor
     }
 
 
-    private static void ProcessTileTexture(string path, Texture2DElement texture2DElement)
+    private static void ProcessTileTexture(string path, Texture2DElement texture2DElement, bool alphaIsTransparency)
     {
         TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
         if (importer == null) return;
@@ -81,7 +81,7 @@ public class SpriteProcessor : Editor
         importer.filterMode = FilterMode.Point;
         importer.textureCompression = TextureImporterCompression.Uncompressed;
         importer.maxTextureSize = texture2DElement.maxSize;
-        importer.alphaIsTransparency = true;
+        importer.alphaIsTransparency = alphaIsTransparency;
         importer.sRGBTexture = true;
         importer.spritePixelsPerUnit = texture2DElement.ppu;
         

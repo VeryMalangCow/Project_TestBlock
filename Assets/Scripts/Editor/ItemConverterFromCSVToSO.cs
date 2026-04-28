@@ -72,9 +72,9 @@ public class ItemConverterFromCSVToSO : EditorWindow
             itemData.maxStack = maxStack;
             if (System.Enum.TryParse(typeStr, out ItemType parsedType)) itemData.type = parsedType;
 
-            // 1. 일반 아이콘 처리 (48x48)
+            // 1. 일반 아이콘 처리 (48x48 이미지를 64 maxSize로 처리)
             string spritePath = $"{SPRITE_DIR}/Item_{id:D5}.png";
-            ProcessAndRegisterSprite(spritePath, $"ItemIcon_{id:D5}", 48, iconGroup, settings, itemData, true);
+            ProcessAndRegisterSprite(spritePath, $"ItemIcon_{id:D5}", 64, iconGroup, settings, itemData, true);
 
             // 2. 들고 있는 전용 이미지 처리 (64x64)
             string heldSpritePath = $"{SPRITE_HELD_DIR}/Item_{id:D5}.png";
@@ -112,12 +112,13 @@ public class ItemConverterFromCSVToSO : EditorWindow
         if (importer != null)
         {
             bool needsReimport = false;
-            if (importer.maxTextureSize != maxSize || importer.filterMode != FilterMode.Point || !importer.isReadable)
+            if (importer.maxTextureSize != maxSize || importer.filterMode != FilterMode.Point || !importer.isReadable || importer.mipmapEnabled)
             {
                 importer.textureType = TextureImporterType.Default;
                 importer.maxTextureSize = maxSize;
                 importer.filterMode = FilterMode.Point;
                 importer.isReadable = true;
+                importer.mipmapEnabled = false;
                 importer.textureCompression = TextureImporterCompression.Uncompressed;
                 
                 var platform = importer.GetDefaultPlatformTextureSettings();
