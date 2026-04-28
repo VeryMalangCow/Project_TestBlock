@@ -475,7 +475,7 @@ public class PlayerController : NetworkBehaviour
         if (!hasNeighbor) return;
 
         Vector2 checkPos = new Vector2(x + 0.5f, y + 0.5f);
-        if (Physics2D.OverlapBox(checkPos, Vector2.one, 0f, LayerMask.GetMask("Player")) != null) return;
+        if (Physics2D.OverlapBox(checkPos, Vector2.one * 0.95f, 0f, LayerMask.GetMask("Player")) != null) return;
 
         var slot = playerData.inventory.GetSlot(hotbarIndex);
         if (slot.IsEmpty || slot.itemID != itemID) return;

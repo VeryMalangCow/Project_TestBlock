@@ -60,9 +60,9 @@ public class PlayerInteraction : MonoBehaviour
 
         if (!hasNeighbor) return;
 
-        // 3. Player Overlap Check (1x1 area)
+        // 3. Player Overlap Check (0.95x0.95 area to allow placement under feet)
         Vector2 checkPos = new Vector2(wx + 0.5f, wy + 0.5f);
-        Collider2D playerCol = Physics2D.OverlapBox(checkPos, Vector2.one, 0f, LayerMask.GetMask("Player"));
+        Collider2D playerCol = Physics2D.OverlapBox(checkPos, Vector2.one * 0.95f, 0f, LayerMask.GetMask("Player"));
         if (playerCol != null) return;
 
         // 4. Request Server to place block and consume item
