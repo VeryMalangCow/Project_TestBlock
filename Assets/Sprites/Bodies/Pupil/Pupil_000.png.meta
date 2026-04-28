@@ -131,17 +131,17 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 0
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 3e63183ad1bc55948b00fedc9e4eb876
+      spriteID: fce761173f35b224c94240efbca7c645
       internalID: 408766544
       vertices: []
       indices: 

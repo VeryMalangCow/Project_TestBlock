@@ -43,12 +43,12 @@ public class SpriteProcessor : Editor
 
     [MenuItem("Tools/Project/Sprite Processor/Body")]
     public static void ProcessSpritesForBody()
-        => ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16), false);
+        => ProcessTileTexture("Bodies", "Body", new Texture2DElement(256, false, new Vector2Int(46, 80), new Vector2(23f, 40), 16), false);
     
 
     [MenuItem("Tools/Project/Sprite Processor/Armor")]
     public static void ProcessSpritesForArmor()
-        => ProcessTileTexture("Armors", "Armor", new Texture2DElement(256, false, new Vector2Int(45, 80), new Vector2(24.5f, 40), 16), false);
+        => ProcessTileTexture("Armors", "Armor", new Texture2DElement(256, false, new Vector2Int(46, 80), new Vector2(23f, 40), 16), false);
     
 
     private static void ProcessTileTexture(string fileName, string debugName, Texture2DElement texture2DElement, bool alphaIsTransparency)

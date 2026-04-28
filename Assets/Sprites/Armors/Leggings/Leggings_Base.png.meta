@@ -158,17 +158,17 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 176
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: e821ac927affe49418808ffe3cf9e6bf
+      spriteID: 3ebd4738151655f4ab1cf02782e835f4
       internalID: -542703524
       vertices: []
       indices: 
@@ -178,19 +178,19 @@ TextureImporter:
       name: Leggings_Base_001
       rect:
         serializedVersion: 2
-        x: 46
+        x: 47
         y: 176
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8664aedcb9d704f4a8441e6c63edbe08
+      spriteID: 0d9f01e49adf9f3498ce31acf8df6ac2
       internalID: -532582691
       vertices: []
       indices: 
@@ -200,19 +200,19 @@ TextureImporter:
       name: Leggings_Base_002
       rect:
         serializedVersion: 2
-        x: 92
+        x: 94
         y: 176
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: b4a50a979119c6b42bf41189d05584a9
+      spriteID: 148a93534521f3f4a94221d4f237c80c
       internalID: 1224684135
       vertices: []
       indices: 
@@ -222,19 +222,19 @@ TextureImporter:
       name: Leggings_Base_003
       rect:
         serializedVersion: 2
-        x: 138
+        x: 141
         y: 176
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 555538cbd2ff6f14ea3872e8a09330c3
+      spriteID: 54b7b616ef1e29b449311b2746ddac0d
       internalID: -173087008
       vertices: []
       indices: 
@@ -244,19 +244,19 @@ TextureImporter:
       name: Leggings_Base_004
       rect:
         serializedVersion: 2
-        x: 184
+        x: 188
         y: 176
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 8d7723f9c65aa8941aea8f7bd9c9793c
+      spriteID: 91f797d9e82219b4c9d35dd9cdc786ae
       internalID: -1833613804
       vertices: []
       indices: 
@@ -268,17 +268,17 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 95
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: dbdfd6a7f47df6c498a34a61e56a383d
+      spriteID: 1370ddbe25b6776469d9dbe53362caf5
       internalID: 1777285048
       vertices: []
       indices: 
@@ -288,19 +288,19 @@ TextureImporter:
       name: Leggings_Base_006
       rect:
         serializedVersion: 2
-        x: 46
+        x: 47
         y: 95
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 5d9388684d4afb24abccedac1020ba1a
+      spriteID: 204c2bebc56ce5646b5c4fbc144336db
       internalID: -1880613813
       vertices: []
       indices: 
@@ -310,19 +310,19 @@ TextureImporter:
       name: Leggings_Base_007
       rect:
         serializedVersion: 2
-        x: 92
+        x: 94
         y: 95
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9f53a84a4b2a90d4dbbe95554c4c6029
+      spriteID: 85576f36140ff464491c65e0ebb91290
       internalID: -1171131225
       vertices: []
       indices: 
@@ -332,19 +332,19 @@ TextureImporter:
       name: Leggings_Base_008
       rect:
         serializedVersion: 2
-        x: 138
+        x: 141
         y: 95
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: bbc44de60fc97ee4bba0c9eb8e569e1a
+      spriteID: d98817354201f4e48ad464dffcd5433d
       internalID: 1120214938
       vertices: []
       indices: 
@@ -354,19 +354,19 @@ TextureImporter:
       name: Leggings_Base_009
       rect:
         serializedVersion: 2
-        x: 184
+        x: 188
         y: 95
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: fe6f21e1267c49348b11546150e77ba3
+      spriteID: b8668c22ece13a04485f15c8fffa7882
       internalID: -44473692
       vertices: []
       indices: 
@@ -378,17 +378,17 @@ TextureImporter:
         serializedVersion: 2
         x: 0
         y: 14
-        width: 45
+        width: 46
         height: 80
       alignment: 9
-      pivot: {x: 0.54444444, y: 0.5}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
       physicsShape: []
       tessellationDetail: 0
       bones: []
-      spriteID: 9775bf71af9e0604cb68286546593dcc
+      spriteID: 5958df733c2336f4b88361cbca3a4565
       internalID: -62409780
       vertices: []
       indices: 
