@@ -397,6 +397,9 @@ public class PlayerController : NetworkBehaviour
         }
 
         if (itemUseDelayTimer > 0) itemUseDelayTimer -= Time.deltaTime;
+
+        HandleContinuousInteraction();
+
         lastPosition = transform.position;
         moveInput = moveAction.ReadValue<Vector2>();
         moveInputSync.Value = moveInput;
@@ -441,25 +444,45 @@ public class PlayerController : NetworkBehaviour
         return results.Count > 0;
     }
 
-    private void OnInteract00Performed(InputAction.CallbackContext ctx)
+    private void HandleContinuousInteraction()
     {
-        if (!IsOwner || itemUseDelayTimer > 0 || IsPointerOverUI()) return;
-        var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
-        if (!slot.IsEmpty) { var itemData = ItemDataManager.Instance.GetItem(slot.itemID); if (itemData != null) itemUseDelayTimer = GetItemUseDelay(itemData.type); }
-        Vector2 screenPos = pointAction.ReadValue<Vector2>();
-        Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-        interaction.UseItem(0, selectedHotbarIndex, worldPos);
+        // 1. 기본 조건 체크 (Owner 여부, 준비 완료 상태, 딜레이 타이머)
+        if (!IsOwner || debugStatus != "READY" || itemUseDelayTimer > 0) return;
+
+        // 2. UI 위에 있을 때는 월드 상호작용 무시
+        if (IsPointerOverUI()) return;
+
+        // 3. 버튼 누름 상태에 따른 상호작용 실행 (0: 왼쪽, 1: 오른쪽)
+        if (interactAction.IsPressed()) PerformWorldInteraction(0);
+        else if (interact01Action.IsPressed()) PerformWorldInteraction(1);
     }
 
-    private void OnInteract01Performed(InputAction.CallbackContext ctx)
+    private void PerformWorldInteraction(int buttonIndex)
     {
-        if (!IsOwner || itemUseDelayTimer > 0 || IsPointerOverUI()) return;
+        if (playerData == null || playerData.inventory == null) return;
+
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
-        if (!slot.IsEmpty) { var itemData = ItemDataManager.Instance.GetItem(slot.itemID); if (itemData != null) itemUseDelayTimer = GetItemUseDelay(itemData.type); }
+        if (slot.IsEmpty) return;
+
+        ItemData itemData = ItemDataManager.Instance.GetItem(slot.itemID);
+        if (itemData == null) return;
+
+        // 딜레이 설정
+        itemUseDelayTimer = GetItemUseDelay(itemData.type);
+
+        // 월드 좌표 계산
         Vector2 screenPos = pointAction.ReadValue<Vector2>();
         Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-        interaction.UseItem(1, selectedHotbarIndex, worldPos);
+
+        // 실제 상호작용 실행
+        interaction.UseItem(buttonIndex, selectedHotbarIndex, worldPos);
     }
+
+    // [Note] OnInteractPerformed 이벤트들은 이제 UI 드래그 앤 드롭 등 1회성 이벤트를 위해서만 남겨두거나 
+    // 혹은 Update 방식과 충돌하지 않도록 내용을 비웁니다. 
+    // 여기서는 연속 설치를 위해 Update 방식으로 완전히 이전합니다.
+    private void OnInteract00Performed(InputAction.CallbackContext ctx) { }
+    private void OnInteract01Performed(InputAction.CallbackContext ctx) { }
 
     [Rpc(SendTo.Server)]
     public void PlaceBlockRpc(int x, int y, int itemID, int hotbarIndex)
