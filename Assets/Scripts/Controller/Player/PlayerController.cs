@@ -483,35 +483,26 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        // 2. UI 위에 있거나 딜레이 중일 때 (딜레이 중에도 누르고는 있을 수 있으므로 애니메이션 유지 여부 판단)
-        bool isInteracting = !IsPointerOverUI() && (interactAction.IsPressed() || interact01Action.IsPressed());
+        // 2. 현재 상태 판단: 버튼을 누르고 있거나, 아직 이전 아이템 사용의 딜레이(UseTime)가 남았는가?
+        bool isButtonPressed = !IsPointerOverUI() && (interactAction.IsPressed() || interact01Action.IsPressed());
+        bool isStillActive = isButtonPressed || itemUseDelayTimer > 0;
         
-        if (!isInteracting)
+        if (!isStillActive)
         {
             if (visuals != null) visuals.StopItemUseAnimation();
             return;
         }
 
-        // 3. 마우스 각도 계산 (애니메이션용)
+        // 3. 마우스 각도 계산 (애니메이션 유지를 위해 계속 갱신)
         Vector2 screenPos = pointAction.ReadValue<Vector2>();
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
         Vector2 dir = (mouseWorldPos - transform.position).normalized;
         float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
 
-        // [New Scale.x Logic] 
-        // 0도가 정면(오른쪽)이 되도록 보정하고, 왼쪽을 볼 때는 각도를 반전시킵니다.
-        if (IsFlipped)
-        {
-            // 왼쪽을 보고 있을 때 (Scale.x = -1)
-            // 실제 월드 각도가 180도일 때 캐릭터 기준으로는 0도가 되어야 함
-            targetAngle = 180f - targetAngle;
-        }
-        
-        // 블록 설치 애니메이션은 아래를 향한 상태(기존 0도)가 기준이므로 
-        // 90도를 더해 마우스 방향과 일치시킵니다.
+        if (IsFlipped) targetAngle = 180f - targetAngle;
         targetAngle += 90f; 
 
-        // 4. 애니메이션 시작/갱신 요청
+        // 4. 애니메이션 시작/갱신 요청 (아이템 데이터 기반)
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         if (!slot.IsEmpty)
         {
@@ -523,8 +514,8 @@ public class PlayerController : NetworkBehaviour
             }
         }
 
-        // 5. 실제 상호작용 실행 (타이머 체크)
-        if (itemUseDelayTimer <= 0)
+        // 5. 실제 상호작용 실행 (버튼이 눌려있고 타이머가 끝났을 때만)
+        if (isButtonPressed && itemUseDelayTimer <= 0)
         {
             if (interactAction.IsPressed()) PerformWorldInteraction(0);
             else if (interact01Action.IsPressed()) PerformWorldInteraction(1);
