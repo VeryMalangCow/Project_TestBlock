@@ -64,13 +64,14 @@ public class PlayerController : NetworkBehaviour
     {
         switch (type)
         {
-            case ItemType.Block: return 0.2f;
+            case ItemType.Block: 
+                return 0.2f;
             case ItemType.Helmet:
             case ItemType.Chestplate:
             case ItemType.Leggings:
             case ItemType.Boots:
             case ItemType.Jetbag:
-                return 2.0f;
+                return 0.2f;
             case ItemType.Consumable: return 0.5f;
             case ItemType.Sword:
             case ItemType.Tool:
@@ -509,8 +510,17 @@ public class PlayerController : NetworkBehaviour
             var itemData = ItemDataManager.Instance.GetItem(slot.itemID);
             if (itemData != null)
             {
-                float duration = GetItemUseDelay(itemData.type);
-                visuals.StartItemUseAnimation(targetAngle, duration);
+                // [Fix] 블록 타입인 경우에만 휘두르기 애니메이션 실행 (실시간 각도 사용)
+                if (itemData.type == ItemType.Block)
+                {
+                    float duration = GetItemUseDelay(itemData.type);
+                    visuals.StartItemUseAnimation(targetAngle, duration);
+                }
+                else
+                {
+                    // 블록이 아니면 애니메이션 중단
+                    visuals.StopItemUseAnimation();
+                }
             }
         }
 
@@ -548,6 +558,40 @@ public class PlayerController : NetworkBehaviour
     // 여기서는 연속 설치를 위해 Update 방식으로 완전히 이전합니다.
     private void OnInteract00Performed(InputAction.CallbackContext ctx) { }
     private void OnInteract01Performed(InputAction.CallbackContext ctx) { }
+
+    [Rpc(SendTo.Server)]
+    public void QuickEquipRpc(int hotbarIndex)
+    {
+        if (playerData == null || playerData.inventory == null || playerData.equipment == null) return;
+
+        var slot = playerData.inventory.GetSlot(hotbarIndex);
+        if (slot.IsEmpty) return;
+
+        ItemData itemData = ItemDataManager.Instance.GetItem(slot.itemID);
+        if (itemData == null || !IsEquipmentType(itemData.type)) return;
+
+        // 1. 현재 장착된 아이템 정보 가져오기
+        int oldTypeID = playerData.equipment.GetEquipment(itemData.type);
+        int oldItemID = ItemDataManager.Instance.FindItemIDByType(itemData.type, oldTypeID);
+
+        // 2. 서버 데이터 갱신 (장착)
+        SetEquipmentOnServer(itemData.type, itemData.typeID);
+
+        // 3. 인벤토리 슬롯 교체
+        if (oldItemID >= 0)
+        {
+            // 기존 장비가 있었다면 핫바 슬롯으로 돌려보냄
+            playerData.inventory.SetSlot(hotbarIndex, new PlayerInventorySlotData(oldItemID, 1));
+        }
+        else
+        {
+            // 기존 장비가 없었다면 핫바 슬롯을 비움
+            playerData.inventory.ClearSlot(hotbarIndex);
+        }
+
+        // 4. 동기화
+        SyncInventoryToNetwork();
+    }
 
     [Rpc(SendTo.Server)]
     public void PlaceBlockRpc(int x, int y, int itemID, int hotbarIndex)

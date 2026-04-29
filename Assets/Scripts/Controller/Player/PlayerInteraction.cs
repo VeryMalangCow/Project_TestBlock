@@ -79,11 +79,28 @@ public class PlayerInteraction : MonoBehaviour
         ItemData itemData = ItemDataManager.Instance.GetItem(selectedSlot.itemID);
         if (itemData == null) return;
 
-        // Block Placement Logic (Left Click Only)
+        // 1. 장비류 즉시 장착 (우클릭 시)
+        if (IsEquipmentType(itemData.type))
+        {
+            if (buttonIndex == 1) // 우클릭
+            {
+                controller.QuickEquipRpc(selectedHotbarIndex);
+            }
+            return;
+        }
+
+        // 2. 블록 설치 로직 (좌클릭만)
         if (itemData.type == ItemType.Block && buttonIndex == 0)
         {
             TryPlaceBlock(selectedHotbarIndex, selectedSlot.itemID, mouseWorldPos);
         }
+    }
+
+    private bool IsEquipmentType(ItemType type)
+    {
+        return type == ItemType.Helmet || type == ItemType.Chestplate || 
+               type == ItemType.Leggings || type == ItemType.Boots || 
+               type == ItemType.Jetbag;
     }
 
     private void TryPlaceBlock(int hotbarIndex, int itemID, Vector2 mouseWorldPos)
