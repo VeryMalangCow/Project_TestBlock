@@ -80,7 +80,7 @@ public class PlayerController : NetworkBehaviour
             case ItemType.Leggings:
             case ItemType.Boots:
             case ItemType.Jetbag:
-                return 0.1f; // [Fix] 장비 장착 딜레이 단축
+                return 0.1f; 
             case ItemType.Consumable: return 0.5f;
             case ItemType.Weapon:
             case ItemType.Tool:
@@ -448,15 +448,14 @@ public class PlayerController : NetworkBehaviour
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         ItemData itemData = !slot.IsEmpty ? ItemDataManager.Instance.GetItem(slot.itemID) : null;
 
-        // [New] 방향 전환 잠금 조건 세분화
-        // 무기(Weapon) 사용 중일 때만 방향 전환을 막고, 블록(Block)은 허용합니다.
+        // 방향 전환 잠금 조건 세분화: 무기(Weapon) 사용 중일 때만 방향 전환을 막고, 블록(Block)은 허용
         bool isDirectionLocked = itemUseDelayTimer > 0 && (itemData != null && itemData.type == ItemType.Weapon);
 
         if (isDashingSync.Value)
         {
             newFlip = dashDirectionSync.Value < 0;
         }
-        else if (!isDirectionLocked) // 잠금 상태가 아닐 때만 마우스 위치 주시
+        else if (!isDirectionLocked)
         {
             Vector2 screenPos = pointAction.ReadValue<Vector2>();
             Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
@@ -489,21 +488,18 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleContinuousInteraction()
     {
-        // 1. 기본 조건 체크 (Owner 여부, 준비 완료 상태)
         if (!IsOwner || debugStatus != "READY") 
         {
             if (visuals != null) visuals.StopItemUseAnimation();
             return;
         }
 
-        // 2. 대시 중인 경우 차단
         if (isDashingSync.Value)
         {
             if (visuals != null) visuals.StopItemUseAnimation();
             return;
         }
 
-        // 아이템 정보 가져오기
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         if (slot.IsEmpty) 
         {
@@ -513,7 +509,6 @@ public class PlayerController : NetworkBehaviour
         ItemData itemData = ItemDataManager.Instance.GetItem(slot.itemID);
         if (itemData == null) return;
 
-        // [New] 3. 현재 아이템 타입에 대해 유효한 버튼이 눌렸는지 판단
         bool leftClick = interactAction.IsPressed();
         bool rightClick = interact01Action.IsPressed();
         bool isPointerOverUI = IsPointerOverUI();
@@ -539,7 +534,6 @@ public class PlayerController : NetworkBehaviour
             }
         }
 
-        // 4. 현재 상태가 활성 상태인지 판단 (유효한 버튼이 눌려있거나, 이미 시작된 딜레이가 진행 중인가)
         bool isStillActive = isValidInput || itemUseDelayTimer > 0;
         
         if (!isStillActive)
@@ -548,7 +542,6 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        // 5. 타입별 핸들러 호출
         switch (itemData.type)
         {
             case ItemType.Block:
@@ -564,16 +557,14 @@ public class PlayerController : NetworkBehaviour
                 break;
 
             default:
-                // 장비류, 소모품 등 기타 아이템 처리 (우클릭 기반)
                 if (visuals != null) visuals.StopItemUseAnimation();
-                if (isValidInput && itemUseDelayTimer <= 0) PerformWorldInteraction(1); // 우클릭(1)으로 실행
+                if (isValidInput && itemUseDelayTimer <= 0) PerformWorldInteraction(1);
                 break;
         }
     }
 
     private void HandleBlockInteraction(ItemData data, bool isButtonPressed)
     {
-        // 1. 마우스 각도 실시간 계산 (타이머 체크 없이 매 프레임 업데이트)
         Vector2 screenPos = pointAction.ReadValue<Vector2>();
         Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
         Vector2 dir = (mouseWorldPos - transform.position).normalized;
@@ -582,10 +573,9 @@ public class PlayerController : NetworkBehaviour
         if (IsFlipped) targetAngle = 180f - targetAngle;
         float finalAngle = targetAngle + 90f; 
 
-        // 2. 애니메이션 실행 (실시간 finalAngle 전달)
-        visuals.StartItemUseAnimation(finalAngle, GetItemUseDelay(data), 15f);
+        // [Fix] 인스펙터의 BlockSwingOffset 연동
+        visuals.StartItemUseAnimation(finalAngle, GetItemUseDelay(data), visuals.BlockSwingOffset);
 
-        // 3. 실제 설치 실행 (타이머가 끝났을 때만)
         if (isButtonPressed && itemUseDelayTimer <= 0) PerformWorldInteraction(0);
     }
 
@@ -593,18 +583,12 @@ public class PlayerController : NetworkBehaviour
     {
         if (data.weaponStats == null) return;
 
-        // 1. 무기 타입별 로직 및 애니메이션 분기
         switch (data.weaponStats.weaponType)
         {
             case WeaponType.Sword:
-                // 검: 고정 각도 0도, 큰 휘두르기(60도)
                 if (itemUseDelayTimer <= 0) lockedTargetAngle = 0f;
-                visuals.StartItemUseAnimation(lockedTargetAngle, GetItemUseDelay(data), 60f);
-                break;
-
-            case WeaponType.Spear:
-                // 추후 구현 (찌르기 애니메이션 등)
-                visuals.StopItemUseAnimation();
+                // [Fix] 인스펙터의 SwordSwingOffset 연동
+                visuals.StartItemUseAnimation(lockedTargetAngle, GetItemUseDelay(data), visuals.SwordSwingOffset);
                 break;
 
             default:
@@ -612,13 +596,11 @@ public class PlayerController : NetworkBehaviour
                 break;
         }
 
-        // 2. 실제 공격 실행 (현재는 애니메이션만)
         if (isButtonPressed && itemUseDelayTimer <= 0) PerformWorldInteraction(0);
     }
 
     private void HandleToolInteraction(ItemData data, bool isButtonPressed)
     {
-        // 도구(곡괭이 등) 로직: 마우스 각도 추적 + 30도 휘두르기
         if (itemUseDelayTimer <= 0)
         {
             Vector2 screenPos = pointAction.ReadValue<Vector2>();

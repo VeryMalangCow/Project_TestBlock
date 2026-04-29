@@ -1118,7 +1118,7 @@ MonoBehaviour:
   - {x: 0, y: 0.125}
   walkAnimSpeedMultiplier: 2
   itemUseRotationRoot: {fileID: 4008413366364234599}
-  blockSwingOffset: 90
+  blockSwingOffset: 30
   swordSwingOffset: 60
   rotationReturnSpeed: 15
 --- !u!1 &3915201043299887287

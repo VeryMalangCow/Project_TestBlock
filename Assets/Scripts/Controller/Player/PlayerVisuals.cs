@@ -39,6 +39,9 @@ public class PlayerVisuals : MonoBehaviour
     [SerializeField] private float blockSwingOffset = 15f; 
     [SerializeField] private float swordSwingOffset = 60f; 
     [SerializeField] private float rotationReturnSpeed = 15f; 
+
+    public float BlockSwingOffset => blockSwingOffset;
+    public float SwordSwingOffset => swordSwingOffset;
     
     private bool isUsingItem = false;
     private float targetBaseAngle = 0f;
