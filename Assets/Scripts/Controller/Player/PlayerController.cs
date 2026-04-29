@@ -597,7 +597,7 @@ public class PlayerController : NetworkBehaviour
         switch (data.weaponStats.weaponType)
         {
             case WeaponType.Sword:
-                if (itemUseDelayTimer <= 0) lockedTargetAngle = 0f;
+                if (itemUseDelayTimer <= 0) lockedTargetAngle = 90f; // [Fix] 0(아래) 대신 90(정면)을 기준으로 휘두름
                 visuals.StartItemUseAnimation(lockedTargetAngle, useDelay, visuals.SwordSwingOffset);
                 break;
 
