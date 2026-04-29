@@ -573,7 +573,6 @@ public class PlayerController : NetworkBehaviour
         if (IsFlipped) targetAngle = 180f - targetAngle;
         float finalAngle = targetAngle + 90f; 
 
-        // [Fix] 인스펙터의 BlockSwingOffset 연동
         visuals.StartItemUseAnimation(finalAngle, GetItemUseDelay(data), visuals.BlockSwingOffset);
 
         if (isButtonPressed && itemUseDelayTimer <= 0) PerformWorldInteraction(0);
@@ -581,18 +580,24 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleWeaponInteraction(ItemData data, bool isButtonPressed)
     {
-        if (data.weaponStats == null) return;
+        if (data.weaponStats == null) 
+        {
+            if (visuals != null) visuals.StopItemUseAnimation();
+            return;
+        }
+
+        float useDelay = GetItemUseDelay(data);
 
         switch (data.weaponStats.weaponType)
         {
             case WeaponType.Sword:
-                if (itemUseDelayTimer <= 0) lockedTargetAngle = 0f;
-                // [Fix] 인스펙터의 SwordSwingOffset 연동
-                visuals.StartItemUseAnimation(lockedTargetAngle, GetItemUseDelay(data), visuals.SwordSwingOffset);
+                // 검: 정면 방향(90도) 고정, 인스펙터의 SwordSwingOffset 연동
+                if (itemUseDelayTimer <= 0) lockedTargetAngle = 90f; 
+                visuals.StartItemUseAnimation(lockedTargetAngle, useDelay, visuals.SwordSwingOffset);
                 break;
 
             default:
-                visuals.StopItemUseAnimation();
+                if (visuals != null) visuals.StopItemUseAnimation();
                 break;
         }
 

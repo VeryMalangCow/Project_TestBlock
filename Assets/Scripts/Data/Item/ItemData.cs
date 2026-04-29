@@ -57,11 +57,10 @@ public class WeaponStats
 {
     public int weaponID; // Matches ItemData.typeID
     public WeaponType weaponType; 
-    public int attackType; // 0: Swing, 1: Poke, etc.
     public int damage;
     public float knockback;
     public float speed;    // Attacks per second
-    public int critChance;
+    public float critChance; 
     public float critDamage; 
     public float reach;
     public int manaCost;

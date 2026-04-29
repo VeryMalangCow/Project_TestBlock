@@ -38,7 +38,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
 
         EnsureFolders();
 
-        // 1. 무기 데이터 로드 (TypeID 기반 매핑을 위해 Dictionary 키를 WeaponID로 설정)
+        // 1. 무기 데이터 로드 (TypeID 기반)
         Dictionary<int, WeaponStats> weaponStatsMap = LoadWeaponStats();
 
         string[] lines = File.ReadAllLines(CSV_PATH);
@@ -124,41 +124,53 @@ public class ItemConverterFromCSVToSO : EditorWindow
             return map;
         }
 
-        string[] lines = File.ReadAllLines(WEAPON_CSV_PATH);
-        for (int i = 1; i < lines.Length; i++) 
+        try
         {
-            string[] v = lines[i].Split(',');
-            if (v.Length < 9) continue; 
-
-            try
+            // [Fix] FileShare.ReadWrite를 사용하여 다른 프로그램(엑셀 등)이 열고 있어도 읽기 시도
+            using (var stream = new FileStream(WEAPON_CSV_PATH, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+            using (var reader = new StreamReader(stream))
             {
-                // CSV Order: 
-                // WeaponID(0) [TypeID], WeaponType(1), AttackType(2), Damage(3), Knockback(4), Speed(5), CritChance(6), CritDamage(7), Reach(8), ManaCost(9)
-                WeaponType wType = WeaponType.None;
-                System.Enum.TryParse(v[1], true, out wType);
-
-                WeaponStats stats = new WeaponStats
+                string header = reader.ReadLine(); // Skip header
+                while (!reader.EndOfStream)
                 {
-                    weaponID = int.Parse(v[0]),
-                    weaponType = wType,
-                    attackType = int.Parse(v[2]),
-                    damage = int.Parse(v[3]),
-                    knockback = float.Parse(v[4]),
-                    speed = float.Parse(v[5]),
-                    critChance = int.Parse(v[6]),
-                    critDamage = float.Parse(v[7]),
-                    reach = float.Parse(v[8])
-                };
-                
-                if (v.Length >= 10) stats.manaCost = int.Parse(v[9]);
+                    string line = reader.ReadLine()?.Trim();
+                    if (string.IsNullOrEmpty(line)) continue;
 
-                map[stats.weaponID] = stats;
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[Converter] Error parsing weapon CSV line {i}: {e.Message}");
+                    string[] v = line.Split(',');
+                    if (v.Length < 8) continue;
+
+                    try
+                    {
+                        WeaponType wType = WeaponType.None;
+                        System.Enum.TryParse(v[1].Trim(), true, out wType);
+
+                        WeaponStats stats = new WeaponStats
+                        {
+                            weaponID = int.Parse(v[0].Trim()),
+                            weaponType = wType,
+                            damage = int.Parse(v[2].Trim()),
+                            knockback = float.Parse(v[3].Trim()),
+                            speed = float.Parse(v[4].Trim()),
+                            critChance = float.Parse(v[5].Trim()),
+                            critDamage = float.Parse(v[6].Trim()),
+                            reach = float.Parse(v[7].Trim()),
+                            manaCost = (v.Length >= 9) ? int.Parse(v[8].Trim()) : 0
+                        };
+
+                        map[stats.weaponID] = stats;
+                    }
+                    catch (System.Exception e)
+                    {
+                        Debug.LogError($"[Converter] Error parsing weapon CSV line: {e.Message}");
+                    }
+                }
             }
         }
+        catch (IOException e)
+        {
+            Debug.LogError($"[Converter] Failed to read weapon CSV due to sharing violation: {e.Message}. Please close the file in Excel.");
+        }
+        
         return map;
     }
 

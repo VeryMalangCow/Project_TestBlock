@@ -256,8 +256,9 @@ public class PlayerVisuals : MonoBehaviour
         }
         else
         {
-            currentSwingOffset = Mathf.Lerp(currentSwingOffset, 0, Time.deltaTime * rotationReturnSpeed);
-            finalRotation = currentSwingOffset; 
+            // [Fix] 즉시 복귀
+            currentSwingOffset = 0f;
+            finalRotation = 0f; 
         }
 
         targetRoot.localRotation = Quaternion.Euler(0, 0, finalRotation);
