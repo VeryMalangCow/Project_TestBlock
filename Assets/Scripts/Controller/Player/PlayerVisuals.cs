@@ -37,6 +37,7 @@ public class PlayerVisuals : MonoBehaviour
     [Header("### Item Use Animation")]
     [SerializeField] private Transform itemUseRotationRoot; 
     [SerializeField] private float blockSwingOffset = 15f; 
+    [SerializeField] private float swordSwingOffset = 60f; 
     [SerializeField] private float rotationReturnSpeed = 15f; 
     
     private bool isUsingItem = false;
@@ -45,6 +46,7 @@ public class PlayerVisuals : MonoBehaviour
     private float swingLerpTime = 0f;
     private int swingPhase = 0; 
     private float itemUseDuration = 0.2f;
+    private float currentMaxSwingOffset = 15f;
 
     private MaterialPropertyBlock heldItemMPB;
     private int currentHeldItemID = -2;
@@ -208,7 +210,21 @@ public class PlayerVisuals : MonoBehaviour
         else
         {
             float absVelocityX = Mathf.Abs(horizontalVelocity);
-            if (absVelocityX > 0.1f) { walkCycleTime += Time.deltaTime * absVelocityX * walkAnimSpeedMultiplier; targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8); }
+            bool isReverse = false;
+            if (absVelocityX > 0.1f) 
+            {
+                // 뒷걸음질 체크 (보는 방향과 이동 방향이 반대인 경우)
+                bool isMovingLeft = horizontalVelocity < 0;
+                if (isMovingLeft != IsFlipped) isReverse = true;
+
+                float speed = absVelocityX * walkAnimSpeedMultiplier * Time.deltaTime;
+                if (isReverse) walkCycleTime -= speed;
+                else walkCycleTime += speed;
+
+                // 순환 처리
+                if (walkCycleTime < 0) walkCycleTime += 8f;
+                targetFrame = 1 + (Mathf.FloorToInt(walkCycleTime) % 8); 
+            }
             else { targetFrame = 0; walkCycleTime = 0; }
         }
 
@@ -227,14 +243,12 @@ public class PlayerVisuals : MonoBehaviour
             swingLerpTime += Time.deltaTime / itemUseDuration;
             if (swingLerpTime >= 1f) { swingLerpTime = 0f; swingPhase = 1 - swingPhase; }
 
-            float startOffset = (swingPhase == 0) ? -blockSwingOffset : blockSwingOffset;
-            float endOffset = (swingPhase == 0) ? blockSwingOffset : -blockSwingOffset;
+            float startOffset = (swingPhase == 0) ? -currentMaxSwingOffset : currentMaxSwingOffset;
+            float endOffset = (swingPhase == 0) ? currentMaxSwingOffset : -currentMaxSwingOffset;
             
             float t = Mathf.SmoothStep(0, 1, swingLerpTime);
             currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
 
-            // [New Scale.x Logic] 로컬 좌표계가 이미 반전되어 있으므로 추가적인 각도 뒤집기가 필요 없습니다.
-            // 단, 타겟 각도 자체가 플레이어가 바라보는 방향 기준이어야 합니다.
             finalRotation = targetBaseAngle + currentSwingOffset;
         }
         else
@@ -246,11 +260,12 @@ public class PlayerVisuals : MonoBehaviour
         targetRoot.localRotation = Quaternion.Euler(0, 0, finalRotation);
     }
 
-    public void StartItemUseAnimation(float targetAngle, float duration)
+    public void StartItemUseAnimation(float targetAngle, float duration, float maxOffset = 15f)
     {
         isUsingItem = true;
         targetBaseAngle = targetAngle;
         itemUseDuration = duration;
+        currentMaxSwingOffset = maxOffset;
     }
 
     public void StopItemUseAnimation()
@@ -269,7 +284,6 @@ public class PlayerVisuals : MonoBehaviour
         if (upperBodyContainer != null)
         {
             Vector2 animOffset = (frameIndex >= 0 && frameIndex < upperBodyPositions.Length) ? upperBodyPositions[frameIndex] : Vector2.zero;
-            // [New Scale.x Logic] IsFlipped에 따른 수동 오프셋 계산이 필요 없어집니다.
             upperBodyContainer.localPosition = new Vector3(animOffset.x, animOffset.y, 0);
         }
 
@@ -290,22 +304,17 @@ public class PlayerVisuals : MonoBehaviour
         if (data == null) return;
         var settings = HeldItemVisualRegistry.GetSettings(data.type);
 
-        // [New Scale.x Logic] 좌우 반전 보정이 불필요해져 기본 값만 적용합니다.
         float pivotOffsetX = (settings.pivot.x - 32f) / 16f;
         float pivotOffsetY = -(settings.pivot.y - 32f) / 16f;
 
-        heldItemRenderer.transform.localPosition = new Vector3(-pivotOffsetX, +pivotOffsetY, -0.01f);
+        heldItemRenderer.transform.localPosition = new Vector3(-pivotOffsetX, pivotOffsetY, -0.01f);
         heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, settings.rotation);
     }
 
     public void SetFlip(bool flipX)
     {
         IsFlipped = flipX;
-        
-        // [New Scale.x Logic] 렌더러 flipX 대신 오브젝트 자체의 Scale을 조절합니다.
         transform.localScale = new Vector3(flipX ? -1f : 1f, 1f, 1f);
-
-        // 기존 렌더러들의 flipX는 초기화합니다.
         foreach (var layer in layers) if (layer.renderer != null) layer.renderer.flipX = false;
         if (heldItemRenderer != null) heldItemRenderer.flipX = false;
     }
