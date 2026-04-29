@@ -448,10 +448,11 @@ public class PlayerController : NetworkBehaviour
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         ItemData itemData = !slot.IsEmpty ? ItemDataManager.Instance.GetItem(slot.itemID) : null;
 
-        // 방향 전환 잠금 조건 세분화: 무기(Weapon) 사용 중일 때만 방향 전환을 막고, 블록(Block)은 허용
+        // [New] 무기 사용 중(공격 중)에는 방향 전환을 잠금
+        // 단, 딜레이가 0이 되면 잠금이 풀려 다음 공격 직전에 방향을 바꿀 수 있게 됩니다.
         bool isDirectionLocked = itemUseDelayTimer > 0 && (itemData != null && itemData.type == ItemType.Weapon);
 
-        // [Fix] 무기 공격 중이 아니라면 대시 여부와 상관없이 항상 마우스 방향 주시
+        // 공격 중이 아닐 때만 마우스 위치 주시
         if (!isDirectionLocked)
         {
             Vector2 screenPos = pointAction.ReadValue<Vector2>();
@@ -490,8 +491,6 @@ public class PlayerController : NetworkBehaviour
             if (visuals != null) visuals.StopItemUseAnimation();
             return;
         }
-
-        // [Removed] Dash Restriction removed per user request
 
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         if (slot.IsEmpty) 
@@ -581,6 +580,20 @@ public class PlayerController : NetworkBehaviour
 
         float useDelay = GetItemUseDelay(data);
 
+        // [Fix] 새로운 공격 주기가 시작될 때 방향(Flip) 강제 업데이트
+        if (itemUseDelayTimer <= 0)
+        {
+            Vector2 screenPos = pointAction.ReadValue<Vector2>();
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+            bool nextFlip = mouseWorldPos.x < transform.position.x;
+            
+            if (isFlippedSync.Value != nextFlip)
+            {
+                isFlippedSync.Value = nextFlip;
+                visuals.SetFlip(nextFlip);
+            }
+        }
+
         switch (data.weaponStats.weaponType)
         {
             case WeaponType.Sword:
@@ -589,7 +602,7 @@ public class PlayerController : NetworkBehaviour
                 break;
 
             default:
-                if (visuals != null) visuals.StopItemUseAnimation();
+                visuals.StopItemUseAnimation();
                 break;
         }
 
