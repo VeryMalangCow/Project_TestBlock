@@ -10,9 +10,19 @@ public enum ItemType
     Leggings,
     Boots,
     Jetbag,
-    Sword,
+    Weapon,
     Tool,
     Consumable
+}
+
+public enum WeaponType
+{
+    None,
+    Sword,
+    Spear,
+    Bow,
+    Arrow,
+    Staff
 }
 
 [CreateAssetMenu(fileName = "NewItemData", menuName = "Project_BlockTest/ItemData")]
@@ -26,15 +36,36 @@ public class ItemData : ScriptableObject
 
     [Header("### Gameplay")]
     public int maxStack = 999;
-    public int typeID = -1; // [Added] For visual resource mapping
+    public int typeID = -1; 
     public ItemType type;
 
     [Header("### Held Visual Settings")]
     public bool hasHeldSprite;
-    public Vector2 heldPivot;  // Pixel-based pivot (0,0 to 64,64)
-    public float heldRotation; // Default rotation when held
+    public Vector2 heldPivot;  
+    public float heldRotation; 
 
     [Header("### Visuals (Addressables)")]
     public AssetReferenceSprite iconReference;
     public AssetReference worldPrefabReference;
+
+    [Header("### Weapon/Tool Stats")]
+    public WeaponStats weaponStats;
+}
+
+[System.Serializable]
+public class WeaponStats
+{
+    public int weaponID;
+    public int itemID;
+    public WeaponType weaponType; 
+    public int attackType; // 0: Swing, 1: Poke, etc.
+    public int damage;
+    public float knockback;
+    public float speed;    // Attacks per second
+    public int critChance;
+    public float critDamage; 
+    public float reach;
+    public int manaCost;
+
+    public float UseTime => speed > 0 ? 1f / speed : 0.2f;
 }

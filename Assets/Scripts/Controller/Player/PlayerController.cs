@@ -60,23 +60,38 @@ public class PlayerController : NetworkBehaviour
 
     #region Helper Methods
 
-    public float GetItemUseDelay(ItemType type)
+    public float GetItemUseDelay(ItemData data)
     {
-        switch (type)
+        if (data == null) return 0.2f;
+
+        // 1. 무기/도구 데이터가 있다면 해당 데이터의 UseTime(1/Speed)을 우선 사용
+        if (data.weaponStats != null && data.weaponStats.speed > 0)
         {
-            case ItemType.Block: 
+            return data.weaponStats.UseTime;
+        }
+
+        // 2. 데이터가 없는 경우 타입별 기본값 반환
+        switch (data.type)
+        {
+            case ItemType.Block:
                 return 0.2f;
+
             case ItemType.Helmet:
             case ItemType.Chestplate:
             case ItemType.Leggings:
             case ItemType.Boots:
             case ItemType.Jetbag:
                 return 0.2f;
-            case ItemType.Consumable: return 0.5f;
-            case ItemType.Sword:
+
+            case ItemType.Consumable: 
+                return 0.5f;
+
+            case ItemType.Weapon:
             case ItemType.Tool:
                 return 0.4f;
-            default: return 0.2f;
+
+            default: 
+                return 0.2f;
         }
     }
 
@@ -513,7 +528,7 @@ public class PlayerController : NetworkBehaviour
                 // [Fix] 블록 타입인 경우에만 휘두르기 애니메이션 실행 (실시간 각도 사용)
                 if (itemData.type == ItemType.Block)
                 {
-                    float duration = GetItemUseDelay(itemData.type);
+                    float duration = GetItemUseDelay(itemData);
                     visuals.StartItemUseAnimation(targetAngle, duration);
                 }
                 else
@@ -543,7 +558,7 @@ public class PlayerController : NetworkBehaviour
         if (itemData == null) return;
 
         // 딜레이 설정
-        itemUseDelayTimer = GetItemUseDelay(itemData.type);
+        itemUseDelayTimer = GetItemUseDelay(itemData);
 
         // 월드 좌표 계산 (애니메이션에서 쓴 값을 재활용해도 됨)
         Vector2 screenPos = pointAction.ReadValue<Vector2>();
@@ -597,7 +612,7 @@ public class PlayerController : NetworkBehaviour
     public void PlaceBlockRpc(int x, int y, int itemID, int hotbarIndex)
     {
         ItemData itemData = ItemDataManager.Instance.GetItem(itemID);
-        float delay = itemData != null ? GetItemUseDelay(itemData.type) : 0.2f;
+        float delay = itemData != null ? GetItemUseDelay(itemData) : 0.2f;
         if (Time.time - serverLastActionTime < delay - 0.05f) return;
 
         Vector2 playerPos = transform.position;
