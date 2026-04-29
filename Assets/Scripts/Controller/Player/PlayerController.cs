@@ -451,11 +451,8 @@ public class PlayerController : NetworkBehaviour
         // 방향 전환 잠금 조건 세분화: 무기(Weapon) 사용 중일 때만 방향 전환을 막고, 블록(Block)은 허용
         bool isDirectionLocked = itemUseDelayTimer > 0 && (itemData != null && itemData.type == ItemType.Weapon);
 
-        if (isDashingSync.Value)
-        {
-            newFlip = dashDirectionSync.Value < 0;
-        }
-        else if (!isDirectionLocked)
+        // [Fix] 무기 공격 중이 아니라면 대시 여부와 상관없이 항상 마우스 방향 주시
+        if (!isDirectionLocked)
         {
             Vector2 screenPos = pointAction.ReadValue<Vector2>();
             Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
@@ -494,11 +491,7 @@ public class PlayerController : NetworkBehaviour
             return;
         }
 
-        if (isDashingSync.Value)
-        {
-            if (visuals != null) visuals.StopItemUseAnimation();
-            return;
-        }
+        // [Removed] Dash Restriction removed per user request
 
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         if (slot.IsEmpty) 
@@ -591,8 +584,7 @@ public class PlayerController : NetworkBehaviour
         switch (data.weaponStats.weaponType)
         {
             case WeaponType.Sword:
-                // 검: 정면 방향(90도) 고정, 인스펙터의 SwordSwingOffset 연동
-                if (itemUseDelayTimer <= 0) lockedTargetAngle = 90f; 
+                if (itemUseDelayTimer <= 0) lockedTargetAngle = 0f;
                 visuals.StartItemUseAnimation(lockedTargetAngle, useDelay, visuals.SwordSwingOffset);
                 break;
 
