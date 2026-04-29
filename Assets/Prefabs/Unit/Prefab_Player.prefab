@@ -146,7 +146,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4087358549
+  GlobalObjectIdHash: 3836181582
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -1104,7 +1104,6 @@ MonoBehaviour:
     currentSheet: []
   heldItemRenderer: {fileID: 348720962500958746}
   upperBodyContainer: {fileID: 6948968457700532495}
-  baseHeldItemPos: {x: -0.3125, y: -0.5625}
   upperBodyPositions:
   - {x: 0, y: 0}
   - {x: 0, y: 0.125}
@@ -1119,7 +1118,7 @@ MonoBehaviour:
   - {x: 0, y: 0.125}
   walkAnimSpeedMultiplier: 2
   itemUseRotationRoot: {fileID: 4008413366364234599}
-  blockSwingOffset: 15
+  blockSwingOffset: 30
   rotationReturnSpeed: 15
 --- !u!1 &3915201043299887287
 GameObject:

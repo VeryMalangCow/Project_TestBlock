@@ -27,7 +27,6 @@ public class PlayerVisuals : MonoBehaviour
     [SerializeField] private Transform upperBodyContainer; 
 
     [Header("### Held Item Settings")]
-    [SerializeField] private Vector2 baseHeldItemPos = new Vector2(0.25f, -0.125f); 
     [SerializeField] private Vector2[] upperBodyPositions = new Vector2[11]; 
 
     [Header("### Animation Settings")]
@@ -292,12 +291,10 @@ public class PlayerVisuals : MonoBehaviour
         var settings = HeldItemVisualRegistry.GetSettings(data.type);
 
         // [New Scale.x Logic] 좌우 반전 보정이 불필요해져 기본 값만 적용합니다.
-        float posX = baseHeldItemPos.x;
-        float posY = baseHeldItemPos.y;
         float pivotOffsetX = (settings.pivot.x - 32f) / 16f;
         float pivotOffsetY = -(settings.pivot.y - 32f) / 16f;
 
-        heldItemRenderer.transform.localPosition = new Vector3(posX - pivotOffsetX, posY + pivotOffsetY, -0.01f);
+        heldItemRenderer.transform.localPosition = new Vector3(-pivotOffsetX, +pivotOffsetY, -0.01f);
         heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, settings.rotation);
     }
 
