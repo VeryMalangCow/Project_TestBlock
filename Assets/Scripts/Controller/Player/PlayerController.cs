@@ -431,11 +431,31 @@ public class PlayerController : NetworkBehaviour
     private void UpdateVisuals()
     {
         if (visuals == null) return;
-        if (Mathf.Abs(moveInput.x) > 0.01f && !isDashingSync.Value)
+
+        bool newFlip = isFlippedSync.Value;
+
+        // 1. 대시 중인 경우: 대시 방향을 바라봄 (마우스 무시)
+        if (isDashingSync.Value)
         {
-            bool newFlip = moveInput.x < 0;
-            if (isFlippedSync.Value != newFlip) { isFlippedSync.Value = newFlip; visuals.SetFlip(newFlip); }
+            newFlip = dashDirectionSync.Value < 0;
         }
+        else
+        {
+            // 2. 평상시: 마우스 위치를 기준으로 방향 결정
+            Vector2 screenPos = pointAction.ReadValue<Vector2>();
+            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+
+            // 플레이어보다 마우스가 왼쪽에 있으면 Flip (true)
+            newFlip = mouseWorldPos.x < transform.position.x;
+        }
+
+        // 방향이 바뀌었을 때만 동기화 및 비주얼 업데이트
+        if (isFlippedSync.Value != newFlip)
+        {
+            isFlippedSync.Value = newFlip;
+            visuals.SetFlip(newFlip);
+        }
+
         visuals.UpdateVisuals(rb.linearVelocity.x, movement.IsGrounded, isDashingSync.Value);
     }
 
