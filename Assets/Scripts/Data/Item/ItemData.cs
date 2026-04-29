@@ -55,8 +55,7 @@ public class ItemData : ScriptableObject
 [System.Serializable]
 public class WeaponStats
 {
-    public int weaponID;
-    public int itemID;
+    public int weaponID; // Matches ItemData.typeID
     public WeaponType weaponType; 
     public int attackType; // 0: Swing, 1: Poke, etc.
     public int damage;

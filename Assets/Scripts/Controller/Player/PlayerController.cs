@@ -80,7 +80,7 @@ public class PlayerController : NetworkBehaviour
             case ItemType.Leggings:
             case ItemType.Boots:
             case ItemType.Jetbag:
-                return 2.0f;
+                return 0.1f; // [Fix] 장비 장착 딜레이 단축
             case ItemType.Consumable: return 0.5f;
             case ItemType.Weapon:
             case ItemType.Tool:

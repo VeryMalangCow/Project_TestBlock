@@ -38,7 +38,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
 
         EnsureFolders();
 
-        // 1. 무기 데이터 로드 (WeaponType 포함)
+        // 1. 무기 데이터 로드 (TypeID 기반 매핑을 위해 Dictionary 키를 WeaponID로 설정)
         Dictionary<int, WeaponStats> weaponStatsMap = LoadWeaponStats();
 
         string[] lines = File.ReadAllLines(CSV_PATH);
@@ -73,12 +73,11 @@ public class ItemConverterFromCSVToSO : EditorWindow
             itemData.description = description.Replace("\\n", "\n");
             itemData.maxStack = maxStack;
             
-            // ItemType enum 변환 (Sword -> Weapon 호환성 고려)
             if (typeStr.Equals("Sword", System.StringComparison.OrdinalIgnoreCase)) typeStr = "Weapon";
             if (System.Enum.TryParse(typeStr, out ItemType parsedType)) itemData.type = parsedType;
 
-            // 2. 무기 정보 매핑
-            if (weaponStatsMap.TryGetValue(id, out WeaponStats wStats))
+            // 2. 무기 정보 매핑 (TypeID 기준)
+            if (itemData.type == ItemType.Weapon && weaponStatsMap.TryGetValue(itemData.typeID, out WeaponStats wStats))
             {
                 itemData.weaponStats = wStats;
             }
@@ -105,7 +104,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log($"[Converter] Successfully converted {createdItems.Count} items. (Weapon stats mapped: {weaponStatsMap.Count})");
+        Debug.Log($"[Converter] Successfully converted {createdItems.Count} items. (Weapon stats mapped by TypeID: {weaponStatsMap.Count})");
     }
 
     private static void EnsureFolders()
@@ -129,32 +128,31 @@ public class ItemConverterFromCSVToSO : EditorWindow
         for (int i = 1; i < lines.Length; i++) 
         {
             string[] v = lines[i].Split(',');
-            if (v.Length < 10) continue; 
+            if (v.Length < 9) continue; 
 
             try
             {
-                // New Order with WeaponType: 
-                // WeaponID(0), ItemID(1), WeaponType(2), AttackType(3), Damage(4), Knockback(5), Speed(6), CritChance(7), CritDamage(8), Reach(9), ManaCost(10)
+                // CSV Order: 
+                // WeaponID(0) [TypeID], WeaponType(1), AttackType(2), Damage(3), Knockback(4), Speed(5), CritChance(6), CritDamage(7), Reach(8), ManaCost(9)
                 WeaponType wType = WeaponType.None;
-                System.Enum.TryParse(v[2], true, out wType);
+                System.Enum.TryParse(v[1], true, out wType);
 
                 WeaponStats stats = new WeaponStats
                 {
                     weaponID = int.Parse(v[0]),
-                    itemID = int.Parse(v[1]),
                     weaponType = wType,
-                    attackType = int.Parse(v[3]),
-                    damage = int.Parse(v[4]),
-                    knockback = float.Parse(v[5]),
-                    speed = float.Parse(v[6]),
-                    critChance = int.Parse(v[7]),
-                    critDamage = float.Parse(v[8]),
-                    reach = float.Parse(v[9])
+                    attackType = int.Parse(v[2]),
+                    damage = int.Parse(v[3]),
+                    knockback = float.Parse(v[4]),
+                    speed = float.Parse(v[5]),
+                    critChance = int.Parse(v[6]),
+                    critDamage = float.Parse(v[7]),
+                    reach = float.Parse(v[8])
                 };
                 
-                if (v.Length >= 11) stats.manaCost = int.Parse(v[10]);
+                if (v.Length >= 10) stats.manaCost = int.Parse(v[9]);
 
-                map[stats.itemID] = stats;
+                map[stats.weaponID] = stats;
             }
             catch (System.Exception e)
             {
