@@ -36,6 +36,7 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
     {
         base.Awake();
         LoadItemDatabase();
+        LoadHeldVisualDatabase(); // [Fix] 시작 시 미리 로드하여 콜백 중 충돌 방지
     }
 
     private void LoadItemDatabase()
