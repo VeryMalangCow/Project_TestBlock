@@ -10,11 +10,15 @@ public static class HeldItemVisualRegistry
     {
         public Vector2 pivot;
         public float rotation;
+        public Vector2 usePivot;    // [New] 아이템 사용 중일 때의 피봇
+        public float useRotation; // [New] 아이템 사용 중일 때의 회전값
 
-        public HeldSettings(float px, float py, float rot)
+        public HeldSettings(float px, float py, float rot, float upx = -1, float upy = -1, float urot = -1)
         {
             pivot = new Vector2(px, py);
             rotation = rot;
+            usePivot = (upx == -1) ? pivot : new Vector2(upx, upy);
+            useRotation = (urot == -1) ? rotation : urot;
         }
     }
 
@@ -23,31 +27,28 @@ public static class HeldItemVisualRegistry
         switch (type)
         {
             case ItemType.Block:
-                // 블럭은 보통 16x16 아이콘이 (0,0)에 있으므로 손잡이를 (8,8) 중앙으로 잡음
-                return new HeldSettings(24f, 24f, 0f);
+                return new HeldSettings(24f, 24f, 0f, 24f, 24f, 0f);
 
             case ItemType.Weapon:
-                // 무기는 왼쪽 하단 정도를 손잡이로 잡고 45도 기울임 (기존 Sword 설정)
-                return new HeldSettings(4f, 60f, -90f);
+                // 일반: 270도, 사용 시(Sword 등): 225도
+                // 사용 시 피봇(usePivot)은 225도 회전 상태에서 손잡이가 올바른 위치에 오도록 설정해야 합니다.
+                return new HeldSettings(4f, 60f, 270f, 32f, 76f, 225f);
 
             case ItemType.Tool:
-                // 곡괭이/도구는 손잡이 위치를 잡고 0도 유지 (애니메이션에서 흔듦)
-                return new HeldSettings(32f, 32f, 0f);
+                return new HeldSettings(32f, 32f, 0f, 32f, 32f, 0f);
 
             case ItemType.Consumable:
-                // 소비템(물약 등)은 하단 중앙
-                return new HeldSettings(32f, 32f, 0f);
+                return new HeldSettings(32f, 32f, 0f, 32f, 32f, 0f);
 
             case ItemType.Helmet:
             case ItemType.Chestplate:
             case ItemType.Leggings:
             case ItemType.Boots:
             case ItemType.Jetbag:
-                // 장비류를 손에 들었을 때의 기본값
-                return new HeldSettings(24f, 24f, 0f);
+                return new HeldSettings(24f, 24f, 0f, 24f, 24f, 0f);
 
             default:
-                return new HeldSettings(18f, 32f, 0f);
+                return new HeldSettings(18f, 32f, 0f, 18f, 32f, 0f);
         }
     }
 }

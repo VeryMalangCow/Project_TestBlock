@@ -256,7 +256,7 @@ public class PlayerVisuals : MonoBehaviour
         }
         else
         {
-            // [Fix] 즉시 복귀
+            // [Fix] 즉시 복귀 및 아이템 기본 각도 복구
             currentSwingOffset = 0f;
             finalRotation = 0f; 
         }
@@ -266,15 +266,24 @@ public class PlayerVisuals : MonoBehaviour
 
     public void StartItemUseAnimation(float targetAngle, float duration, float maxOffset = 15f)
     {
+        if (isUsingItem && targetBaseAngle == targetAngle) return; // 이미 같은 각도로 사용 중이면 무시
+        
         isUsingItem = true;
         targetBaseAngle = targetAngle;
         itemUseDuration = duration;
         currentMaxSwingOffset = maxOffset;
+
+        // [Fix] 애니메이션 시작 시점에 딱 한 번 비주얼(각도/위치) 갱신
+        UpdateHeldItemTransform();
     }
 
     public void StopItemUseAnimation()
     {
+        if (!isUsingItem) return;
         isUsingItem = false;
+
+        // [Fix] 애니메이션 종료 시점에 딱 한 번 기본 상태로 복구
+        UpdateHeldItemTransform();
     }
 
     public void SyncAnimation(int frameIndex)
@@ -290,8 +299,6 @@ public class PlayerVisuals : MonoBehaviour
             Vector2 animOffset = (frameIndex >= 0 && frameIndex < upperBodyPositions.Length) ? upperBodyPositions[frameIndex] : Vector2.zero;
             upperBodyContainer.localPosition = new Vector3(animOffset.x, animOffset.y, 0);
         }
-
-        UpdateHeldItemTransform(frameIndex);
     }
 
     private bool IsUpperBodyLayer(string layerName)
@@ -301,18 +308,25 @@ public class PlayerVisuals : MonoBehaviour
                  layerName.Equals("Boots", System.StringComparison.OrdinalIgnoreCase));
     }
 
-    private void UpdateHeldItemTransform(int frameIndex)
+    private void UpdateHeldItemTransform()
     {
         if (heldItemRenderer == null || currentHeldItemID < 0) return;
+
         ItemData data = ItemDataManager.Instance.GetItem(currentHeldItemID);
         if (data == null) return;
         var settings = HeldItemVisualRegistry.GetSettings(data.type);
 
-        float pivotOffsetX = (settings.pivot.x - 32f) / 16f;
-        float pivotOffsetY = -(settings.pivot.y - 32f) / 16f;
+        // [New] 상태에 따라 레지스트리의 데이터 선택
+        Vector2 targetPivot = isUsingItem ? settings.usePivot : settings.pivot;
+        float targetRotation = isUsingItem ? settings.useRotation : settings.rotation;
 
-        heldItemRenderer.transform.localPosition = new Vector3(-pivotOffsetX, pivotOffsetY, -0.01f);
-        heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, settings.rotation);
+        // 피봇 좌표 변환 (중앙 32,32 기준 픽셀 오프셋을 Unity 단위로 변환)
+        float px = (targetPivot.x - 32f) / 16f;
+        float py = (targetPivot.y - 32f) / 16f;
+
+        // 위치와 회전 즉시 적용
+        heldItemRenderer.transform.localPosition = new Vector3(-px, -py, -0.01f);
+        heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, targetRotation);
     }
 
     public void SetFlip(bool flipX)
@@ -354,7 +368,7 @@ public class PlayerVisuals : MonoBehaviour
         heldItemMPB.SetFloat("_SliceIndex", (float)sliceIdx);
         heldItemRenderer.SetPropertyBlock(heldItemMPB);
         heldItemRenderer.enabled = (sliceIdx >= 0);
-        UpdateHeldItemTransform(currentFrameIndex);
+        UpdateHeldItemTransform();
     }
 
     #endregion
