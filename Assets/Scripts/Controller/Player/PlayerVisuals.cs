@@ -249,7 +249,20 @@ public class PlayerVisuals : MonoBehaviour
             float startOffset = (swingPhase == 0) ? -currentMaxSwingOffset : currentMaxSwingOffset;
             float endOffset = (swingPhase == 0) ? currentMaxSwingOffset : -currentMaxSwingOffset;
             
-            float t = Mathf.SmoothStep(0, 1, swingLerpTime);
+            // [Fix] 검(Sword)일 경우 Ease-Out (처음엔 빠르고 끝엔 느리게) 효과 적용
+            float t = swingLerpTime;
+            ItemData data = ItemDataManager.Instance.GetItem(currentHeldItemID);
+            if (data != null && data.type == ItemType.Weapon && data.weaponStats?.weaponType == WeaponType.Sword)
+            {
+                // Ease-Out 공식: 1 - (1 - t)^3 (더 역동적인 3제곱 사용)
+                t = 1f - Mathf.Pow(1f - swingLerpTime, 3f);
+            }
+            else
+            {
+                // 그 외 일반 아이템은 기존의 부드러운 왕복 보간 유지
+                t = Mathf.SmoothStep(0, 1, swingLerpTime);
+            }
+
             currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
 
             finalRotation = targetBaseAngle + currentSwingOffset;

@@ -30,6 +30,9 @@ public class PlayerController : NetworkBehaviour
     private InputAction pointAction;
     private InputAction[] hotbarActions;
 
+    [Header("### Held Item")]
+    [SerializeField] private float SwordSwingLockedTargetAngle = 90;
+
     [Header("### Resources")]
     [SerializeField] private GameObject itemDropPrefab;
 
@@ -597,7 +600,7 @@ public class PlayerController : NetworkBehaviour
         switch (data.weaponStats.weaponType)
         {
             case WeaponType.Sword:
-                if (itemUseDelayTimer <= 0) lockedTargetAngle = 90f; 
+                if (itemUseDelayTimer <= 0) lockedTargetAngle = SwordSwingLockedTargetAngle; 
                 visuals.StartItemUseAnimation(lockedTargetAngle, useDelay, visuals.SwordSwingOffset);
                 break;
 

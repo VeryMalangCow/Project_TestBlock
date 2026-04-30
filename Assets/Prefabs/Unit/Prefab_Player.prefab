@@ -178,6 +178,7 @@ MonoBehaviour:
   movement: {fileID: 2795475633606825749}
   interaction: {fileID: 6624281061998066826}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
+  SwordSwingLockedTargetAngle: 90
   itemDropPrefab: {fileID: 2994726321107835729, guid: 64e1813cd709a2d4b935635ac744c184, type: 3}
 --- !u!114 &2795475633606825749
 MonoBehaviour:
@@ -1119,7 +1120,7 @@ MonoBehaviour:
   walkAnimSpeedMultiplier: 2
   itemUseRotationRoot: {fileID: 4008413366364234599}
   blockSwingOffset: 22.5
-  swordSwingOffset: 60
+  swordSwingOffset: 100
   rotationReturnSpeed: 15
 --- !u!1 &3915201043299887287
 GameObject:
