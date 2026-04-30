@@ -314,22 +314,27 @@ public class PlayerVisuals : MonoBehaviour
 
         ItemData data = ItemDataManager.Instance.GetItem(currentHeldItemID);
         if (data == null) return;
-        var settings = HeldItemVisualRegistry.GetSettings(data.type);
 
-        // [New] 상태에 따라 레지스트리의 데이터 선택
+        // [New] ScriptableObject 데이터베이스에서 설정 가져오기
+        var db = ItemDataManager.Instance.HeldVisualDatabase;
+        if (db == null) return;
+
+        // 무기 타입 확인 (무기가 아니면 None 전달)
+        WeaponType wType = (data.weaponStats != null) ? data.weaponStats.weaponType : WeaponType.None;
+        var settings = db.GetSettings(data.type, wType);
+
+        // 상태에 따라 데이터 선택
         Vector2 targetPivot = isUsingItem ? settings.usePivot : settings.pivot;
         float targetRotation = isUsingItem ? settings.useRotation : settings.rotation;
 
-        // 피봇 좌표 변환 (중앙 32,32 기준 픽셀 오프셋을 Unity 단위로 변환)
+        // 피봇 좌표 변환
         float px = (targetPivot.x - 32f) / 16f;
         float py = (targetPivot.y - 32f) / 16f;
 
         // 위치와 회전 즉시 적용
         heldItemRenderer.transform.localPosition = new Vector3(-px, -py, -0.01f);
         heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, targetRotation);
-    }
-
-    public void SetFlip(bool flipX)
+    }    public void SetFlip(bool flipX)
     {
         IsFlipped = flipX;
         transform.localScale = new Vector3(flipX ? -1f : 1f, 1f, 1f);

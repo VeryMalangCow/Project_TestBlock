@@ -8,9 +8,29 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 public class ItemDataManager : PermanentSingleton<ItemDataManager>
 {
     private Dictionary<int, ItemData> itemCache = new Dictionary<int, ItemData>();
+    private HeldItemVisualDatabase heldVisualDatabase; // [New] 비주얼 데이터베이스
     
     private Dictionary<int, AsyncOperationHandle<Texture2D>> iconHandles = new Dictionary<int, AsyncOperationHandle<Texture2D>>();
     private Dictionary<int, Sprite> generatedSprites = new Dictionary<int, Sprite>();
+
+    public HeldItemVisualDatabase HeldVisualDatabase
+    {
+        get
+        {
+            if (heldVisualDatabase == null) LoadHeldVisualDatabase();
+            return heldVisualDatabase;
+        }
+    }
+
+    private void LoadHeldVisualDatabase()
+    {
+        var handle = Addressables.LoadAssetAsync<HeldItemVisualDatabase>("HeldItemVisualDatabase");
+        heldVisualDatabase = handle.WaitForCompletion();
+        if (heldVisualDatabase == null)
+        {
+            Debug.LogError("[ItemDataManager] Failed to load HeldItemVisualDatabase via Addressables.");
+        }
+    }
 
     protected override void Awake()
     {

@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e13f105a7e900f84b881c6a5b7ac1de8, type: 3}
+  m_Name: HeldItemVisualDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::HeldItemVisualDatabase
+  settingsList:
+  - itemType: 1
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 2
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 3
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 4
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 5
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 6
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 8
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 9
+    weaponType: 0
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 7
+    weaponType: 1
+    pivot: {x: 4, y: 60}
+    rotation: 270
+    usePivot: {x: 32, y: 76}
+    useRotation: 225
+  - itemType: 7
+    weaponType: 2
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 7
+    weaponType: 3
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 7
+    weaponType: 4
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0
+  - itemType: 7
+    weaponType: 5
+    pivot: {x: 24, y: 24}
+    rotation: 0
+    usePivot: {x: 24, y: 24}
+    useRotation: 0

@@ -14,7 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Addressables.Editor::UnityEditor.AddressableAssets.Settings.AddressableAssetGroup
   m_GroupName: Default Local Group
   m_GUID: cffb4757272ee9b4799aa4c877feae41
-  m_SerializeEntries: []
+  m_SerializeEntries:
+  - m_GUID: c1c9c17d55fac3a4b8103092db796eba
+    m_Address: HeldItemVisualDatabase
+    m_ReadOnly: 0
+    m_SerializedLabels: []
+    FlaggedDuringContentUpdateRestriction: 0
   m_ReadOnly: 0
   m_Settings: {fileID: 11400000, guid: 93248ff7ece636b438fe1742e9aa36fa, type: 2}
   m_SchemaSet:
