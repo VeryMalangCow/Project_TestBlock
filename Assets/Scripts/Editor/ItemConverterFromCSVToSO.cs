@@ -21,8 +21,26 @@ public class ItemConverterFromCSVToSO : EditorWindow
         public int manaCost;
     }
 
+    private struct PickaxeStats
+    {
+        public int id;
+        public int hardness;
+        public int power;
+        public float speed;
+    }
+
+    private struct BlockStats
+    {
+        public int id;
+        public int hardness;
+        public float maxHealth;
+        public int dropItemID;
+    }
+
     private const string CSV_PATH = "Assets/Datas/ItemDatabase.csv";
     private const string WEAPON_CSV_PATH = "Assets/Datas/WeaponDatabase.csv";
+    private const string PICKAXE_CSV_PATH = "Assets/Datas/PickaxeDatabase.csv";
+    private const string BLOCK_CSV_PATH = "Assets/Datas/BlockDatabase.csv";
     private const string SO_DIR = "Assets/Datas/Items";
     private const string DATABASE_PATH = "Assets/Datas/ItemDatabase.asset";
     private const string SPRITE_DIR = "Assets/Sprites/Items";
@@ -51,8 +69,19 @@ public class ItemConverterFromCSVToSO : EditorWindow
 
         EnsureFolders();
 
-        // 1. 무기 데이터 로드 (TypeID 기반)
+        // 1. 데이터 로드
         Dictionary<int, WeaponStats> weaponStatsMap = LoadWeaponStats();
+        Dictionary<int, PickaxeStats> pickaxeStatsMap = LoadPickaxeStats();
+        Dictionary<int, BlockStats> blockStatsMap = LoadBlockStats();
+
+        // [New] MapManager에 블록 통계 등록 (에디터 런타임용)
+        if (MapManager.Instance != null)
+        {
+            foreach (var kvp in blockStatsMap)
+            {
+                MapManager.Instance.RegisterBlockStats(kvp.Key, kvp.Value.hardness, kvp.Value.maxHealth);
+            }
+        }
 
         string[] lines = File.ReadAllLines(CSV_PATH);
         if (lines.Length <= 1) return;
@@ -108,14 +137,17 @@ public class ItemConverterFromCSVToSO : EditorWindow
                     }
                     break;
 
-                case ItemType.Tool:
-                    // 현재 CSV에 Tool 전용 데이터가 없으므로 기본값 할당
-                    ToolProperty toolProp = new ToolProperty
+                case ItemType.Pickaxe:
+                    if (pickaxeStatsMap.TryGetValue(itemData.typeID, out PickaxeStats pStats))
                     {
-                        minePower = 10,
-                        mineSpeed = 0.2f
-                    };
-                    itemData.properties.Add(toolProp);
+                        PickaxeProperty pickProp = new PickaxeProperty
+                        {
+                            hardness = pStats.hardness,
+                            power = pStats.power,
+                            speed = pStats.speed
+                        };
+                        itemData.properties.Add(pickProp);
+                    }
                     break;
 
                 case ItemType.Block:
@@ -153,7 +185,65 @@ public class ItemConverterFromCSVToSO : EditorWindow
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
-        Debug.Log($"[Converter] Successfully converted {createdItems.Count} items. (Weapon stats mapped by TypeID: {weaponStatsMap.Count})");
+        Debug.Log($"[Converter] Successfully converted {createdItems.Count} items.");
+    }
+
+    private static Dictionary<int, PickaxeStats> LoadPickaxeStats()
+    {
+        Dictionary<int, PickaxeStats> map = new Dictionary<int, PickaxeStats>();
+        if (!File.Exists(PICKAXE_CSV_PATH)) return map;
+
+        using (var stream = new FileStream(PICKAXE_CSV_PATH, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var reader = new StreamReader(stream))
+        {
+            reader.ReadLine(); // Skip header
+            while (!reader.EndOfStream)
+            {
+                string line = reader.ReadLine()?.Trim();
+                if (string.IsNullOrEmpty(line)) continue;
+                string[] v = line.Split(',');
+                if (v.Length < 4) continue;
+
+                PickaxeStats stats = new PickaxeStats
+                {
+                    id = int.Parse(v[0].Trim()),
+                    hardness = int.Parse(v[1].Trim()),
+                    power = int.Parse(v[2].Trim()),
+                    speed = float.Parse(v[3].Trim())
+                };
+                map[stats.id] = stats;
+            }
+        }
+        return map;
+    }
+
+    private static Dictionary<int, BlockStats> LoadBlockStats()
+    {
+        Dictionary<int, BlockStats> map = new Dictionary<int, BlockStats>();
+        if (!File.Exists(BLOCK_CSV_PATH)) return map;
+
+        using (var stream = new FileStream(BLOCK_CSV_PATH, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+        using (var reader = new StreamReader(stream))
+        {
+            reader.ReadLine(); // Skip header
+            while (!reader.EndOfStream)
+            {
+                string line = reader.ReadLine()?.Trim();
+                if (string.IsNullOrEmpty(line)) continue;
+                string[] v = line.Split(',');
+                if (v.Length < 4) continue;
+
+                BlockStats stats = new BlockStats
+                {
+                    id = int.Parse(v[0].Trim()),
+                    hardness = int.Parse(v[1].Trim()),
+                    maxHealth = float.Parse(v[2].Trim()),
+                    dropItemID = int.Parse(v[3].Trim())
+                };
+                map[stats.id] = stats;
+            }
+        }
+        return map;
     }
 
     private static void EnsureFolders()

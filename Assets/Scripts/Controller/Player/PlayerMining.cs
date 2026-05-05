@@ -9,11 +9,59 @@ public class PlayerMining : MonoBehaviour
         controller = ctrl;
     }
 
-    public void PerformMine(ToolProperty stats, UseContext context)
+    public void PerformPickaxe(PickaxeProperty stats, UseContext context)
     {
-        // 실제 채굴 로직 (서버측 실행)
-        Debug.Log($"[Server-Mining] 채굴 실행! 위력: {stats.minePower}");
+        if (!Unity.Netcode.NetworkManager.Singleton.IsServer) return;
 
-        // 여기에 나중에 MapManager.Instance를 이용한 블록 파괴 로직이 들어옵니다.
+        Vector2 mousePos = context.MouseWorldPos;
+        int wx = Mathf.FloorToInt(mousePos.x);
+        int wy = Mathf.FloorToInt(mousePos.y);
+
+        // 1. 사거리 체크 (기존 8칸 유지)
+        if (Vector2.Distance(transform.position, mousePos) > 8.5f) return;
+
+        // 2. 블록 존재 확인
+        var block = MapManager.Instance.GetBlock(wx, wy);
+        if (!block.isActive) return;
+
+        // 3. 강도(Hardness) 체크
+        var blockStats = MapManager.Instance.GetBlockStats(block.id);
+        if (stats.hardness < blockStats.hardness)
+        {
+            Debug.Log($"[Mining] 강도가 부족합니다! (필요: {blockStats.hardness}, 보유: {stats.hardness})");
+            return;
+        }
+
+        // 4. 데미지 적용
+        float currentHealth = MapManager.Instance.GetBlockHealth(wx, wy);
+        MapManager.Instance.DamageBlock(wx, wy, stats.power);
+
+        // 5. 파괴 확인 및 아이템 드랍
+        if (currentHealth > 0 && MapManager.Instance.GetBlockHealth(wx, wy) <= 0)
+        {
+            SpawnDroppedBlock(block.id, wx, wy, context.Player);
+        }
+    }
+
+    private void SpawnDroppedBlock(int blockID, int x, int y, PlayerController player)
+    {
+        // 블록 위치 중앙에서 스폰
+        Vector3 spawnPos = new Vector3(x + 0.5f, y + 0.5f, 0);
+        
+        // 아이템 스폰 (기존의 PlayerInteraction.HandleDropItem 로직 활용 가능)
+        // 여기서는 직접 NetworkObjectPoolManager 호출
+        var itemDropPrefab = player.GetComponent<PlayerInteraction>().GetItemDropPrefab();
+        if (itemDropPrefab == null) return;
+
+        var netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, spawnPos, Quaternion.identity);
+        if (netObj != null)
+        {
+            ItemController item = netObj.GetComponent<ItemController>();
+            item.itemID.Value = blockID;
+            item.stackCount.Value = 1;
+            
+            // [Key] 즉시 흡수 설정
+            item.SetTargetPlayer(player);
+        }
     }
 }

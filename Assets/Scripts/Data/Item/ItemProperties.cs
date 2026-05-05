@@ -31,34 +31,34 @@ public class WeaponProperty : IItemProperty, IUsable
 }
 
 [System.Serializable]
-public class ToolProperty : IItemProperty, IUsable
+public class PickaxeProperty : IItemProperty, IUsable
 {
     public int TargetButton => 0; // 좌클릭
     
     [Header("Stats")]
-    public int minePower;
-    public float mineSpeed;
+    public int hardness; // 파괴 가능한 블록의 최대 강도
+    public int power;    // 블록에 입히는 데미지
+    public float speed;  // 초당 휘두르는 횟수
 
     public void OnUseClient(UseContext context)
     {
-        // 마우스 방향에 따른 각도 계산 복구
+        // 마우스 방향에 따른 각도 계산
         Vector2 dir = (context.MouseWorldPos - (Vector2)context.Player.transform.position).normalized;
         float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         if (context.Player.IsFlipped) targetAngle = 180f - targetAngle;
         float finalAngle = targetAngle + 90f;
 
-        // 클라이언트: 도구 휘두르기 애니메이션
-        float offset = 30f; // 도구는 보통 30도 정도가 적당
-        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), offset);
+        // 클라이언트: 곡괭이 휘두르기 애니메이션 (보통 30도)
+        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), 30f);
     }
 
     public void OnUseServer(UseContext context)
     {
         // 서버: 채굴 전용 컴포넌트에 로직 위임
-        context.Player.Mining.PerformMine(this, context);
+        context.Player.Mining.PerformPickaxe(this, context);
     }
 
-    public float GetUseDelay() => mineSpeed;
+    public float GetUseDelay() => speed > 0 ? 1f / speed : 0.4f;
     public bool IsContinuous() => true;
     public bool ShouldLockFlip() => false;
     public ItemAnimationType GetAnimationType() => ItemAnimationType.Swing;

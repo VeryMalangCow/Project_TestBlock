@@ -12,7 +12,7 @@ public enum ItemType
     Boots,
     Jetbag,
     Weapon,
-    Tool,
+    Pickaxe,
     Consumable
 }
 

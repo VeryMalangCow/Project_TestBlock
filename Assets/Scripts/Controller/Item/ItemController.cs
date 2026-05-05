@@ -235,6 +235,25 @@ public class ItemController : NetworkBehaviour
         }
     }
 
+    /// <summary>
+    /// 특정 플레이어를 즉시 타겟으로 설정하여 자석 효과를 활성화합니다.
+    /// </summary>
+    public void SetTargetPlayer(PlayerController player)
+    {
+        if (!IsServer || player == null) return;
+        
+        targetPlayer = player;
+        isAttracted = true;
+        currentSpeed = InitialSpeed;
+        cooldownTimer = 0; // 즉시 획득 가능하도록 쿨다운 제거
+        
+        if (rb != null)
+        {
+            rb.bodyType = RigidbodyType2D.Kinematic;
+            rb.linearVelocity = Vector2.zero;
+        }
+    }
+
     #endregion
 
     #region Pickup Logic (Collision)

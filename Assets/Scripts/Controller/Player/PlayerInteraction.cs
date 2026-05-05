@@ -20,6 +20,8 @@ public class PlayerInteraction : MonoBehaviour
     public static float DropThrowForce = 4f;
     public static float DropUpwardForce = 6f;
 
+    public GameObject GetItemDropPrefab() => itemDropPrefab;
+
     public void Init(PlayerController ctrl, GameObject dropPrefab)
     {
         controller = ctrl;
