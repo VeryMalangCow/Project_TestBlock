@@ -18,6 +18,13 @@ public class PlayerController : NetworkBehaviour
     [SerializeField] private PlayerVisuals visuals;
     [SerializeField] private PlayerMovement movement;
     [SerializeField] private PlayerInteraction interaction;
+    [SerializeField] private PlayerCombat combat;
+    [SerializeField] private PlayerMining mining;
+    [SerializeField] private PlayerBuilding building;
+
+    public PlayerCombat Combat => combat;
+    public PlayerMining Mining => mining;
+    public PlayerBuilding Building => building;
 
     [Header("### Input Actions")]
     [SerializeField] private InputActionAsset inputActions;
@@ -115,9 +122,15 @@ public class PlayerController : NetworkBehaviour
 
         if (movement == null) movement = GetComponent<PlayerMovement>();
         if (interaction == null) interaction = GetComponent<PlayerInteraction>();
+        if (combat == null) combat = GetComponent<PlayerCombat>();
+        if (mining == null) mining = GetComponent<PlayerMining>();
+        if (building == null) building = GetComponent<PlayerBuilding>();
 
         movement?.Init(this, rb, col, groundMask);
         interaction?.Init(this, itemDropPrefab);
+        combat?.Init(this);
+        mining?.Init(this);
+        building?.Init(this);
     }
 
     private void InitializeInput()

@@ -108,6 +108,9 @@ GameObject:
   - component: {fileID: 4366262622963462345}
   - component: {fileID: 7557954901024385104}
   - component: {fileID: 3691483584524692821}
+  - component: {fileID: 4098946448289942515}
+  - component: {fileID: 4003763757986885103}
+  - component: {fileID: 8436007642671894771}
   m_Layer: 3
   m_Name: Prefab_Player
   m_TagString: Player
@@ -177,6 +180,9 @@ MonoBehaviour:
   visuals: {fileID: 4155625903134356229}
   movement: {fileID: 2795475633606825749}
   interaction: {fileID: 6624281061998066826}
+  combat: {fileID: 4003763757986885103}
+  mining: {fileID: 8436007642671894771}
+  building: {fileID: 4098946448289942515}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
   SwordSwingLockedTargetAngle: 90
   itemDropPrefab: {fileID: 2994726321107835729, guid: 64e1813cd709a2d4b935635ac744c184, type: 3}
@@ -340,6 +346,42 @@ SortingGroup:
   m_SortingOrder: 1
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
+--- !u!114 &4098946448289942515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162841608114231149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0521bdeecb13ac443a421e275eb009a8, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerBuilding
+--- !u!114 &4003763757986885103
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162841608114231149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5591ad5cbf38d2c4ea862b0be4a3f565, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerCombat
+--- !u!114 &8436007642671894771
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 162841608114231149}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 64b42e5837f9e0b4685ab4c0177f9c52, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerMining
 --- !u!1 &315711372752958681
 GameObject:
   m_ObjectHideFlags: 0

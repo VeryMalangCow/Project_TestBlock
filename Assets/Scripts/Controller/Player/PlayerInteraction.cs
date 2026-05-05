@@ -124,48 +124,17 @@ public class PlayerInteraction : MonoBehaviour
                type == ItemType.Jetbag;
     }
 
-    // --- Server Side Helpers (Used by RPCs) ---
+    // --- Server Side Helpers (Used by RPCs and Properties) ---
     
     public void ExecuteServerAction(int buttonIndex, UseContext context)
     {
-        // 서버에서도 해당 아이템의 Action을 찾아 실행
         ItemData itemData = ItemDataManager.Instance.GetItem(context.ItemID);
         if (itemData == null) return;
 
         IUsable action = (buttonIndex == 0) ? itemData.LeftAction : itemData.RightAction;
+        
+        // 인터페이스를 통한 실행 (내부에서 PlayerBuilding 호출)
         action.OnUseServer(context);
-
-        // [Legacy] 블록 설치는 아직 전용 로직이 필요함 (좌표 검증 등)
-        if (itemData.type == ItemType.Block)
-        {
-            TryPlaceBlockOnServer(context.HotbarIndex, context.ItemID, context.MouseWorldPos);
-        }
-    }
-
-    private void TryPlaceBlockOnServer(int hotbarIndex, int itemID, Vector2 mouseWorldPos)
-    {
-        int wx = Mathf.FloorToInt(mouseWorldPos.x);
-        int wy = Mathf.FloorToInt(mouseWorldPos.y);
-
-        Vector2 playerPos = transform.position;
-        if (Mathf.Abs(wx + 0.5f - playerPos.x) > 8.5f || Mathf.Abs(wy + 0.5f - playerPos.y) > 6.5f) return;
-        if (MapManager.Instance.IsBlockActive(wx, wy)) return;
-
-        bool hasNeighbor = MapManager.Instance.IsBlockActive(wx + 1, wy) ||
-                           MapManager.Instance.IsBlockActive(wx - 1, wy) ||
-                           MapManager.Instance.IsBlockActive(wx, wy + 1) ||
-                           MapManager.Instance.IsBlockActive(wx, wy - 1);
-
-        if (!hasNeighbor) return;
-
-        Vector2 checkPos = new Vector2(wx + 0.5f, wy + 0.5f);
-        if (Physics2D.OverlapBox(checkPos, Vector2.one * 0.95f, 0f, LayerMask.GetMask("Player")) != null) return;
-
-        if (controller.Data.inventory.RemoveItemFromSlot(hotbarIndex, 1))
-        {
-            MapManager.Instance.SetBlock(wx, wy, itemID);
-            controller.SyncInventoryToNetwork();
-        }
     }
 
     public void HandleDropItem(int id, int count, float lookDir)

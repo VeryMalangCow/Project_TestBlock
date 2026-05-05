@@ -20,8 +20,8 @@ public class WeaponProperty : IItemProperty, IUsable
 
     public void OnUseServer(UseContext context)
     {
-        // 서버: 데미지 판정 (현재는 로그만)
-        Debug.Log($"[Server] {context.ItemID}번 무기로 공격! 데미지: {damage}");
+        // 서버: 전투 전용 컴포넌트에 로직 위임
+        context.Player.Combat.PerformAttack(this, context);
     }
 
     public float GetUseDelay() => speed > 0 ? 1f / speed : 0.4f;
@@ -54,8 +54,8 @@ public class ToolProperty : IItemProperty, IUsable
 
     public void OnUseServer(UseContext context)
     {
-        // 서버: 채굴 로직 (현재는 로그만)
-        Debug.Log($"[Server] {context.ItemID}번 도구로 채굴! 위력: {minePower}");
+        // 서버: 채굴 전용 컴포넌트에 로직 위임
+        context.Player.Mining.PerformMine(this, context);
     }
 
     public float GetUseDelay() => mineSpeed;
@@ -84,12 +84,8 @@ public class BlockProperty : IItemProperty, IUsable
 
     public void OnUseServer(UseContext context)
     {
-        // 서버: 실제 블록 설치 요청
-        int wx = Mathf.FloorToInt(context.MouseWorldPos.x);
-        int wy = Mathf.FloorToInt(context.MouseWorldPos.y);
-        
-        // PlayerController의 기존 PlaceBlockRpc 로직이 여기로 들어올 수 있음
-        // 지금은 PlayerController에 로직이 있으므로 이를 호출하도록 구조만 유지
+        // 서버: 설치 전용 컴포넌트에 로직 위임
+        context.Player.Building.TryPlaceBlock(this, context);
     }
 
     public float GetUseDelay() => 0.2f;
