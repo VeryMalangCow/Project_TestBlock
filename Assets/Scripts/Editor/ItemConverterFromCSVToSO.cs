@@ -8,6 +8,19 @@ using UnityEngine.AddressableAssets;
 
 public class ItemConverterFromCSVToSO : EditorWindow
 {
+    private struct WeaponStats
+    {
+        public int weaponID;
+        public WeaponType weaponType;
+        public int damage;
+        public float knockback;
+        public float speed;
+        public float critChance;
+        public float critDamage;
+        public float reach;
+        public int manaCost;
+    }
+
     private const string CSV_PATH = "Assets/Datas/ItemDatabase.csv";
     private const string WEAPON_CSV_PATH = "Assets/Datas/WeaponDatabase.csv";
     private const string SO_DIR = "Assets/Datas/Items";
@@ -76,14 +89,40 @@ public class ItemConverterFromCSVToSO : EditorWindow
             if (typeStr.Equals("Sword", System.StringComparison.OrdinalIgnoreCase)) typeStr = "Weapon";
             if (System.Enum.TryParse(typeStr, out ItemType parsedType)) itemData.type = parsedType;
 
-            // 2. 무기 정보 매핑 (TypeID 기준)
-            if (itemData.type == ItemType.Weapon && weaponStatsMap.TryGetValue(itemData.typeID, out WeaponStats wStats))
+            // --- New Property Mapping Logic ---
+            itemData.properties.Clear();
+
+            switch (itemData.type)
             {
-                itemData.weaponStats = wStats;
-            }
-            else
-            {
-                itemData.weaponStats = null;
+                case ItemType.Weapon:
+                    if (weaponStatsMap.TryGetValue(itemData.typeID, out WeaponStats wStats))
+                    {
+                        WeaponProperty weaponProp = new WeaponProperty
+                        {
+                            weaponType = wStats.weaponType,
+                            damage = wStats.damage,
+                            speed = wStats.speed,
+                            reach = wStats.reach
+                        };
+                        itemData.properties.Add(weaponProp);
+                    }
+                    break;
+
+                case ItemType.Tool:
+                    // 현재 CSV에 Tool 전용 데이터가 없으므로 기본값 할당
+                    ToolProperty toolProp = new ToolProperty
+                    {
+                        minePower = 10,
+                        mineSpeed = 0.2f
+                    };
+                    itemData.properties.Add(toolProp);
+                    break;
+
+                case ItemType.Block:
+                    // 블록 설치 속성 추가
+                    BlockProperty blockProp = new BlockProperty();
+                    itemData.properties.Add(blockProp);
+                    break;
             }
 
             string spritePath = $"{SPRITE_DIR}/Item_{id:D5}.png";

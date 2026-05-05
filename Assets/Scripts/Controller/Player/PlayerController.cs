@@ -43,60 +43,24 @@ public class PlayerController : NetworkBehaviour
     public bool IsFlipped => isFlippedSync.Value;
     public bool IsDashing => isDashingSync.Value;
     public float DashDirection => dashDirectionSync.Value;
+    public PlayerVisuals Visuals => visuals;
 
     private Vector2 moveInput;
     private PlayerData playerData;
     private string debugStatus = "Initializing...";
 
-    // Animation Proxy Data
     private Vector3 lastPosition;
     private float proxySpeedX;
 
-    // Item Use Delay
     private float itemUseDelayTimer = 0f;
     public float ItemUseDelayTimer => itemUseDelayTimer;
 
-    // [Server-Only] Anti-Cheat Cooldown
     private float serverLastActionTime = 0f;
-
-    // [New] Animation Locking
-    private float lockedTargetAngle = 0f;
-
-    #endregion
-
-    #region Helper Methods
-
-    public float GetItemUseDelay(ItemData data)
-    {
-        if (data == null) return 0.2f;
-
-        if (data.weaponStats != null && data.weaponStats.speed > 0)
-        {
-            return data.weaponStats.UseTime;
-        }
-
-        switch (data.type)
-        {
-            case ItemType.Block: return 0.2f;
-            case ItemType.Helmet:
-            case ItemType.Chestplate:
-            case ItemType.Leggings:
-            case ItemType.Boots:
-            case ItemType.Jetbag:
-                return 0.1f; 
-            case ItemType.Consumable: return 0.5f;
-            case ItemType.Weapon:
-            case ItemType.Tool:
-                return 0.4f;
-            default: return 0.2f;
-        }
-    }
 
     #endregion
 
     #region Network Sync Variables
 
-    // Movement & State Sync
     private NetworkVariable<Vector2> moveInputSync = new NetworkVariable<Vector2>(Vector2.zero, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isFlippedSync = new NetworkVariable<bool>(false, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<bool> isGroundedSync = new NetworkVariable<bool>(true, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
@@ -105,7 +69,6 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<int> jumpCountSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private int lastProcessedJumpCount;
 
-    // Appearance & Equipment Sync
     private NetworkVariable<int> helmetIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<int> chestplateIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
     private NetworkVariable<int> leggingsIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
@@ -117,7 +80,6 @@ public class PlayerController : NetworkBehaviour
     private NetworkVariable<int> hairStyleSync = new NetworkVariable<int>(0, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Owner);
     private NetworkVariable<int> heldItemIdSync = new NetworkVariable<int>(-1, NetworkVariableReadPermission.Everyone, NetworkVariableWritePermission.Server);
 
-    // Ghost Item Sync (Server-side dragging item)
     private NetworkVariable<PlayerInventorySlotData> ghostItemSync = new NetworkVariable<PlayerInventorySlotData>(
         new PlayerInventorySlotData(-1, 0),
         NetworkVariableReadPermission.Owner,
@@ -183,8 +145,6 @@ public class PlayerController : NetworkBehaviour
             jumpAction.performed += OnJumpPerformed;
             dashAction.performed += OnDashPerformed;
             scrollAction.performed += OnScrollPerformed;
-            interactAction.performed += OnInteract00Performed;
-            interact01Action.performed += OnInteract01Performed;
 
             hotbarActions = new InputAction[10];
             for (int i = 0; i < 10; i++)
@@ -211,8 +171,6 @@ public class PlayerController : NetworkBehaviour
             if (jumpAction != null) jumpAction.performed -= OnJumpPerformed;
             if (dashAction != null) dashAction.performed -= OnDashPerformed;
             if (scrollAction != null) scrollAction.performed -= OnScrollPerformed;
-            if (interactAction != null) interactAction.performed -= OnInteract00Performed;
-            if (interact01Action != null) interact01Action.performed -= OnInteract01Performed;
             moveAction?.Disable();
             jumpAction?.Disable();
             dashAction?.Disable();
@@ -301,12 +259,34 @@ public class PlayerController : NetworkBehaviour
         if (!IsOwner || playerData == null || playerData.inventory == null) return;
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         int itemID = slot.IsEmpty ? -1 : slot.itemID;
+        
+        ItemData data = (itemID != -1) ? ItemDataManager.Instance.GetItem(itemID) : null;
+        interaction.SetCurrentItem(data);
+
         UpdateHeldItemRpc(itemID);
         if (visuals != null) visuals.SetHeldItem(itemID);
     }
 
     [Rpc(SendTo.Server)]
     public void UpdateHeldItemRpc(int itemID) => heldItemIdSync.Value = itemID;
+
+    [Rpc(SendTo.Server)]
+    public void ExecuteUsableRpc(int buttonIndex, int hotbarIndex, Vector2 mouseWorldPos)
+    {
+        if (playerData == null || playerData.inventory == null) return;
+        var slot = playerData.inventory.GetSlot(hotbarIndex);
+        if (slot.IsEmpty) return;
+        ItemData itemData = ItemDataManager.Instance.GetItem(slot.itemID);
+        if (itemData == null) return;
+
+        IUsable action = (buttonIndex == 0) ? itemData.LeftAction : itemData.RightAction;
+        float delay = action.GetUseDelay();
+        if (Time.time - serverLastActionTime < delay - 0.05f) return;
+        serverLastActionTime = Time.time;
+
+        UseContext context = new UseContext { Player = this, MouseWorldPos = mouseWorldPos, HotbarIndex = hotbarIndex, ItemID = slot.itemID, ButtonIndex = buttonIndex };
+        interaction.ExecuteServerAction(buttonIndex, context);
+    }
 
     private IEnumerator InitPlayerCo()
     {
@@ -315,9 +295,7 @@ public class PlayerController : NetworkBehaviour
         if (visuals != null) visuals.gameObject.SetActive(false);
 
         while (MapManager.Instance == null || !MapManager.Instance.IsMapReady()) yield return null;
-        
-        int dbRetry = 0;
-        while (ItemDataManager.Instance.GetItem(9) == null && dbRetry < 20) { yield return new WaitForSeconds(0.1f); dbRetry++; }
+        while (ItemDataManager.Instance.GetItem(9) == null) yield return new WaitForSeconds(0.1f);
 
         if (IsServer)
         {
@@ -334,22 +312,15 @@ public class PlayerController : NetworkBehaviour
             debugStatus = "Requesting Spawn...";
             RequestSpawnRpc();
             while (debugStatus == "Requesting Spawn...") yield return null;
-
             if (MeshManager.Instance != null) MeshManager.Instance.SetTarget(transform);
-
             debugStatus = "Building Terrain...";
-            float terrainWaitStartTime = Time.time;
-            while (!MapManager.Instance.IsTerrainReadyAt(rb.position) && Time.time - terrainWaitStartTime < 5f) yield return new WaitForSeconds(0.1f);
+            while (!MapManager.Instance.IsTerrainReadyAt(rb.position)) yield return new WaitForSeconds(0.1f);
 
             UpdateAppearance(playerData.visual);
             var e = playerData.equipment;
             UpdateEquipmentRpc(e.helmetIndex, e.chestplateIndex, e.leggingsIndex, e.bootsIndex, e.jetbagIndex);
             
-            InventoryUI ui = Object.FindAnyObjectByType<InventoryUI>();
-            if (ui != null) ui.RefreshUI();
-
-            float inventoryWaitTime = 0;
-            while (playerData.inventory.GetSlot(selectedHotbarIndex).IsEmpty && inventoryWaitTime < 1.0f) { yield return new WaitForSeconds(0.1f); inventoryWaitTime += 0.1f; }
+            Object.FindAnyObjectByType<InventoryUI>()?.RefreshUI();
             RefreshHeldItem();
         }
 
@@ -388,9 +359,7 @@ public class PlayerController : NetworkBehaviour
     }
 
     [Rpc(SendTo.Server)] public void RequestSyncInventoryRpc() => SyncInventoryToNetwork();
-
     [Rpc(SendTo.Server)] private void RequestSpawnRpc(RpcParams rpcParams = default) => ConfirmSpawnRpc(MapManager.Instance.GetSurfacePosition(50f), RpcTarget.Single(rpcParams.Receive.SenderClientId, RpcTargetUse.Temp));
-    
     [Rpc(SendTo.SpecifiedInParams)] private void ConfirmSpawnRpc(Vector2 pos, RpcParams rpcParams = default) { if (IsOwner) { transform.position = pos; rb.position = pos; debugStatus = "Spawned"; } }
 
     #endregion
@@ -410,10 +379,8 @@ public class PlayerController : NetworkBehaviour
         }
 
         if (itemUseDelayTimer > 0) itemUseDelayTimer -= Time.deltaTime;
-
         HandleContinuousInteraction();
 
-        // [New] Update Block Placement Preview
         if (playerData != null && playerData.inventory != null)
         {
             var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
@@ -444,39 +411,48 @@ public class PlayerController : NetworkBehaviour
     private void UpdateVisuals()
     {
         if (visuals == null) return;
-
         bool newFlip = isFlippedSync.Value;
 
-        // 현재 아이템 정보 확인
+        // --- New Interface Based Flip Logic ---
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
         ItemData itemData = !slot.IsEmpty ? ItemDataManager.Instance.GetItem(slot.itemID) : null;
+        IUsable action = (itemData != null) ? itemData.LeftAction : new NullUsable();
 
-        // [New] 무기 사용 중(공격 중)에는 방향 전환을 잠금
-        // 단, 딜레이가 0이 되면 잠금이 풀려 다음 공격 직전에 방향을 바꿀 수 있게 됩니다.
-        bool isDirectionLocked = itemUseDelayTimer > 0 && (itemData != null && itemData.type == ItemType.Weapon);
+        bool canUpdateFlip = true;
+        if (itemUseDelayTimer > 0 && action.ShouldLockFlip())
+        {
+            canUpdateFlip = false;
+        }
 
-        // 공격 중이 아닐 때만 마우스 위치 주시
-        if (!isDirectionLocked)
+        if (canUpdateFlip)
         {
             Vector2 screenPos = pointAction.ReadValue<Vector2>();
             Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
             newFlip = mouseWorldPos.x < transform.position.x;
         }
 
+        if (isFlippedSync.Value != newFlip) { isFlippedSync.Value = newFlip; visuals.SetFlip(newFlip); }
+        visuals.UpdateVisuals(rb.linearVelocity.x, movement.IsGrounded, isDashingSync.Value);
+    }
+
+    private void UpdateFlipTowardsMouse()
+    {
+        Vector2 screenPos = pointAction.ReadValue<Vector2>();
+        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+        bool newFlip = mouseWorldPos.x < transform.position.x;
+        
         if (isFlippedSync.Value != newFlip)
         {
             isFlippedSync.Value = newFlip;
             visuals.SetFlip(newFlip);
         }
-
-        visuals.UpdateVisuals(rb.linearVelocity.x, movement.IsGrounded, isDashingSync.Value);
     }
 
     public void OnGroundedChanged(bool grounded) { if (IsOwner) isGroundedSync.Value = grounded; }
 
     #endregion
 
-    #region Interaction & Rpc (Logic Hub)
+    #region Interaction & Rpc
 
     private bool IsPointerOverUI()
     {
@@ -489,166 +465,44 @@ public class PlayerController : NetworkBehaviour
 
     private void HandleContinuousInteraction()
     {
-        if (!IsOwner || debugStatus != "READY") 
-        {
-            if (visuals != null) visuals.StopItemUseAnimation();
-            return;
-        }
-
+        if (!IsOwner || debugStatus != "READY") { if (visuals != null) visuals.StopItemUseAnimation(); return; }
         var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
-        if (slot.IsEmpty) 
-        {
-            if (visuals != null) visuals.StopItemUseAnimation();
-            return;
-        }
+        if (slot.IsEmpty) { if (visuals != null) visuals.StopItemUseAnimation(); return; }
         ItemData itemData = ItemDataManager.Instance.GetItem(slot.itemID);
         if (itemData == null) return;
 
         bool leftClick = interactAction.IsPressed();
         bool rightClick = interact01Action.IsPressed();
-        bool isPointerOverUI = IsPointerOverUI();
+        if (IsPointerOverUI()) { if (visuals != null) visuals.StopItemUseAnimation(); return; }
 
-        bool isValidInput = false;
-        if (!isPointerOverUI)
+        IUsable action = null;
+        int buttonIdx = -1;
+        if (leftClick) { action = itemData.LeftAction; buttonIdx = 0; }
+        else if (rightClick) { action = itemData.RightAction; buttonIdx = 1; }
+
+        if (action == null || action is NullUsable) { if (itemUseDelayTimer <= 0 && visuals != null) visuals.StopItemUseAnimation(); return; }
+
+        bool canUse = false;
+        if (itemUseDelayTimer <= 0)
         {
-            switch (itemData.type)
-            {
-                case ItemType.Block:
-                case ItemType.Weapon:
-                case ItemType.Tool:
-                    if (leftClick) isValidInput = true;
-                    break;
-                case ItemType.Helmet:
-                case ItemType.Chestplate:
-                case ItemType.Leggings:
-                case ItemType.Boots:
-                case ItemType.Jetbag:
-                case ItemType.Consumable:
-                    if (rightClick) isValidInput = true;
-                    break;
-            }
+            if (action.IsContinuous()) canUse = true;
+            else if (buttonIdx == 0 && interactAction.WasPerformedThisFrame()) canUse = true;
+            else if (buttonIdx == 1 && interact01Action.WasPerformedThisFrame()) canUse = true;
         }
 
-        bool isStillActive = isValidInput || itemUseDelayTimer > 0;
+        if (canUse)
+        {
+            // [New] 사용 직전에 마우스 방향으로 즉시 전환
+            UpdateFlipTowardsMouse();
+
+            itemUseDelayTimer = action.GetUseDelay();
+            Vector2 screenPos = pointAction.ReadValue<Vector2>();
+            Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
+            interaction.UseItem(buttonIdx, selectedHotbarIndex, worldPos);
+        }
         
-        if (!isStillActive)
-        {
-            if (visuals != null) visuals.StopItemUseAnimation();
-            return;
-        }
-
-        switch (itemData.type)
-        {
-            case ItemType.Block:
-                HandleBlockInteraction(itemData, leftClick);
-                break;
-
-            case ItemType.Weapon:
-                HandleWeaponInteraction(itemData, leftClick);
-                break;
-
-            case ItemType.Tool:
-                HandleToolInteraction(itemData, leftClick);
-                break;
-
-            default:
-                if (visuals != null) visuals.StopItemUseAnimation();
-                if (isValidInput && itemUseDelayTimer <= 0) PerformWorldInteraction(1);
-                break;
-        }
+        if (itemUseDelayTimer <= 0 && !leftClick && !rightClick) { if (visuals != null) visuals.StopItemUseAnimation(); }
     }
-
-    private void HandleBlockInteraction(ItemData data, bool isButtonPressed)
-    {
-        Vector2 screenPos = pointAction.ReadValue<Vector2>();
-        Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-        Vector2 dir = (mouseWorldPos - transform.position).normalized;
-        float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-
-        if (IsFlipped) targetAngle = 180f - targetAngle;
-        float finalAngle = targetAngle + 90f; 
-
-        visuals.StartItemUseAnimation(finalAngle, GetItemUseDelay(data), visuals.BlockSwingOffset);
-
-        if (isButtonPressed && itemUseDelayTimer <= 0) PerformWorldInteraction(0);
-    }
-
-    private void HandleWeaponInteraction(ItemData data, bool isButtonPressed)
-    {
-        if (data.weaponStats == null) 
-        {
-            if (visuals != null) visuals.StopItemUseAnimation();
-            return;
-        }
-
-        float useDelay = GetItemUseDelay(data);
-
-        // [Fix] 새로운 공격 주기가 시작될 때 방향(Flip) 강제 업데이트
-        if (itemUseDelayTimer <= 0)
-        {
-            Vector2 screenPos = pointAction.ReadValue<Vector2>();
-            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-            bool nextFlip = mouseWorldPos.x < transform.position.x;
-            
-            if (isFlippedSync.Value != nextFlip)
-            {
-                isFlippedSync.Value = nextFlip;
-                visuals.SetFlip(nextFlip);
-            }
-        }
-
-        switch (data.weaponStats.weaponType)
-        {
-            case WeaponType.Sword:
-                if (itemUseDelayTimer <= 0) lockedTargetAngle = SwordSwingLockedTargetAngle; 
-                visuals.StartItemUseAnimation(lockedTargetAngle, useDelay, visuals.SwordSwingOffset);
-                break;
-
-            default:
-                visuals.StopItemUseAnimation();
-                break;
-        }
-
-        if (isButtonPressed && itemUseDelayTimer <= 0) PerformWorldInteraction(0);
-    }
-
-    private void HandleToolInteraction(ItemData data, bool isButtonPressed)
-    {
-        if (itemUseDelayTimer <= 0)
-        {
-            Vector2 screenPos = pointAction.ReadValue<Vector2>();
-            Vector3 mouseWorldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-            Vector2 dir = (mouseWorldPos - transform.position).normalized;
-            float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-            if (IsFlipped) targetAngle = 180f - targetAngle;
-            lockedTargetAngle = targetAngle + 90f; 
-        }
-
-        visuals.StartItemUseAnimation(lockedTargetAngle, GetItemUseDelay(data), 30f);
-
-        if (isButtonPressed && itemUseDelayTimer <= 0) PerformWorldInteraction(0);
-    }
-
-    #endregion
-
-    #region Interaction RPCs
-
-    private void PerformWorldInteraction(int buttonIndex)
-    {
-        if (playerData == null || playerData.inventory == null) return;
-        var slot = playerData.inventory.GetSlot(selectedHotbarIndex);
-        if (slot.IsEmpty) return;
-        ItemData itemData = ItemDataManager.Instance.GetItem(slot.itemID);
-        if (itemData == null) return;
-
-        itemUseDelayTimer = GetItemUseDelay(itemData);
-        Vector2 screenPos = pointAction.ReadValue<Vector2>();
-        Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-        interaction.UseItem(buttonIndex, selectedHotbarIndex, worldPos);
-    }
-
-    private void OnInteract00Performed(InputAction.CallbackContext ctx) { }
-    private void OnInteract01Performed(InputAction.CallbackContext ctx) { }
 
     [Rpc(SendTo.Server)]
     public void QuickEquipRpc(int hotbarIndex)
@@ -665,33 +519,6 @@ public class PlayerController : NetworkBehaviour
         if (oldItemID >= 0) playerData.inventory.SetSlot(hotbarIndex, new PlayerInventorySlotData(oldItemID, 1));
         else playerData.inventory.ClearSlot(hotbarIndex);
         SyncInventoryToNetwork();
-    }
-
-    [Rpc(SendTo.Server)]
-    public void PlaceBlockRpc(int x, int y, int itemID, int hotbarIndex)
-    {
-        ItemData itemData = ItemDataManager.Instance.GetItem(itemID);
-        float delay = GetItemUseDelay(itemData);
-        if (Time.time - serverLastActionTime < delay - 0.05f) return;
-
-        Vector2 playerPos = transform.position;
-        if (Mathf.Abs(x + 0.5f - playerPos.x) > 8.5f || Mathf.Abs(y + 0.5f - playerPos.y) > 6.5f) return;
-        if (MapManager.Instance.IsBlockActive(x, y)) return;
-        bool hasNeighbor = MapManager.Instance.IsBlockActive(x + 1, y) || MapManager.Instance.IsBlockActive(x - 1, y) || MapManager.Instance.IsBlockActive(x, y + 1) || MapManager.Instance.IsBlockActive(x, y - 1);
-        if (!hasNeighbor) return;
-
-        Vector2 checkPos = new Vector2(x + 0.5f, y + 0.5f);
-        if (Physics2D.OverlapBox(checkPos, Vector2.one * 0.95f, 0f, LayerMask.GetMask("Player")) != null) return;
-
-        var slot = playerData.inventory.GetSlot(hotbarIndex);
-        if (slot.IsEmpty || slot.itemID != itemID) return;
-
-        if (playerData.inventory.RemoveItemFromSlot(hotbarIndex, 1))
-        {
-            serverLastActionTime = Time.time;
-            MapManager.Instance.SetBlock(x, y, itemID);
-            SyncInventoryToNetwork();
-        }
     }
 
     [Rpc(SendTo.Server)]

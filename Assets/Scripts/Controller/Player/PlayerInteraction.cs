@@ -13,6 +13,10 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private GameObject itemDropPrefab;
     [SerializeField] private SpriteRenderer previewRenderer;
 
+    // --- New Action Cache ---
+    private IUsable currentLeftAction = new NullUsable();
+    private IUsable currentRightAction = new NullUsable();
+
     public static float DropThrowForce = 4f;
     public static float DropUpwardForce = 6f;
 
@@ -21,16 +25,27 @@ public class PlayerInteraction : MonoBehaviour
         controller = ctrl;
         itemDropPrefab = dropPrefab;
 
-        // 프리뷰 렌더러 초기화 (없으면 생성)
         if (previewRenderer == null)
         {
             GameObject go = new GameObject("PlacementPreview");
             go.transform.SetParent(transform);
             previewRenderer = go.AddComponent<SpriteRenderer>();
-            previewRenderer.sortingOrder = 100; // 블록보다 위
-            
-            // 초기 상태는 비활성
+            previewRenderer.sortingOrder = 100;
             go.SetActive(false);
+        }
+    }
+
+    public void SetCurrentItem(ItemData data)
+    {
+        if (data == null)
+        {
+            currentLeftAction = new NullUsable();
+            currentRightAction = new NullUsable();
+        }
+        else
+        {
+            currentLeftAction = data.LeftAction;
+            currentRightAction = data.RightAction;
         }
     }
 
@@ -38,7 +53,6 @@ public class PlayerInteraction : MonoBehaviour
     {
         if (previewRenderer == null) return;
 
-        // 1. 블록 아이템인지 확인
         ItemData itemData = ItemDataManager.Instance.GetItem(itemID);
         if (itemData == null || itemData.type != ItemType.Block || isPointerOverUI)
         {
@@ -46,11 +60,9 @@ public class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        // 2. 그리드 좌표 계산 (Snapping)
         int wx = Mathf.FloorToInt(mouseWorldPos.x);
         int wy = Mathf.FloorToInt(mouseWorldPos.y);
 
-        // 3. 거리 체크 (8x6)
         Vector2 playerPos = transform.position;
         float diffX = Mathf.Abs(wx + 0.5f - playerPos.x);
         float diffY = Mathf.Abs(wy + 0.5f - playerPos.y);
@@ -61,12 +73,8 @@ public class PlayerInteraction : MonoBehaviour
             return;
         }
 
-        // 4. 프리뷰 활성화 및 위치 설정
         if (!previewRenderer.gameObject.activeSelf) previewRenderer.gameObject.SetActive(true);
         previewRenderer.transform.position = new Vector3(wx + 0.5f, wy + 0.5f, 0);
-
-        // [Note] 나중에 이미지를 준비하시면 previewRenderer.sprite에 할당하면 됩니다.
-        // 현재는 영역 확인을 위해 반투명한 색상을 유지할 수 있습니다.
     }
 
     public void UseItem(int buttonIndex, int selectedHotbarIndex, Vector2 mouseWorldPos)
@@ -79,20 +87,33 @@ public class PlayerInteraction : MonoBehaviour
         ItemData itemData = ItemDataManager.Instance.GetItem(selectedSlot.itemID);
         if (itemData == null) return;
 
-        // 1. 장비류 즉시 장착 (우클릭 시)
-        if (IsEquipmentType(itemData.type))
+        // 장비류 특수 처리 (우클릭 시 즉시 장착) - 이건 시스템 성격상 유지하거나 Property로 뺄 수 있음
+        if (buttonIndex == 1 && IsEquipmentType(itemData.type))
         {
-            if (buttonIndex == 1) // 우클릭
-            {
-                controller.QuickEquipRpc(selectedHotbarIndex);
-            }
+            controller.QuickEquipRpc(selectedHotbarIndex);
             return;
         }
 
-        // 2. 블록 설치 로직 (좌클릭만)
-        if (itemData.type == ItemType.Block && buttonIndex == 0)
+        // Context 생성
+        UseContext context = new UseContext
         {
-            TryPlaceBlock(selectedHotbarIndex, selectedSlot.itemID, mouseWorldPos);
+            Player = controller,
+            MouseWorldPos = mouseWorldPos,
+            HotbarIndex = selectedHotbarIndex,
+            ItemID = selectedSlot.itemID,
+            ButtonIndex = buttonIndex
+        };
+
+        // 인터페이스 기반 실행 (If/Switch 제거)
+        if (buttonIndex == 0)
+        {
+            currentLeftAction.OnUseClient(context);
+            controller.ExecuteUsableRpc(0, selectedHotbarIndex, mouseWorldPos);
+        }
+        else if (buttonIndex == 1)
+        {
+            currentRightAction.OnUseClient(context);
+            controller.ExecuteUsableRpc(1, selectedHotbarIndex, mouseWorldPos);
         }
     }
 
@@ -103,19 +124,31 @@ public class PlayerInteraction : MonoBehaviour
                type == ItemType.Jetbag;
     }
 
-    private void TryPlaceBlock(int hotbarIndex, int itemID, Vector2 mouseWorldPos)
+    // --- Server Side Helpers (Used by RPCs) ---
+    
+    public void ExecuteServerAction(int buttonIndex, UseContext context)
+    {
+        // 서버에서도 해당 아이템의 Action을 찾아 실행
+        ItemData itemData = ItemDataManager.Instance.GetItem(context.ItemID);
+        if (itemData == null) return;
+
+        IUsable action = (buttonIndex == 0) ? itemData.LeftAction : itemData.RightAction;
+        action.OnUseServer(context);
+
+        // [Legacy] 블록 설치는 아직 전용 로직이 필요함 (좌표 검증 등)
+        if (itemData.type == ItemType.Block)
+        {
+            TryPlaceBlockOnServer(context.HotbarIndex, context.ItemID, context.MouseWorldPos);
+        }
+    }
+
+    private void TryPlaceBlockOnServer(int hotbarIndex, int itemID, Vector2 mouseWorldPos)
     {
         int wx = Mathf.FloorToInt(mouseWorldPos.x);
         int wy = Mathf.FloorToInt(mouseWorldPos.y);
 
-        // 1. Distance Check (Horizontal 8, Vertical 6)
         Vector2 playerPos = transform.position;
-        float diffX = Mathf.Abs(mouseWorldPos.x - playerPos.x);
-        float diffY = Mathf.Abs(mouseWorldPos.y - playerPos.y);
-
-        if (diffX > 8f || diffY > 6f) return;
-
-        // 2. Adjacency & Empty Check
+        if (Mathf.Abs(wx + 0.5f - playerPos.x) > 8.5f || Mathf.Abs(wy + 0.5f - playerPos.y) > 6.5f) return;
         if (MapManager.Instance.IsBlockActive(wx, wy)) return;
 
         bool hasNeighbor = MapManager.Instance.IsBlockActive(wx + 1, wy) ||
@@ -125,38 +158,24 @@ public class PlayerInteraction : MonoBehaviour
 
         if (!hasNeighbor) return;
 
-        // 3. Player Overlap Check (0.95x0.95 area to allow placement under feet)
         Vector2 checkPos = new Vector2(wx + 0.5f, wy + 0.5f);
-        Collider2D playerCol = Physics2D.OverlapBox(checkPos, Vector2.one * 0.95f, 0f, LayerMask.GetMask("Player"));
-        if (playerCol != null) return;
+        if (Physics2D.OverlapBox(checkPos, Vector2.one * 0.95f, 0f, LayerMask.GetMask("Player")) != null) return;
 
-        // 4. Request Server to place block and consume item
-        controller.PlaceBlockRpc(wx, wy, itemID, hotbarIndex);
+        if (controller.Data.inventory.RemoveItemFromSlot(hotbarIndex, 1))
+        {
+            MapManager.Instance.SetBlock(wx, wy, itemID);
+            controller.SyncInventoryToNetwork();
+        }
     }
 
     public void HandleDropItem(int id, int count, float lookDir)
     {
-        if (itemDropPrefab == null) 
-        {
-            Debug.LogError("[Interaction] itemDropPrefab is NULL!");
-            return;
-        }
-
-        Debug.Log($"[Interaction-Server] Requesting Spawn for ItemID: {id}. IsServer: {Unity.Netcode.NetworkManager.Singleton.IsServer}");
+        if (itemDropPrefab == null) return;
 
         Vector3 spawnPos = transform.position + new Vector3(lookDir * 0.8f, 0.5f, 0);
-        
-        // 매니저 호출 전후 로그
         var netObj = NetworkObjectPoolManager.Instance.Spawn(itemDropPrefab, spawnPos, Quaternion.identity);
-        
-        if (netObj == null)
-        {
-            Debug.LogError("[Interaction-Server] Spawn failed! Manager returned NULL.");
-            return;
-        }
+        if (netObj == null) return;
 
-        Debug.Log($"[Interaction-Server] Spawn SUCCESS. NetObj: {netObj.name}, Hash: {netObj.PrefabIdHash}");
-        
         ItemController item = netObj.GetComponent<ItemController>();
         item.itemID.Value = id;
         item.stackCount.Value = count;
@@ -166,7 +185,6 @@ public class PlayerInteraction : MonoBehaviour
         {
             rb.linearVelocity = throwForce;
         }
-
         item.SetDropCooldown(false);
     }
 }

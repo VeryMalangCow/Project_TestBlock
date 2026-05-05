@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 
@@ -48,22 +49,43 @@ public class ItemData : ScriptableObject
     public AssetReferenceSprite iconReference;
     public AssetReference worldPrefabReference;
 
-    [Header("### Weapon/Tool Stats")]
-    public WeaponStats weaponStats;
-}
+    [Header("### Properties (Polymorphic)")]
+    [SerializeReference]
+    public List<IItemProperty> properties = new List<IItemProperty>();
 
-[System.Serializable]
-public class WeaponStats
-{
-    public int weaponID; // Matches ItemData.typeID
-    public WeaponType weaponType; 
-    public int damage;
-    public float knockback;
-    public float speed;    // Attacks per second
-    public float critChance; 
-    public float critDamage; 
-    public float reach;
-    public int manaCost;
+    // --- Runtime Caching ---
+    private IUsable _leftUsable;
+    private IUsable _rightUsable;
+    private bool _isCached = false;
 
-    public float UseTime => speed > 0 ? 1f / speed : 0.2f;
+    public IUsable LeftAction => GetUsable(0);
+    public IUsable RightAction => GetUsable(1);
+
+    private IUsable GetUsable(int buttonIndex)
+    {
+        if (!_isCached) CacheUsables();
+        return buttonIndex == 0 ? _leftUsable : _rightUsable;
+    }
+
+    private void CacheUsables()
+    {
+        _leftUsable = new NullUsable();
+        _rightUsable = new NullUsable();
+
+        if (properties != null)
+        {
+            foreach (var prop in properties)
+            {
+                if (prop is IUsable usable)
+                {
+                    if (usable.TargetButton == 0) _leftUsable = usable;
+                    else if (usable.TargetButton == 1) _rightUsable = usable;
+                    else if (usable.TargetButton == 2) { _leftUsable = usable; _rightUsable = usable; }
+                }
+            }
+        }
+        _isCached = true;
+    }
+
+    public void OnValidate() { _isCached = false; } // 인스펙터 수정 시 캐시 초기화
 }

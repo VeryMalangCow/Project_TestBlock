@@ -249,19 +249,9 @@ public class PlayerVisuals : MonoBehaviour
             float startOffset = (swingPhase == 0) ? -currentMaxSwingOffset : currentMaxSwingOffset;
             float endOffset = (swingPhase == 0) ? currentMaxSwingOffset : -currentMaxSwingOffset;
             
-            // [Fix] 검(Sword)일 경우 Ease-Out (처음엔 빠르고 끝엔 느리게) 효과 적용
-            float t = swingLerpTime;
-            ItemData data = ItemDataManager.Instance.GetItem(currentHeldItemID);
-            if (data != null && data.type == ItemType.Weapon && data.weaponStats?.weaponType == WeaponType.Sword)
-            {
-                // Ease-Out 공식: 1 - (1 - t)^3 (더 역동적인 3제곱 사용)
-                t = 1f - Mathf.Pow(1f - swingLerpTime, 3f);
-            }
-            else
-            {
-                // 그 외 일반 아이템은 기존의 부드러운 왕복 보간 유지
-                t = Mathf.SmoothStep(0, 1, swingLerpTime);
-            }
+            // [New] 인터페이스 기반의 애니메이션 곡선 선택
+            // 현재는 모든 휘두르기에 역동적인 Ease-Out 적용
+            float t = 1f - Mathf.Pow(1f - swingLerpTime, 3f); 
 
             currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
 
@@ -332,9 +322,8 @@ public class PlayerVisuals : MonoBehaviour
         var db = ItemDataManager.Instance.HeldVisualDatabase;
         if (db == null) return;
 
-        // 무기 타입 확인 (무기가 아니면 None 전달)
-        WeaponType wType = (data.weaponStats != null) ? data.weaponStats.weaponType : WeaponType.None;
-        var settings = db.GetSettings(data.type, wType);
+        // [Fix] weaponStats 제거에 따른 수정 (기본값 None 사용, 필요시 속성에서 가져오도록 확장 가능)
+        var settings = db.GetSettings(data.type, WeaponType.None);
 
         // 상태에 따라 데이터 선택
         Vector2 targetPivot = isUsingItem ? settings.usePivot : settings.pivot;

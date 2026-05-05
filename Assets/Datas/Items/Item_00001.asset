@@ -33,13 +33,11 @@ MonoBehaviour:
     m_SubObjectType: 
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
-  weaponStats:
-    weaponID: 0
-    weaponType: 0
-    damage: 0
-    knockback: 0
-    speed: 0
-    critChance: 0
-    critDamage: 0
-    reach: 0
-    manaCost: 0
+  properties:
+  - rid: 2897859769728499796
+  references:
+    version: 2
+    RefIds:
+    - rid: 2897859769728499796
+      type: {class: BlockProperty, ns: , asm: Assembly-CSharp}
+      data: 
