@@ -520,17 +520,30 @@ public class PlayerController : NetworkBehaviour
     [Rpc(SendTo.Server)]
     public void QuickEquipRpc(int hotbarIndex)
     {
-        if (playerData == null || playerData.inventory == null || playerData.equipment == null) return;
+        PerformQuickEquip(hotbarIndex);
+    }
+
+    /// <summary>
+    /// 서버 측 장비 교체 실행 (Property에서 호출)
+    /// </summary>
+    public void PerformQuickEquip(int hotbarIndex)
+    {
+        if (!IsServer || playerData == null || playerData.inventory == null || playerData.equipment == null) return;
+        
         var slot = playerData.inventory.GetSlot(hotbarIndex);
         if (slot.IsEmpty) return;
+        
         ItemData itemData = ItemDataManager.Instance.GetItem(slot.itemID);
         if (itemData == null || !IsEquipmentType(itemData.type)) return;
 
         int oldTypeID = playerData.equipment.GetEquipment(itemData.type);
         int oldItemID = ItemDataManager.Instance.FindItemIDByType(itemData.type, oldTypeID);
+        
         SetEquipmentOnServer(itemData.type, itemData.typeID);
+        
         if (oldItemID >= 0) playerData.inventory.SetSlot(hotbarIndex, new PlayerInventorySlotData(oldItemID, 1));
         else playerData.inventory.ClearSlot(hotbarIndex);
+        
         SyncInventoryToNetwork();
     }
 

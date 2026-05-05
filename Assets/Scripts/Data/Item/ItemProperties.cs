@@ -93,3 +93,25 @@ public class BlockProperty : IItemProperty, IUsable
     public bool ShouldLockFlip() => false;
     public ItemAnimationType GetAnimationType() => ItemAnimationType.Place;
 }
+
+[System.Serializable]
+public class EquipmentProperty : IItemProperty, IUsable
+{
+    public int TargetButton => 1; // 우클릭
+
+    public void OnUseClient(UseContext context)
+    {
+        // 클라이언트: 장착 효과음 등을 여기서 재생할 수 있습니다.
+    }
+
+    public void OnUseServer(UseContext context)
+    {
+        // 서버: 플레이어 컨트롤러의 장비 교체 로직 호출
+        context.Player.PerformQuickEquip(context.HotbarIndex);
+    }
+
+    public float GetUseDelay() => 0.2f;
+    public bool IsContinuous() => false;
+    public bool ShouldLockFlip() => false;
+    public ItemAnimationType GetAnimationType() => ItemAnimationType.None;
+}

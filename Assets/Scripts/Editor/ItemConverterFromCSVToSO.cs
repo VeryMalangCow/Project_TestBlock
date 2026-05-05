@@ -123,6 +123,16 @@ public class ItemConverterFromCSVToSO : EditorWindow
                     BlockProperty blockProp = new BlockProperty();
                     itemData.properties.Add(blockProp);
                     break;
+
+                case ItemType.Helmet:
+                case ItemType.Chestplate:
+                case ItemType.Leggings:
+                case ItemType.Boots:
+                case ItemType.Jetbag:
+                    // 장비 교체 속성 추가 (우클릭)
+                    EquipmentProperty equipProp = new EquipmentProperty();
+                    itemData.properties.Add(equipProp);
+                    break;
             }
 
             string spritePath = $"{SPRITE_DIR}/Item_{id:D5}.png";
