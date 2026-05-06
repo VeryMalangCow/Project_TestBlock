@@ -256,7 +256,7 @@ public class PlayerVisuals : MonoBehaviour
             // 베이스 각도(에이밍) 부드럽게 추종 (Snap 방지의 핵심)
             // 도구류는 부드럽게 추종하고, 무기류는 기존처럼 즉시 이동
             float followSpeed = isStrokeAnimation ? rotationReturnSpeed : 100f; 
-            activeBaseAngle = Mathf.Lerp(activeBaseAngle, targetBaseAngle, Time.deltaTime * followSpeed);
+            activeBaseAngle = Mathf.LerpAngle(activeBaseAngle, targetBaseAngle, Time.deltaTime * followSpeed);
 
             // 한 루프 완료 시 (연속 사용 중이면 루프 반복)
             if (swingLerpTime >= 1f) 
@@ -408,6 +408,13 @@ public class PlayerVisuals : MonoBehaviour
         heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, targetRotation);
     }    public void SetFlip(bool flipX)
     {
+        if (IsFlipped != flipX)
+        {
+            // [Fix] 뒤집히는 순간 활성 각도를 즉시 반전시켜 비주얼 점프 방지
+            // 좌표계가 반전되므로 (360 - x)를 통해 반대편 대응 각도로 즉시 스냅
+            activeBaseAngle = (360f - activeBaseAngle) % 360f;
+        }
+
         IsFlipped = flipX;
         transform.localScale = new Vector3(flipX ? -1f : 1f, 1f, 1f);
         foreach (var layer in layers) if (layer.renderer != null) layer.renderer.flipX = false;
