@@ -48,9 +48,9 @@ public class PickaxeProperty : IItemProperty, IUsable
         if (context.Player.IsFlipped) targetAngle = 180f - targetAngle;
         float finalAngle = targetAngle + 90f;
 
-        // 클라이언트: 곡괭이 휘두르기 애니메이션
+        // 클라이언트: 곡괭이 휘두르기 애니메이션 (Stroke 방식 적용)
         float offset = context.Player.Visuals.PickaxeSwingOffset;
-        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), offset);
+        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), offset, true);
     }
 
     public void OnUseServer(UseContext context)
@@ -78,9 +78,9 @@ public class BlockProperty : IItemProperty, IUsable
         if (context.Player.IsFlipped) targetAngle = 180f - targetAngle;
         float finalAngle = targetAngle + 90f;
 
-        // 클라이언트: 설치 애니메이션
+        // 클라이언트: 설치 애니메이션 (Stroke 방식 적용)
         float offset = context.Player.Visuals.BlockSwingOffset;
-        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), offset);
+        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), offset, true);
     }
 
     public void OnUseServer(UseContext context)

@@ -46,12 +46,18 @@ public class PlayerVisuals : MonoBehaviour
     public float PickaxeSwingOffset => pickaxeSwingOffset;
     
     private bool isUsingItem = false;
+    private bool stopRequested = false; 
+    private bool isStrokeAnimation = false; 
+    private bool isFirstSwing = true; 
     private float targetBaseAngle = 0f;
+    private float activeBaseAngle = 0f; // [New] 부드러운 에이밍을 위한 활성 베이스 각도
     private float currentSwingOffset = 0f;
     private float swingLerpTime = 0f;
     private int swingPhase = 0; 
     private float itemUseDuration = 0.2f;
     private float currentMaxSwingOffset = 15f;
+
+    public float ActiveBaseAngle => activeBaseAngle; // [New] 외부(PlayerMovement 등)에서 참조 가능하도록 노출
 
     private MaterialPropertyBlock heldItemMPB;
     private int currentHeldItemID = -2;
@@ -246,48 +252,110 @@ public class PlayerVisuals : MonoBehaviour
         if (isUsingItem)
         {
             swingLerpTime += Time.deltaTime / itemUseDuration;
-            if (swingLerpTime >= 1f) { swingLerpTime = 0f; swingPhase = 1 - swingPhase; }
-
-            float startOffset = (swingPhase == 0) ? -currentMaxSwingOffset : currentMaxSwingOffset;
-            float endOffset = (swingPhase == 0) ? currentMaxSwingOffset : -currentMaxSwingOffset;
             
-            // [New] 인터페이스 기반의 애니메이션 곡선 선택
-            // 현재는 모든 휘두르기에 역동적인 Ease-Out 적용
-            float t = 1f - Mathf.Pow(1f - swingLerpTime, 3f); 
+            // 베이스 각도(에이밍) 부드럽게 추종 (Snap 방지의 핵심)
+            // 도구류는 부드럽게 추종하고, 무기류는 기존처럼 즉시 이동
+            float followSpeed = isStrokeAnimation ? rotationReturnSpeed : 100f; 
+            activeBaseAngle = Mathf.Lerp(activeBaseAngle, targetBaseAngle, Time.deltaTime * followSpeed);
 
-            currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
+            // 한 루프 완료 시 (연속 사용 중이면 루프 반복)
+            if (swingLerpTime >= 1f) 
+            { 
+                if (isStrokeAnimation && stopRequested)
+                {
+                    isUsingItem = false;
+                    stopRequested = false;
+                    activeBaseAngle = 0f;
+                    currentSwingOffset = 0f;
+                    finalRotation = 0f;
+                }
+                else
+                {
+                    swingLerpTime = 0f; 
+                    swingPhase++; 
+                    isFirstSwing = false; 
+                }
+            }
 
-            finalRotation = targetBaseAngle + currentSwingOffset;
+            if (isUsingItem)
+            {
+                float startOffset, endOffset;
+
+                if (isStrokeAnimation && isFirstSwing)
+                {
+                    // 도구류 첫 타: Idle(0)에서 시작하여 목표로 이동 (시작 Snap 제거)
+                    startOffset = 0f;
+                    endOffset = currentMaxSwingOffset;
+                }
+                else
+                {
+                    bool isForward = (swingPhase % 2 == 0);
+                    startOffset = isForward ? -currentMaxSwingOffset : currentMaxSwingOffset;
+                    endOffset = isForward ? currentMaxSwingOffset : -currentMaxSwingOffset;
+                }
+                
+                float t = 1f - Mathf.Pow(1f - swingLerpTime, 3f); 
+                currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
+
+                finalRotation = activeBaseAngle + currentSwingOffset;
+            }
         }
         else
         {
-            // [Fix] 즉시 복귀 및 아이템 기본 각도 복구
+            activeBaseAngle = 0f;
             currentSwingOffset = 0f;
-            finalRotation = 0f; 
+            finalRotation = 0f;
         }
 
         targetRoot.localRotation = Quaternion.Euler(0, 0, finalRotation);
     }
 
-    public void StartItemUseAnimation(float targetAngle, float duration, float maxOffset = 15f)
+    public void StartItemUseAnimation(float targetAngle, float duration, float maxOffset = 15f, bool isStroke = false)
     {
-        if (isUsingItem && targetBaseAngle == targetAngle) return; // 이미 같은 각도로 사용 중이면 무시
+        // [Key] 이미 사용 중인 도구류는 각도 목표만 업데이트 (Snap 방지)
+        if (isStroke && isUsingItem)
+        {
+            targetBaseAngle = targetAngle;
+            itemUseDuration = duration;
+            currentMaxSwingOffset = maxOffset;
+            isStrokeAnimation = true;
+            stopRequested = false; 
+            return;
+        }
         
+        // 무기류는 기존 로직 유지
+        if (!isStroke && isUsingItem && targetBaseAngle == targetAngle) return;
+
         isUsingItem = true;
+        stopRequested = false;
+        isStrokeAnimation = isStroke;
+        isFirstSwing = true; 
         targetBaseAngle = targetAngle;
         itemUseDuration = duration;
         currentMaxSwingOffset = maxOffset;
 
-        // [Fix] 애니메이션 시작 시점에 딱 한 번 비주얼(각도/위치) 갱신
+        swingLerpTime = 0f;
+        swingPhase = 0;
+
         UpdateHeldItemTransform();
     }
 
     public void StopItemUseAnimation()
     {
         if (!isUsingItem) return;
-        isUsingItem = false;
 
-        // [Fix] 애니메이션 종료 시점에 딱 한 번 기본 상태로 복구
+        if (isStrokeAnimation)
+        {
+            // 도구류: 즉시 멈추지 않고, 현재 진행 중인 스윙이 끝날 때까지 기다림
+            stopRequested = true;
+        }
+        else
+        {
+            // 무기류: 기존처럼 즉시 중단 (As is)
+            isUsingItem = false;
+            stopRequested = false;
+        }
+
         UpdateHeldItemTransform();
     }
 
