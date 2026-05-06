@@ -48,8 +48,9 @@ public class PickaxeProperty : IItemProperty, IUsable
         if (context.Player.IsFlipped) targetAngle = 180f - targetAngle;
         float finalAngle = targetAngle + 90f;
 
-        // 클라이언트: 곡괭이 휘두르기 애니메이션 (보통 30도)
-        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), 30f);
+        // 클라이언트: 곡괭이 휘두르기 애니메이션
+        float offset = context.Player.Visuals.PickaxeSwingOffset;
+        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), offset);
     }
 
     public void OnUseServer(UseContext context)

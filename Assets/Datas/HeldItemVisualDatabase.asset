@@ -51,10 +51,10 @@ MonoBehaviour:
     useRotation: 0
   - itemType: 8
     weaponType: 0
-    pivot: {x: 24, y: 24}
-    rotation: 0
-    usePivot: {x: 24, y: 24}
-    useRotation: 0
+    pivot: {x: 4, y: 60}
+    rotation: 270
+    usePivot: {x: 32, y: 76}
+    useRotation: 225
   - itemType: 9
     weaponType: 0
     pivot: {x: 24, y: 24}
