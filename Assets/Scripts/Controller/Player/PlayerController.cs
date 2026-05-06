@@ -315,7 +315,8 @@ public class PlayerController : NetworkBehaviour
             debugStatus = "Initializing Data (Server)...";
             inventorySlotsSync.Clear();
             for (int i = 0; i < 50; i++) inventorySlotsSync.Add(new PlayerInventorySlotData(-1, 0));
-            for (int i = 0; i <= 9; i++) { ItemData item = ItemDataManager.Instance.GetItem(i); if (item != null) playerData.inventory.AddItem(i, item.maxStack); }
+            debugStatus = "Test Item Giving...";
+            for (int i = 0; i <= 10; i++) { ItemData item = ItemDataManager.Instance.GetItem(i); if (item != null) playerData.inventory.AddItem(i, item.maxStack); }
             for (int i = 0; i < inventorySlotsSync.Count; i++) inventorySlotsSync[i] = playerData.inventory.GetSlot(i);
             yield return new WaitForEndOfFrame();
         }

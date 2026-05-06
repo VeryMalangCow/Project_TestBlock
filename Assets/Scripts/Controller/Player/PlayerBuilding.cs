@@ -49,9 +49,13 @@ public class PlayerBuilding : MonoBehaviour
         // 5. 아이템 소모 및 맵 수정
         if (playerCtrl.Data.inventory.RemoveItemFromSlot(hotbarIndex, 1))
         {
-            MapManager.Instance.SetBlock(wx, wy, itemID);
+            // [Fix] 아이템 ID 대신 블록의 TypeID를 사용하여 설치 (이미지 로딩 일관성 유지)
+            ItemData itemData = ItemDataManager.Instance.GetItem(itemID);
+            int blockTypeID = (itemData != null) ? itemData.typeID : itemID;
+
+            MapManager.Instance.SetBlock(wx, wy, blockTypeID);
             playerCtrl.SyncInventoryToNetwork();
-            Debug.Log($"[Server-Building] 블록 설치 성공: {wx}, {wy} (ID: {itemID})");
+            Debug.Log($"[Server-Building] 블록 설치 성공: {wx}, {wy} (Item: {itemID}, BlockType: {blockTypeID})");
         }
     }
 }
