@@ -15,7 +15,7 @@ public class WeaponProperty : IItemProperty, IUsable
     {
         // 클라이언트: 애니메이션 재생 (PlayerVisuals의 설정값 참조)
         float offset = context.Player.Visuals.SwordSwingOffset;
-        context.Player.Visuals.StartItemUseAnimation(90f, GetUseDelay(), offset); 
+        context.Player.Visuals.StartItemUseAnimation(0f, GetUseDelay(), offset); 
     }
 
     public void OnUseServer(UseContext context)
@@ -46,7 +46,7 @@ public class PickaxeProperty : IItemProperty, IUsable
         Vector2 dir = (context.MouseWorldPos - (Vector2)context.Player.transform.position).normalized;
         float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         if (context.Player.IsFlipped) targetAngle = 180f - targetAngle;
-        float finalAngle = targetAngle + 90f;
+        float finalAngle = targetAngle; // [Fix] +90 제거하여 정면을 0도로 변경 (안정성 개선)
 
         // 클라이언트: 곡괭이 휘두르기 애니메이션 (Stroke 방식 적용)
         float offset = context.Player.Visuals.PickaxeSwingOffset;
@@ -76,7 +76,7 @@ public class BlockProperty : IItemProperty, IUsable
         Vector2 dir = (context.MouseWorldPos - (Vector2)context.Player.transform.position).normalized;
         float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         if (context.Player.IsFlipped) targetAngle = 180f - targetAngle;
-        float finalAngle = targetAngle + 90f;
+        float finalAngle = targetAngle; // [Fix] +90 제거하여 정면을 0도로 변경 (안정성 개선)
 
         // 클라이언트: 설치 애니메이션 (Stroke 방식 적용)
         float offset = context.Player.Visuals.BlockSwingOffset;

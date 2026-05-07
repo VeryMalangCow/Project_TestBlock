@@ -59,6 +59,11 @@ public class PlayerVisuals : MonoBehaviour
 
     public float ActiveBaseAngle => activeBaseAngle; // [New] 외부(PlayerMovement 등)에서 참조 가능하도록 노출
 
+    public void UpdateContinuousAim(float angle)
+    {
+        if (isUsingItem) targetBaseAngle = angle;
+    }
+
     private MaterialPropertyBlock heldItemMPB;
     private int currentHeldItemID = -2;
     private bool isVisualsReady = false; 
@@ -251,14 +256,35 @@ public class PlayerVisuals : MonoBehaviour
 
         if (isUsingItem)
         {
-            swingLerpTime += Time.deltaTime / itemUseDuration;
-            
             // 베이스 각도(에이밍) 부드럽게 추종 (Snap 방지의 핵심)
-            // 도구류는 부드럽게 추종하고, 무기류는 기존처럼 즉시 이동
             float followSpeed = isStrokeAnimation ? rotationReturnSpeed : 100f; 
             activeBaseAngle = Mathf.LerpAngle(activeBaseAngle, targetBaseAngle, Time.deltaTime * followSpeed);
 
-            // 한 루프 완료 시 (연속 사용 중이면 루프 반복)
+            // [Fix] 현재 swingLerpTime으로 먼저 오프셋 계산 (첫 프레임 0 보장)
+            float t = 1f - Mathf.Pow(1f - swingLerpTime, 3f); 
+            float startOffset, endOffset;
+
+            if (isStrokeAnimation && isFirstSwing)
+            {
+                startOffset = currentMaxSwingOffset;
+                endOffset = -currentMaxSwingOffset;
+            }
+            else
+            {
+                bool isForward = (swingPhase % 2 == 0);
+                startOffset = isForward ? currentMaxSwingOffset : -currentMaxSwingOffset;
+                endOffset = isForward ? -currentMaxSwingOffset : currentMaxSwingOffset;
+            }
+            
+            currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
+            
+            // [Fix] 정면 0도 시스템에 맞추기 위해 렌더링 시점에만 +90 적용
+            finalRotation = activeBaseAngle + currentSwingOffset + 90f;
+
+            // 계산 후 시간 갱신
+            swingLerpTime += Time.deltaTime / itemUseDuration;
+
+            // 한 루프 완료 체크
             if (swingLerpTime >= 1f) 
             { 
                 if (isStrokeAnimation && stopRequested)
@@ -277,29 +303,6 @@ public class PlayerVisuals : MonoBehaviour
                     isFirstSwing = false; 
                 }
             }
-
-            if (isUsingItem)
-            {
-                float startOffset, endOffset;
-
-                if (isStrokeAnimation && isFirstSwing)
-                {
-                    // 도구류 첫 타: Idle(0)에서 시작하여 목표로 이동 (시작 Snap 제거)
-                    startOffset = 0f;
-                    endOffset = currentMaxSwingOffset;
-                }
-                else
-                {
-                    bool isForward = (swingPhase % 2 == 0);
-                    startOffset = isForward ? -currentMaxSwingOffset : currentMaxSwingOffset;
-                    endOffset = isForward ? currentMaxSwingOffset : -currentMaxSwingOffset;
-                }
-                
-                float t = 1f - Mathf.Pow(1f - swingLerpTime, 3f); 
-                currentSwingOffset = Mathf.Lerp(startOffset, endOffset, t);
-
-                finalRotation = activeBaseAngle + currentSwingOffset;
-            }
         }
         else
         {
@@ -317,6 +320,9 @@ public class PlayerVisuals : MonoBehaviour
         if (isStroke && isUsingItem)
         {
             targetBaseAngle = targetAngle;
+            // [Fix] 새 스윙이 시작될 때마다 에이밍을 즉시 스냅하여 반응성 개선
+            activeBaseAngle = targetAngle;
+
             itemUseDuration = duration;
             currentMaxSwingOffset = maxOffset;
             isStrokeAnimation = true;
@@ -326,6 +332,9 @@ public class PlayerVisuals : MonoBehaviour
         
         // 무기류는 기존 로직 유지
         if (!isStroke && isUsingItem && targetBaseAngle == targetAngle) return;
+
+        // [Fix] 처음 시작할 때 에이밍 각도를 즉시 스냅하여 반응성 개선
+        activeBaseAngle = targetAngle;
 
         isUsingItem = true;
         stopRequested = false;
