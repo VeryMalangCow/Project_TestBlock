@@ -411,9 +411,7 @@ public class PlayerVisuals : MonoBehaviour
     {
         if (IsFlipped != flipX)
         {
-            // [Fix] 뒤집히는 순간 활성 각도를 즉시 반전시켜 비주얼 점프 방지
-            // 좌표계가 반전되므로 (360 - x)를 통해 반대편 대응 각도로 즉시 스냅
-            activeBaseAngle = (360f - activeBaseAngle) % 360f;
+            // [Note] 로컬 각도를 유지하면 localScale.x 반전에 의해 자동으로 새로운 앞방향을 가리키게 됨
         }
 
         IsFlipped = flipX;
