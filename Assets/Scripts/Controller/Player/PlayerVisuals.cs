@@ -268,6 +268,7 @@ public class PlayerVisuals : MonoBehaviour
                     activeBaseAngle = 0f;
                     currentSwingOffset = 0f;
                     finalRotation = 0f;
+                    UpdateHeldItemTransform();
                 }
                 else
                 {
