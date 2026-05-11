@@ -1,24 +1,27 @@
 using UnityEngine;
 using Unity.Netcode;
 using System.Collections.Generic;
+using System.Linq;
 
 /// <summary>
 /// 클라이언트 예측 기반의 채굴 시스템을 담당하는 컴포넌트입니다.
-/// 모든 진행도와 회복 타이머는 클라이언트 로컬에서 관리됩니다.
+/// 여러 블록의 손상 상태를 독립적으로 기억하며, 각 블록은 마지막 타격 후 5초 뒤에 회복됩니다.
 /// </summary>
 public class PlayerMining : NetworkBehaviour
 {
     private PlayerController controller;
 
     // --- Client Side States (Prediction) ---
-    private Vector2Int currentTargetPos = new Vector2Int(-1, -1);
-    private int currentProgress = 0;
-    private int requiredProgress = 0;
+    // 좌표별 (누적 데미지) 저장
+    private Dictionary<Vector2Int, int> localDamagedBlocks = new Dictionary<Vector2Int, int>();
+    // 좌표별 (마지막 타격 시간) 저장
+    private Dictionary<Vector2Int, float> localLastHitTimes = new Dictionary<Vector2Int, float>();
+    
     private bool isMining = false;
-    private float lastHitTime = 0f;
     private PickaxeProperty currentToolStats;
 
-    private const float RESET_TIMEOUT = 5.0f; // 5초 동안 안 건드리면 로컬 리셋
+    private const float RESET_TIMEOUT = 5.0f; // 5초 동안 안 건드리면 해당 블록 리셋
+    private float cleanupTimer = 0f;
 
     public void Init(PlayerController ctrl)
     {
@@ -29,16 +32,12 @@ public class PlayerMining : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        // 1. 회복 타이머 체크 (클라이언트 로컬)
-        if (currentTargetPos.x != -1 && Time.time - lastHitTime > RESET_TIMEOUT)
+        // 1초마다 방치된 블록들 회복 체크 (최적화)
+        cleanupTimer += Time.deltaTime;
+        if (cleanupTimer >= 1.0f)
         {
-            ResetLocalMining();
-        }
-
-        // 2. 버튼을 뗐을 때의 상태 관리
-        if (!isMining && currentTargetPos.x != -1)
-        {
-            // 타겟은 유지하되(타이머를 위해), 채굴 중인 상태만 해제
+            cleanupTimer = 0f;
+            CheckBlockRecovery();
         }
     }
 
@@ -52,18 +51,11 @@ public class PlayerMining : NetworkBehaviour
         Vector2 mousePos = context.MouseWorldPos;
         Vector2Int targetPos = new Vector2Int(Mathf.FloorToInt(mousePos.x), Mathf.FloorToInt(mousePos.y));
 
-        // 1. 새로운 블록을 타격하는 경우 초기화
-        if (targetPos != currentTargetPos)
-        {
-            StartNewMining(targetPos, stats);
-        }
-
         isMining = true;
         currentToolStats = stats;
-        lastHitTime = Time.time; // 타격 시간 갱신
 
-        // 2. 즉시 데미지(히트) 적용
-        ApplyMiningHit(stats);
+        // 즉시 데미지(히트) 적용
+        ApplyMiningHit(targetPos, stats);
     }
 
     public void StopMiningClient()
@@ -74,77 +66,78 @@ public class PlayerMining : NetworkBehaviour
 
     #region Client Local Logic
 
-    private void StartNewMining(Vector2Int pos, PickaxeProperty stats)
+    private void ApplyMiningHit(Vector2Int pos, PickaxeProperty stats)
     {
-        // 이전 블록 균열 제거
-        if (currentTargetPos.x != -1) UpdateMiningVisuals(currentTargetPos, 0);
-
-        currentTargetPos = pos;
-        currentProgress = 0;
-        
+        // 1. 블록 데이터 확인
         var block = MapManager.Instance.GetBlock(pos.x, pos.y);
-        if (!block.isActive)
-        {
-            currentTargetPos = new Vector2Int(-1, -1);
-            return;
-        }
+        if (!block.isActive) return;
 
         var blockStats = MapManager.Instance.GetBlockStats(block.id);
         
-        // 강도 체크 (로컬)
-        if (stats.hardness < blockStats.hardness)
-        {
-            requiredProgress = int.MaxValue; 
-            return;
-        }
+        // 2. 강도 체크 (로컬)
+        if (stats.hardness < blockStats.hardness) return;
 
-        requiredProgress = blockStats.maxHealth;
-    }
-
-    private void ApplyMiningHit(PickaxeProperty stats)
-    {
-        if (currentTargetPos.x == -1 || requiredProgress == int.MaxValue) return;
-
-        // 사거리 체크 (로컬)
+        // 3. 사거리 체크 (로컬)
         Vector2 playerPos = transform.position;
-        float diffX = Mathf.Abs(currentTargetPos.x + 0.5f - playerPos.x);
-        float diffY = Mathf.Abs(currentTargetPos.y + 0.5f - playerPos.y);
-
+        float diffX = Mathf.Abs(pos.x + 0.5f - playerPos.x);
+        float diffY = Mathf.Abs(pos.y + 0.5f - playerPos.y);
         if (diffX > stats.rangeWidth || diffY > stats.rangeHeight) return;
 
-        // 데미지 누적
-        currentProgress += stats.power;
+        // 4. 데미지 누적
+        if (!localDamagedBlocks.ContainsKey(pos)) localDamagedBlocks[pos] = 0;
+        
+        localDamagedBlocks[pos] += stats.power;
+        localLastHitTimes[pos] = Time.time; // 타격 시간 갱신
 
-        // 비주얼 업데이트 (균열)
-        float crackRatio = Mathf.Clamp01((float)currentProgress / requiredProgress);
-        UpdateMiningVisuals(currentTargetPos, crackRatio);
+        // 5. 비주얼 업데이트 (균열)
+        float crackRatio = Mathf.Clamp01((float)localDamagedBlocks[pos] / blockStats.maxHealth);
+        UpdateMiningVisuals(pos, crackRatio);
 
-        // 파괴 판정
-        if (currentProgress >= requiredProgress)
+        // 6. 파괴 판정
+        if (localDamagedBlocks[pos] >= blockStats.maxHealth)
         {
-            CompleteMining();
+            CompleteMining(pos, stats);
         }
     }
 
-    private void CompleteMining()
+    private void CompleteMining(Vector2Int pos, PickaxeProperty stats)
     {
-        // 서버에 승인 요청 (최소한의 검증 정보만 전송)
-        RequestCompleteMiningServerRpc(currentTargetPos, currentToolStats.power, currentToolStats.hardness);
-        ResetLocalMining();
+        // 서버에 승인 요청
+        RequestCompleteMiningServerRpc(pos, stats.power, stats.hardness);
+        
+        // 로컬 데이터 즉시 제거
+        RemoveBlockData(pos);
     }
 
-    private void ResetLocalMining()
+    private void CheckBlockRecovery()
     {
-        if (currentTargetPos.x != -1) UpdateMiningVisuals(currentTargetPos, 0);
-        currentTargetPos = new Vector2Int(-1, -1);
-        currentProgress = 0;
-        requiredProgress = 0;
-        isMining = false;
+        if (localLastHitTimes.Count == 0) return;
+
+        float currentTime = Time.time;
+        // ToList()를 사용하여 순회 중 삭제 에러 방지
+        var expiredBlocks = localLastHitTimes
+            .Where(kvp => currentTime - kvp.Value > RESET_TIMEOUT)
+            .Select(kvp => kvp.Key)
+            .ToList();
+
+        foreach (var pos in expiredBlocks)
+        {
+            UpdateMiningVisuals(pos, 0); // 균열 제거
+            RemoveBlockData(pos);
+            // Debug.Log($"[Mining] Block at {pos} has recovered.");
+        }
+    }
+
+    private void RemoveBlockData(Vector2Int pos)
+    {
+        localDamagedBlocks.Remove(pos);
+        localLastHitTimes.Remove(pos);
     }
 
     private void UpdateMiningVisuals(Vector2Int pos, float ratio)
     {
-        // TODO: MapManager.Instance.SetBlockCrack(pos.x, pos.y, ratio);
+        // TODO: MapManager나 시각 효과 매니저를 통해 해당 좌표의 균열 스프라이트 강도 조절
+        // MapManager.Instance.SetBlockCrack(pos.x, pos.y, ratio);
     }
 
     #endregion
@@ -154,22 +147,17 @@ public class PlayerMining : NetworkBehaviour
     [Rpc(SendTo.Server)]
     private void RequestCompleteMiningServerRpc(Vector2Int pos, int toolPower, int toolHardness)
     {
-        // 1. 블록 존재 및 데이터 확인
         var block = MapManager.Instance.GetBlock(pos.x, pos.y);
         if (!block.isActive) return;
 
         var blockStats = MapManager.Instance.GetBlockStats(block.id);
-
-        // 2. 성능 검증 (강도 체크)
         if (toolHardness < blockStats.hardness) return;
 
-        // 3. 거리 검증 (서버 기준 오차 범위 허용)
         Vector2 playerPos = transform.position;
         float diffX = Mathf.Abs(pos.x + 0.5f - playerPos.x);
         float diffY = Mathf.Abs(pos.y + 0.5f - playerPos.y);
         if (diffX > 15f || diffY > 15f) return; 
 
-        // 4. 최종 승인: 월드 업데이트 및 아이템 생성
         MapManager.Instance.SetBlock(pos.x, pos.y, -1);
         SpawnDroppedBlock(block.id, pos.x, pos.y, controller);
     }
