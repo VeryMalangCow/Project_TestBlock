@@ -27,6 +27,8 @@ public class ItemConverterFromCSVToSO : EditorWindow
         public int hardness;
         public int power;
         public float speed;
+        public float rangeHeight;
+        public float rangeWidth;
     }
 
     private struct BlockStats
@@ -144,7 +146,9 @@ public class ItemConverterFromCSVToSO : EditorWindow
                         {
                             hardness = pStats.hardness,
                             power = pStats.power,
-                            speed = pStats.speed
+                            speed = pStats.speed,
+                            rangeHeight = pStats.rangeHeight,
+                            rangeWidth = pStats.rangeWidth
                         };
                         itemData.properties.Add(pickProp);
                     }
@@ -215,7 +219,9 @@ public class ItemConverterFromCSVToSO : EditorWindow
                     id = int.Parse(v[0].Trim()),
                     hardness = int.Parse(v[1].Trim()),
                     power = int.Parse(v[2].Trim()),
-                    speed = float.Parse(v[3].Trim())
+                    speed = float.Parse(v[3].Trim()),
+                    rangeHeight = v.Length > 4 ? float.Parse(v[4].Trim()) : 5.5f,
+                    rangeWidth = v.Length > 5 ? float.Parse(v[5].Trim()) : 8.5f
                 };
                 map[stats.id] = stats;
             }

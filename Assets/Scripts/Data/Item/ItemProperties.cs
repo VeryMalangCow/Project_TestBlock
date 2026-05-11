@@ -41,6 +41,8 @@ public class PickaxeProperty : IItemProperty, IUsable
     public int hardness; // 파괴 가능한 블록의 최대 강도
     public int power;    // 블록에 입히는 데미지
     public float speed;  // 초당 휘두르는 횟수
+    public float rangeHeight; // 상하 사거리
+    public float rangeWidth;  // 좌우 사거리
 
     public void OnUseClient(UseContext context)
     {

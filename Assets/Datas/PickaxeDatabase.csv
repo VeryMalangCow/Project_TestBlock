@@ -1,2 +1,2 @@
-PickaxeID,Hardness,Power,Speed
-0,1,1,2
+PickaxeID,Hardness,Power,Speed,RangeHeight,RangeWidth
+0,1,1,2,5.5,8.5

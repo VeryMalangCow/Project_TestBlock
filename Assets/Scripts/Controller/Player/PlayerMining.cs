@@ -19,11 +19,14 @@ public class PlayerMining : MonoBehaviour
 
         Debug.Log($"[Mining] PerformPickaxe called at ({wx}, {wy}). Pickaxe Power: {stats.power}, Hardness: {stats.hardness}");
 
-        // 1. 사거리 체크 (기존 8칸 유지)
-        float dist = Vector2.Distance(transform.position, mousePos);
-        if (dist > 8.5f)
+        // 1. 사거리 체크 (사각형 범위 체크)
+        Vector2 playerPos = (Vector2)transform.position;
+        float diffX = Mathf.Abs(wx + 0.5f - playerPos.x);
+        float diffY = Mathf.Abs(wy + 0.5f - playerPos.y);
+
+        if (diffX > stats.rangeWidth || diffY > stats.rangeHeight)
         {
-            Debug.Log($"[Mining] 사거리가 너무 멉니다! (거리: {dist})");
+            Debug.Log($"[Mining] 사거리가 너무 멉니다! (X차이: {diffX}/{stats.rangeWidth}, Y차이: {diffY}/{stats.rangeHeight})");
             return;
         }
 
