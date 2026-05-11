@@ -151,9 +151,15 @@ public class ItemConverterFromCSVToSO : EditorWindow
                     break;
 
                 case ItemType.Block:
-                    // 블록 설치 속성 추가
-                    BlockProperty blockProp = new BlockProperty();
-                    itemData.properties.Add(blockProp);
+                    if (blockStatsMap.TryGetValue(itemData.id, out BlockStats bStats))
+                    {
+                        BlockProperty blockProp = new BlockProperty
+                        {
+                            hardness = bStats.hardness,
+                            maxHealth = bStats.maxHealth
+                        };
+                        itemData.properties.Add(blockProp);
+                    }
                     break;
 
                 case ItemType.Helmet:

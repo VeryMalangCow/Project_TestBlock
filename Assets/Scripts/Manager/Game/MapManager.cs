@@ -110,7 +110,26 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
     public (int hardness, float maxHealth) GetBlockStats(int id)
     {
         if (blockLibrary.TryGetValue(id, out var stats)) return stats;
-        return (0, 10f); // 기본값
+
+        // [New] Fallback: ItemDataManager에서 블록 속성 가져오기
+        if (ItemDataManager.Instance != null)
+        {
+            var itemData = ItemDataManager.Instance.GetItem(id);
+            if (itemData != null)
+            {
+                foreach (var prop in itemData.properties)
+                {
+                    if (prop is BlockProperty blockProp)
+                    {
+                        var result = (blockProp.hardness, blockProp.maxHealth);
+                        blockLibrary[id] = result;
+                        return result;
+                    }
+                }
+            }
+        }
+
+        return (0, 1f); // 기본값 (최소 1 이상의 체력 권장)
     }
 
     public float GetBlockHealth(int x, int y)

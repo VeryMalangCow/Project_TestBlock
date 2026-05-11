@@ -17,12 +17,23 @@ public class PlayerMining : MonoBehaviour
         int wx = Mathf.FloorToInt(mousePos.x);
         int wy = Mathf.FloorToInt(mousePos.y);
 
+        Debug.Log($"[Mining] PerformPickaxe called at ({wx}, {wy}). Pickaxe Power: {stats.power}, Hardness: {stats.hardness}");
+
         // 1. 사거리 체크 (기존 8칸 유지)
-        if (Vector2.Distance(transform.position, mousePos) > 8.5f) return;
+        float dist = Vector2.Distance(transform.position, mousePos);
+        if (dist > 8.5f)
+        {
+            Debug.Log($"[Mining] 사거리가 너무 멉니다! (거리: {dist})");
+            return;
+        }
 
         // 2. 블록 존재 확인
         var block = MapManager.Instance.GetBlock(wx, wy);
-        if (!block.isActive) return;
+        if (!block.isActive)
+        {
+            Debug.Log($"[Mining] 해당 위치에 활성화된 블록이 없습니다.");
+            return;
+        }
 
         // 3. 강도(Hardness) 체크
         var blockStats = MapManager.Instance.GetBlockStats(block.id);
@@ -34,11 +45,15 @@ public class PlayerMining : MonoBehaviour
 
         // 4. 데미지 적용
         float currentHealth = MapManager.Instance.GetBlockHealth(wx, wy);
+        Debug.Log($"[Mining] 블록 데미지 적용 전 체력: {currentHealth}");
         MapManager.Instance.DamageBlock(wx, wy, stats.power);
 
         // 5. 파괴 확인 및 아이템 드랍
-        if (currentHealth > 0 && MapManager.Instance.GetBlockHealth(wx, wy) <= 0)
+        float newHealth = MapManager.Instance.GetBlockHealth(wx, wy);
+        Debug.Log($"[Mining] 블록 데미지 적용 후 체력: {newHealth}");
+        if (currentHealth > 0 && newHealth <= 0)
         {
+            Debug.Log($"[Mining] 블록 파괴 성공! 아이템 드랍: {block.id}");
             SpawnDroppedBlock(block.id, wx, wy, context.Player);
         }
     }

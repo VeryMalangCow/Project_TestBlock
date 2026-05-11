@@ -73,6 +73,10 @@ public class BlockProperty : IItemProperty, IUsable
 {
     public int TargetButton => 0; // 좌클릭 (또는 설정에 따라 우클릭)
 
+    [Header("Stats")]
+    public int hardness;
+    public float maxHealth;
+
     public void OnUseClient(UseContext context)
     {
         // 마우스 방향에 따른 각도 계산 복구
