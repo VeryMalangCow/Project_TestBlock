@@ -46,21 +46,23 @@ public class PickaxeProperty : IItemProperty, IUsable
 
     public void OnUseClient(UseContext context)
     {
-        // 마우스 방향에 따른 각도 계산
+        // 1. 마우스 방향에 따른 각도 계산
         Vector2 dir = (context.MouseWorldPos - (Vector2)context.Player.transform.position).normalized;
         float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
         if (context.Player.IsFlipped) targetAngle = 180f - targetAngle;
-        float finalAngle = targetAngle; // [Fix] +90 제거하여 정면을 0도로 변경 (안정성 개선)
 
-        // 클라이언트: 곡괭이 휘두르기 애니메이션 (Stroke 방식 적용)
+        // 2. 곡괭이 휘두르기 애니메이션 재생
         float offset = context.Player.Visuals.PickaxeSwingOffset;
-        context.Player.Visuals.StartItemUseAnimation(finalAngle, GetUseDelay(), offset, true);
+        context.Player.Visuals.StartItemUseAnimation(targetAngle, GetUseDelay(), offset, true);
+
+        // 3. 채굴 상태 업데이트 (진행도 계산 시작)
+        context.Player.Mining.ProcessMiningClient(this, context);
     }
 
     public void OnUseServer(UseContext context)
     {
-        // 서버: 채굴 전용 컴포넌트에 로직 위임
-        context.Player.Mining.PerformPickaxe(this, context);
+        // 서버: 원자적 검증 방식을 사용하므로 여기서는 아무것도 하지 않거나
+        // 필요 시 서버측 애니메이션 트리거만 수행합니다.
     }
 
     public float GetUseDelay() => speed > 0 ? 1f / speed : 0.4f;

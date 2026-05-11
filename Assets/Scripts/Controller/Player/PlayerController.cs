@@ -526,7 +526,11 @@ public class PlayerController : NetworkBehaviour
             interaction.UseItem(buttonIdx, selectedHotbarIndex, worldPos);
         }
         
-        if (itemUseDelayTimer <= 0 && !leftClick && !rightClick) { if (visuals != null) visuals.StopItemUseAnimation(); }
+        if (itemUseDelayTimer <= 0 && !leftClick && !rightClick) 
+        { 
+            if (visuals != null) visuals.StopItemUseAnimation(); 
+            if (mining != null) mining.StopMiningClient(); // [New] 채굴 상태 중지
+        }
     }
 
     [Rpc(SendTo.Server)]
