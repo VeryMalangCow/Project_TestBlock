@@ -98,8 +98,6 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
     private bool isMapReady = false;
     private HashSet<Vector2Int> requestedChunks = new HashSet<Vector2Int>();
 
-    // --- New Block Stats System ---
-    private Dictionary<Vector2Int, float> damagedBlocksHealth = new Dictionary<Vector2Int, float>();
     private Dictionary<int, (int hardness, int maxHealth)> blockLibrary = new Dictionary<int, (int, int)>();
 
     public void RegisterBlockStats(int id, int hardness, int maxHealth)
@@ -130,38 +128,6 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         }
 
         return (0, 1); // 기본값 (최소 1 이상의 체력 권장)
-    }
-
-    public float GetBlockHealth(int x, int y)
-    {
-        Vector2Int pos = new Vector2Int(x, y);
-        if (damagedBlocksHealth.TryGetValue(pos, out float health)) return health;
-        
-        var block = GetBlock(x, y);
-        if (!block.isActive) return 0;
-        return GetBlockStats(block.id).maxHealth;
-    }
-
-    public void DamageBlock(int x, int y, float damage)
-    {
-        if (!IsServer) return;
-
-        Vector2Int pos = new Vector2Int(x, y);
-        var block = GetBlock(x, y);
-        if (!block.isActive) return;
-
-        if (!damagedBlocksHealth.ContainsKey(pos))
-        {
-            damagedBlocksHealth[pos] = GetBlockStats(block.id).maxHealth;
-        }
-
-        damagedBlocksHealth[pos] -= damage;
-        
-        if (damagedBlocksHealth[pos] <= 0)
-        {
-            damagedBlocksHealth.Remove(pos);
-            SetBlock(x, y, -1); // 파괴 (ID -1은 비활성화를 의미)
-        }
     }
 
     #endregion
