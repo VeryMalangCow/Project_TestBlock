@@ -79,7 +79,7 @@ public class BlockProperty : IItemProperty, IUsable
 
     [Header("Stats")]
     public int hardness;
-    public float maxHealth;
+    public int maxHealth;
 
     public void OnUseClient(UseContext context)
     {

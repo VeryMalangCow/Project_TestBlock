@@ -100,14 +100,14 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
 
     // --- New Block Stats System ---
     private Dictionary<Vector2Int, float> damagedBlocksHealth = new Dictionary<Vector2Int, float>();
-    private Dictionary<int, (int hardness, float maxHealth)> blockLibrary = new Dictionary<int, (int, float)>();
+    private Dictionary<int, (int hardness, int maxHealth)> blockLibrary = new Dictionary<int, (int, int)>();
 
-    public void RegisterBlockStats(int id, int hardness, float maxHealth)
+    public void RegisterBlockStats(int id, int hardness, int maxHealth)
     {
         blockLibrary[id] = (hardness, maxHealth);
     }
 
-    public (int hardness, float maxHealth) GetBlockStats(int id)
+    public (int hardness, int maxHealth) GetBlockStats(int id)
     {
         if (blockLibrary.TryGetValue(id, out var stats)) return stats;
 
@@ -129,7 +129,7 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
             }
         }
 
-        return (0, 1f); // 기본값 (최소 1 이상의 체력 권장)
+        return (0, 1); // 기본값 (최소 1 이상의 체력 권장)
     }
 
     public float GetBlockHealth(int x, int y)

@@ -12,8 +12,8 @@ public class PlayerMining : NetworkBehaviour
 
     // --- Client Side States (Prediction) ---
     private Vector2Int currentTargetPos = new Vector2Int(-1, -1);
-    private float currentProgress = 0f;
-    private float requiredProgress = 0f;
+    private int currentProgress = 0;
+    private int requiredProgress = 0;
     private bool isMining = false;
     private PickaxeProperty currentToolStats;
 
@@ -70,7 +70,7 @@ public class PlayerMining : NetworkBehaviour
     private void StartNewMining(Vector2Int pos, PickaxeProperty stats)
     {
         currentTargetPos = pos;
-        currentProgress = 0f;
+        currentProgress = 0;
         
         var block = MapManager.Instance.GetBlock(pos.x, pos.y);
         if (!block.isActive)
@@ -84,7 +84,7 @@ public class PlayerMining : NetworkBehaviour
         // 강도 체크 (로컬 예측)
         if (stats.hardness < blockStats.hardness)
         {
-            requiredProgress = float.MaxValue; 
+            requiredProgress = int.MaxValue; 
             return;
         }
 
@@ -96,7 +96,7 @@ public class PlayerMining : NetworkBehaviour
 
     private void ApplyMiningHit(PickaxeProperty stats)
     {
-        if (currentTargetPos.x == -1 || requiredProgress == float.MaxValue) return;
+        if (currentTargetPos.x == -1 || requiredProgress == int.MaxValue) return;
 
         // 사거리 체크 (로컬)
         Vector2 playerPos = transform.position;
@@ -113,7 +113,7 @@ public class PlayerMining : NetworkBehaviour
         currentProgress += stats.power;
 
         // 시각적 피드백 (균열 상태 업데이트)
-        float crackRatio = Mathf.Clamp01(currentProgress / requiredProgress);
+        float crackRatio = Mathf.Clamp01((float)currentProgress / requiredProgress);
         UpdateMiningVisuals(currentTargetPos, crackRatio);
 
         Debug.Log($"[Mining] Hit! Progress: {currentProgress}/{requiredProgress}");
@@ -141,8 +141,8 @@ public class PlayerMining : NetworkBehaviour
             UpdateMiningVisuals(currentTargetPos, 0); 
         }
         currentTargetPos = new Vector2Int(-1, -1);
-        currentProgress = 0f;
-        requiredProgress = 0f;
+        currentProgress = 0;
+        requiredProgress = 0;
         isMining = false;
     }
 

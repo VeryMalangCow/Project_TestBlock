@@ -35,7 +35,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
     {
         public int id;
         public int hardness;
-        public float maxHealth;
+        public int maxHealth;
         public int dropItemID;
     }
 
@@ -249,7 +249,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
                 {
                     id = int.Parse(v[0].Trim()),
                     hardness = int.Parse(v[1].Trim()),
-                    maxHealth = float.Parse(v[2].Trim()),
+                    maxHealth = int.Parse(v[2].Trim()),
                     dropItemID = int.Parse(v[3].Trim())
                 };
                 map[stats.id] = stats;
