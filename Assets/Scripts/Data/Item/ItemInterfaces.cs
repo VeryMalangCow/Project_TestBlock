@@ -46,6 +46,7 @@ public interface IUsable
     float GetUseDelay();
     bool IsContinuous(); // 누르고 있을 때 자동 재사용 여부
     bool ShouldLockFlip(); // 아이템 사용 중 방향 전환을 잠글지 여부
+    bool IsAimingFollowMouse(); // [New] 마우스 방향을 실시간으로 추종할지 여부
     ItemAnimationType GetAnimationType();
 }
 
@@ -60,5 +61,6 @@ public class NullUsable : IUsable
     public float GetUseDelay() => 0.2f;
     public bool IsContinuous() => false;
     public bool ShouldLockFlip() => false;
+    public bool IsAimingFollowMouse() => false;
     public ItemAnimationType GetAnimationType() => ItemAnimationType.None;
 }

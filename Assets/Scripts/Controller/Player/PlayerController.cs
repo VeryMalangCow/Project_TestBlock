@@ -38,7 +38,8 @@ public class PlayerController : NetworkBehaviour
     private InputAction[] hotbarActions;
 
     [Header("### Held Item")]
-    [SerializeField] private float SwordSwingLockedTargetAngle = 90;
+    [SerializeField] private float swordSwingLockedTargetAngle = 90;
+    public float SwordSwingLockedTargetAngle => swordSwingLockedTargetAngle;
 
     [Header("### Resources")]
     [SerializeField] private GameObject itemDropPrefab;
@@ -496,13 +497,17 @@ public class PlayerController : NetworkBehaviour
 
         if (action == null || action is NullUsable) { if (itemUseDelayTimer <= 0 && visuals != null) visuals.StopItemUseAnimation(); return; }
 
-        // [Fix] 버튼을 누르고 있는 동안 매 프레임 실시간으로 마우스 방향 업데이트 (에이밍 지연 제거)
         Vector2 screenPos = pointAction.ReadValue<Vector2>();
         Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-        Vector2 dir = (worldPos - (Vector2)transform.position).normalized;
-        float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
-        if (IsFlipped) targetAngle = 180f - targetAngle;
-        if (visuals != null) visuals.UpdateContinuousAim(targetAngle);
+
+        // [Fix] 버튼을 누르고 있는 동안 매 프레임 실시간으로 마우스 방향 업데이트 (에이밍 지연 제거)
+        if (action.IsAimingFollowMouse())
+        {
+            Vector2 dir = (worldPos - (Vector2)transform.position).normalized;
+            float targetAngle = Mathf.Atan2(dir.y, dir.x) * Mathf.Rad2Deg;
+            if (IsFlipped) targetAngle = 180f - targetAngle;
+            if (visuals != null) visuals.UpdateContinuousAim(targetAngle);
+        }
 
         bool canUse = false;
         if (itemUseDelayTimer <= 0)

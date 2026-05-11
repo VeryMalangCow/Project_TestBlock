@@ -15,7 +15,8 @@ public class WeaponProperty : IItemProperty, IUsable
     {
         // 클라이언트: 애니메이션 재생 (PlayerVisuals의 설정값 참조)
         float offset = context.Player.Visuals.SwordSwingOffset;
-        context.Player.Visuals.StartItemUseAnimation(0f, GetUseDelay(), offset); 
+        float baseAngle = context.Player.SwordSwingLockedTargetAngle - 90f;
+        context.Player.Visuals.StartItemUseAnimation(baseAngle, GetUseDelay(), offset); 
     }
 
     public void OnUseServer(UseContext context)
@@ -27,6 +28,7 @@ public class WeaponProperty : IItemProperty, IUsable
     public float GetUseDelay() => speed > 0 ? 1f / speed : 0.4f;
     public bool IsContinuous() => true;
     public bool ShouldLockFlip() => true;
+    public bool IsAimingFollowMouse() => false;
     public ItemAnimationType GetAnimationType() => ItemAnimationType.Swing;
 }
 
@@ -62,6 +64,7 @@ public class PickaxeProperty : IItemProperty, IUsable
     public float GetUseDelay() => speed > 0 ? 1f / speed : 0.4f;
     public bool IsContinuous() => true;
     public bool ShouldLockFlip() => false;
+    public bool IsAimingFollowMouse() => true;
     public ItemAnimationType GetAnimationType() => ItemAnimationType.Swing;
 }
 
@@ -92,6 +95,7 @@ public class BlockProperty : IItemProperty, IUsable
     public float GetUseDelay() => 0.2f;
     public bool IsContinuous() => true;
     public bool ShouldLockFlip() => false;
+    public bool IsAimingFollowMouse() => true;
     public ItemAnimationType GetAnimationType() => ItemAnimationType.Place;
 }
 
@@ -114,5 +118,6 @@ public class EquipmentProperty : IItemProperty, IUsable
     public float GetUseDelay() => 0.2f;
     public bool IsContinuous() => false;
     public bool ShouldLockFlip() => false;
+    public bool IsAimingFollowMouse() => false;
     public ItemAnimationType GetAnimationType() => ItemAnimationType.None;
 }
