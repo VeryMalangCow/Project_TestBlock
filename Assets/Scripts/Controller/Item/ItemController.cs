@@ -38,6 +38,7 @@ public class ItemController : NetworkBehaviour
     private float searchTimer; 
     private PlayerController targetPlayer;
     private bool isAttracted;
+    private bool isForceTargeted; // [New] 강제 타겟팅 여부 (거리 제한 무시)
     private bool isBeingPickedUp; 
 
     #endregion
@@ -210,7 +211,8 @@ public class ItemController : NetworkBehaviour
         Vector2 nextPos = Vector2.MoveTowards(rb.position, targetPlayer.transform.position, currentSpeed * Time.fixedDeltaTime);
         rb.MovePosition(nextPos);
 
-        if (Vector2.Distance(transform.position, targetPlayer.transform.position) > SearchRadius * 1.5f)
+        // [Fix] 강제 타겟팅이 아닌 경우에만 거리 제한 체크
+        if (!isForceTargeted && Vector2.Distance(transform.position, targetPlayer.transform.position) > SearchRadius * 1.5f)
         {
             ResetAttraction();
         }
@@ -219,6 +221,7 @@ public class ItemController : NetworkBehaviour
     private void ResetAttraction()
     {
         isAttracted = false;
+        isForceTargeted = false; // [Reset]
         targetPlayer = null;
         rb.bodyType = RigidbodyType2D.Dynamic;
         if (rb != null) rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous; // [Added] 안정성 강화
@@ -244,6 +247,7 @@ public class ItemController : NetworkBehaviour
         
         targetPlayer = player;
         isAttracted = true;
+        isForceTargeted = true; // [Set] 거리 무시 활성화
         currentSpeed = InitialSpeed;
         cooldownTimer = 0; // 즉시 획득 가능하도록 쿨다운 제거
         
