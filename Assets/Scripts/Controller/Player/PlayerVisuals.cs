@@ -294,10 +294,12 @@ public class PlayerVisuals : MonoBehaviour
                     swingPhase++; 
                     isFirstSwing = false; 
 
+                    // [Fix] 사이클이 끝나면 즉시 아이템 트랜스폼을 갱신하여 대기 자세 피봇으로 복귀 보장
+                    UpdateHeldItemTransform();
+
                     if (stopRequested)
                     {
                         stopRequested = false;
-                        UpdateHeldItemTransform();
                     }
                 }
                 else
@@ -321,21 +323,22 @@ public class PlayerVisuals : MonoBehaviour
 
     public void StartItemUseAnimation(float targetAngle, float duration, float maxOffset = 15f, bool isStroke = false)
     {
+        // [New Surgical Fix] 어떤 상황에서도 도구 여부 플래그를 먼저 갱신하여 상태 꼬임 방지
+        isStrokeAnimation = isStroke;
+
         // [Key] 이미 사용 중인 도구류는 각도 목표만 업데이트 (Snap 방지)
         if (isStroke && isUsingItem)
         {
             targetBaseAngle = targetAngle;
-            // [Fix] 새 스윙이 시작될 때마다 에이밍을 즉시 스냅하여 반응성 개선
             activeBaseAngle = targetAngle;
 
-            // [New Surgical Fix] 재입력 시 즉시 진행도를 0으로 리셋하여 타격 시점 동기화
+            // [Surgical Fix] 재입력 시 즉시 진행도를 0으로 리셋하여 타격 시점 동기화
             swingLerpTime = 0f;
             swingPhase++;
             isFirstSwing = false;
 
             itemUseDuration = duration;
             currentMaxSwingOffset = maxOffset;
-            isStrokeAnimation = true;
             stopRequested = false; 
             return;
         }
@@ -375,8 +378,17 @@ public class PlayerVisuals : MonoBehaviour
     {
         if (!isUsingItem) return;
 
-        // 모든 종류의 애니메이션에 대해 "현재 사이클만 마치고 중단"하도록 설정
-        stopRequested = true;
+        if (isStrokeAnimation)
+        {
+            // 도구류: 진행 중인 휘두르기를 마저 끝내고 멈추도록 설정
+            stopRequested = true;
+        }
+        else
+        {
+            // 무기류: 원래대로 즉시 중단
+            isUsingItem = false;
+            stopRequested = false;
+        }
 
         UpdateHeldItemTransform();
     }
