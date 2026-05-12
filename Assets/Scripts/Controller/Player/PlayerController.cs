@@ -526,10 +526,11 @@ public class PlayerController : NetworkBehaviour
             interaction.UseItem(buttonIdx, selectedHotbarIndex, worldPos);
         }
         
-        if (itemUseDelayTimer <= 0 && !leftClick && !rightClick) 
+        // [Surgical Fix] 마우스 버튼을 떼는 즉시 중단 신호 전달 (쿨타임과 무관하게)
+        if (!leftClick && !rightClick) 
         { 
             if (visuals != null) visuals.StopItemUseAnimation(); 
-            if (mining != null) mining.StopMiningClient(); // [New] 채굴 상태 중지
+            if (itemUseDelayTimer <= 0 && mining != null) mining.StopMiningClient(); 
         }
     }
 

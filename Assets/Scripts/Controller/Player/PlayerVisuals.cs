@@ -284,20 +284,25 @@ public class PlayerVisuals : MonoBehaviour
             // 계산 후 시간 갱신
             swingLerpTime += Time.deltaTime / itemUseDuration;
 
-            // 한 루프 완료 체크
+            // [Surgical Fix] 한 루프 완료 체크
             if (swingLerpTime >= 1f) 
             { 
-                if (isStrokeAnimation && stopRequested)
+                // 도구류(Stroke)는 스스로 다음 루프를 돌지 않고, 오직 StartItemUseAnimation 신호를 대기함
+                if (isStrokeAnimation)
                 {
                     isUsingItem = false;
-                    stopRequested = false;
-                    activeBaseAngle = 0f;
-                    currentSwingOffset = 0f;
-                    finalRotation = 0f;
-                    UpdateHeldItemTransform();
+                    swingPhase++; 
+                    isFirstSwing = false; 
+
+                    if (stopRequested)
+                    {
+                        stopRequested = false;
+                        UpdateHeldItemTransform();
+                    }
                 }
                 else
                 {
+                    // 무기류는 기존 루프 유지
                     swingLerpTime = 0f; 
                     swingPhase++; 
                     isFirstSwing = false; 
@@ -323,6 +328,11 @@ public class PlayerVisuals : MonoBehaviour
             // [Fix] 새 스윙이 시작될 때마다 에이밍을 즉시 스냅하여 반응성 개선
             activeBaseAngle = targetAngle;
 
+            // [New Surgical Fix] 재입력 시 즉시 진행도를 0으로 리셋하여 타격 시점 동기화
+            swingLerpTime = 0f;
+            swingPhase++;
+            isFirstSwing = false;
+
             itemUseDuration = duration;
             currentMaxSwingOffset = maxOffset;
             isStrokeAnimation = true;
@@ -330,7 +340,7 @@ public class PlayerVisuals : MonoBehaviour
             return;
         }
         
-        // 무기류는 기존 로직 유지
+        // 무기류 혹은 멈춰있던 도구류 시작
         if (!isStroke && isUsingItem && targetBaseAngle == targetAngle) return;
 
         // [Fix] 처음 시작할 때 에이밍 각도를 즉시 스냅하여 반응성 개선
@@ -339,13 +349,24 @@ public class PlayerVisuals : MonoBehaviour
         isUsingItem = true;
         stopRequested = false;
         isStrokeAnimation = isStroke;
-        isFirstSwing = true; 
+        
+        // [Surgical Fix] 도구류가 멈춰있다가 다시 시작할 때, 이전 방향의 반대부터 시작하도록 보장
+        if (isStroke)
+        {
+            if (swingPhase == 0) isFirstSwing = true;
+            // swingPhase는 Update에서 이미 증가되었으므로 그대로 사용
+        }
+        else
+        {
+            isFirstSwing = true; 
+            swingPhase = 0;
+        }
+
         targetBaseAngle = targetAngle;
         itemUseDuration = duration;
         currentMaxSwingOffset = maxOffset;
 
         swingLerpTime = 0f;
-        swingPhase = 0;
 
         UpdateHeldItemTransform();
     }
@@ -354,17 +375,8 @@ public class PlayerVisuals : MonoBehaviour
     {
         if (!isUsingItem) return;
 
-        if (isStrokeAnimation)
-        {
-            // 도구류: 즉시 멈추지 않고, 현재 진행 중인 스윙이 끝날 때까지 기다림
-            stopRequested = true;
-        }
-        else
-        {
-            // 무기류: 기존처럼 즉시 중단 (As is)
-            isUsingItem = false;
-            stopRequested = false;
-        }
+        // 모든 종류의 애니메이션에 대해 "현재 사이클만 마치고 중단"하도록 설정
+        stopRequested = true;
 
         UpdateHeldItemTransform();
     }
@@ -416,7 +428,9 @@ public class PlayerVisuals : MonoBehaviour
         // 위치와 회전 즉시 적용
         heldItemRenderer.transform.localPosition = new Vector3(-px, -py, -0.01f);
         heldItemRenderer.transform.localRotation = Quaternion.Euler(0, 0, targetRotation);
-    }    public void SetFlip(bool flipX)
+    }
+
+    public void SetFlip(bool flipX)
     {
         if (IsFlipped != flipX)
         {
