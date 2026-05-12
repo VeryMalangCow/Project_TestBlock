@@ -37,6 +37,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
         public int hardness;
         public int maxHealth;
         public int dropItemID;
+        public BlockMaterial material;
     }
 
     private const string CSV_PATH = "Assets/Datas/ItemDatabase.csv";
@@ -81,7 +82,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
         {
             foreach (var kvp in blockStatsMap)
             {
-                MapManager.Instance.RegisterBlockStats(kvp.Key, kvp.Value.hardness, kvp.Value.maxHealth);
+                MapManager.Instance.RegisterBlockStats(kvp.Key, kvp.Value.hardness, kvp.Value.maxHealth, kvp.Value.material);
             }
         }
 
@@ -160,7 +161,8 @@ public class ItemConverterFromCSVToSO : EditorWindow
                         BlockProperty blockProp = new BlockProperty
                         {
                             hardness = bStats.hardness,
-                            maxHealth = bStats.maxHealth
+                            maxHealth = bStats.maxHealth,
+                            material = bStats.material
                         };
                         itemData.properties.Add(blockProp);
                     }
@@ -250,7 +252,8 @@ public class ItemConverterFromCSVToSO : EditorWindow
                     id = int.Parse(v[0].Trim()),
                     hardness = int.Parse(v[1].Trim()),
                     maxHealth = int.Parse(v[2].Trim()),
-                    dropItemID = int.Parse(v[3].Trim())
+                    dropItemID = int.Parse(v[3].Trim()),
+                    material = BlockMaterial.Dirt // 기본값
                 };
                 map[stats.id] = stats;
             }
