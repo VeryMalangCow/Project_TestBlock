@@ -52,7 +52,7 @@ public class EffectManager : MonoBehaviour
         // 3. Fake Glow
         if (fakeGlowPrefab != null)
         {
-            StartCoroutine(FakeGlowSequence(worldPos, data.hitFlashColor, 0.1f, 0.8f));
+            StartCoroutine(FakeGlowSequence(worldPos, data.hitFlashColor, 0.1f, 12f));
         }
     }
 
@@ -76,7 +76,7 @@ public class EffectManager : MonoBehaviour
         // 3. Fake Glow (Stronger)
         if (fakeGlowPrefab != null)
         {
-            StartCoroutine(FakeGlowSequence(worldPos, data.hitFlashColor, 0.2f, 1.5f));
+            StartCoroutine(FakeGlowSequence(worldPos, data.hitFlashColor, 0.2f, 20f));
         }
     }
 
