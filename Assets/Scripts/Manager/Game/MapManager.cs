@@ -364,7 +364,15 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
         if (chunk.blocks[idx].isActive && chunk.blocks[idx].id == id && id >= 0) return;
         if (!chunk.blocks[idx].isActive && id < 0) return;
 
-        if (id < 0) chunk.blocks[idx] = default;
+        if (id < 0)
+        {
+            // [New] 블록 파괴 시 모든 클라이언트에게 시각 효과 브로드캐스트 (서버 권한)
+            if (IsServer)
+            {
+                BroadcastBlockBreakRpc(worldX, worldY, chunk.blocks[idx].id);
+            }
+            chunk.blocks[idx] = default;
+        }
         else
         {
             int maxKinds = ResourceManager.Instance != null ? ResourceManager.Instance.GetTileKindCount(id) : 1;
@@ -385,6 +393,24 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
             if (isL && isT) MeshManager.Instance.RequestChunkRedraw(cx - 1, cy + 1);
             if (isR && isB) MeshManager.Instance.RequestChunkRedraw(cx + 1, cy - 1);
             if (isR && isT) MeshManager.Instance.RequestChunkRedraw(cx + 1, cy + 1);
+        }
+    }
+
+    [Rpc(SendTo.Everyone)]
+    private void BroadcastBlockBreakRpc(int worldX, int worldY, int blockID)
+    {
+        // 서버는 비주얼을 재생하지 않음 (Host 제외)
+        if (IsServer && !IsHost) return;
+
+        // 청크 가시성/동기화 여부 확인 (최적화)
+        int cx = worldX / ChunkData.Size;
+        int cy = worldY / ChunkData.Size;
+        if (!IsChunkSynced(cx, cy)) return;
+
+        // 이펙트 재생
+        if (EffectManager.Instance != null)
+        {
+            EffectManager.Instance.PlayBreakFX(new Vector2(worldX + 0.5f, worldY + 0.5f), blockID);
         }
     }
 

@@ -149,7 +149,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: d5a57f767e5e46a458fc5d3c628d0cbb, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Unity.Netcode.Runtime::Unity.Netcode.NetworkObject
-  GlobalObjectIdHash: 4087358549
+  GlobalObjectIdHash: 3836181582
   InScenePlacedSourceGlobalObjectIdHash: 0
   DeferredDespawnTick: 0
   Ownership: 1
@@ -184,7 +184,7 @@ MonoBehaviour:
   mining: {fileID: 8436007642671894771}
   building: {fileID: 4098946448289942515}
   inputActions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  SwordSwingLockedTargetAngle: 90
+  swordSwingLockedTargetAngle: 90
   itemDropPrefab: {fileID: 2994726321107835729, guid: 64e1813cd709a2d4b935635ac744c184, type: 3}
 --- !u!114 &2795475633606825749
 MonoBehaviour:
@@ -341,8 +341,8 @@ SortingGroup:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 162841608114231149}
   m_Enabled: 1
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: -625925993
+  m_SortingLayer: 1
   m_SortingOrder: 1
   m_SortAtRoot: 0
   m_Sort3DAs2D: 0
@@ -382,6 +382,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 64b42e5837f9e0b4685ab4c0177f9c52, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PlayerMining
+  ShowTopMostFoldoutHeaderGroup: 1
 --- !u!1 &315711372752958681
 GameObject:
   m_ObjectHideFlags: 0

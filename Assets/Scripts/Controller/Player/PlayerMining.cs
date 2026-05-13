@@ -111,6 +111,12 @@ public class PlayerMining : NetworkBehaviour
         data.lastHitTime = Time.time; // 타격 시간 갱신
         localDamagedBlocks[pos] = data;
 
+        // [New] 즉시 로컬 타격 이펙트 재생 (서버 통신 없음)
+        if (EffectManager.Instance != null)
+        {
+            EffectManager.Instance.PlayHitFX((Vector2)(Vector2)pos + new Vector2(0.5f, 0.5f), block.id);
+        }
+
         // 5. 비주얼 업데이트 (균열)
         float crackRatio = Mathf.Clamp01((float)data.currentDamage / blockStats.maxHealth);
         UpdateMiningVisuals(pos, crackRatio);
