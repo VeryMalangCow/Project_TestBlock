@@ -11,7 +11,8 @@ public class PlayerInteraction : MonoBehaviour
     [Header("### Interaction Settings")]
     [SerializeField] private float interactRange = 6f;
     [SerializeField] private GameObject itemDropPrefab;
-    [SerializeField] private SpriteRenderer previewRenderer;
+    [SerializeField] private SpriteRenderer previewRenderer; // 블록 설치용
+    [SerializeField] private SpriteRenderer selectionRenderer; // 채굴 선택용
 
     // --- New Action Cache ---
     private IUsable currentLeftAction = new NullUsable();
@@ -35,6 +36,16 @@ public class PlayerInteraction : MonoBehaviour
             previewRenderer.sortingOrder = 100;
             go.SetActive(false);
         }
+
+        if (selectionRenderer == null)
+        {
+            GameObject go = new GameObject("SelectionPreview");
+            go.transform.SetParent(transform);
+            selectionRenderer = go.AddComponent<SpriteRenderer>();
+            selectionRenderer.color = new Color(1f, 1f, 1f, 0.4f); // 반투명 흰색
+            selectionRenderer.sortingOrder = 101;
+            go.SetActive(false);
+        }
     }
 
     public void SetCurrentItem(ItemData data)
@@ -51,32 +62,73 @@ public class PlayerInteraction : MonoBehaviour
         }
     }
 
-    public void UpdatePlacementPreview(int itemID, Vector2 mouseWorldPos, bool isPointerOverUI)
+    public void UpdateInteractionPreview(int itemID, Vector2 mouseWorldPos, bool isPointerOverUI)
     {
-        if (previewRenderer == null) return;
+        if (isPointerOverUI)
+        {
+            if (previewRenderer?.gameObject.activeSelf == true) previewRenderer.gameObject.SetActive(false);
+            if (selectionRenderer?.gameObject.activeSelf == true) selectionRenderer.gameObject.SetActive(false);
+            return;
+        }
 
         ItemData itemData = ItemDataManager.Instance.GetItem(itemID);
-        if (itemData == null || itemData.type != ItemType.Block || isPointerOverUI)
+        if (itemData == null)
         {
-            if (previewRenderer.gameObject.activeSelf) previewRenderer.gameObject.SetActive(false);
+            if (previewRenderer?.gameObject.activeSelf == true) previewRenderer.gameObject.SetActive(false);
+            if (selectionRenderer?.gameObject.activeSelf == true) selectionRenderer.gameObject.SetActive(false);
             return;
         }
 
         int wx = Mathf.FloorToInt(mouseWorldPos.x);
         int wy = Mathf.FloorToInt(mouseWorldPos.y);
-
         Vector2 playerPos = transform.position;
-        float diffX = Mathf.Abs(wx + 0.5f - playerPos.x);
-        float diffY = Mathf.Abs(wy + 0.5f - playerPos.y);
 
-        if (diffX > 8.5f || diffY > 6.5f)
+        // --- 1. 블록 설치 프리뷰 ---
+        if (itemData.type == ItemType.Block)
         {
-            if (previewRenderer.gameObject.activeSelf) previewRenderer.gameObject.SetActive(false);
-            return;
-        }
+            if (selectionRenderer?.gameObject.activeSelf == true) selectionRenderer.gameObject.SetActive(false);
 
-        if (!previewRenderer.gameObject.activeSelf) previewRenderer.gameObject.SetActive(true);
-        previewRenderer.transform.position = new Vector3(wx + 0.5f, wy + 0.5f, 0);
+            float diffX = Mathf.Abs(wx + 0.5f - playerPos.x);
+            float diffY = Mathf.Abs(wy + 0.5f - playerPos.y);
+
+            // 설치 사거리 체크 (기존 8.5, 6.5)
+            if (diffX <= 8.5f && diffY <= 6.5f)
+            {
+                if (!previewRenderer.gameObject.activeSelf) previewRenderer.gameObject.SetActive(true);
+                previewRenderer.transform.position = new Vector3(wx + 0.5f, wy + 0.5f, 0);
+            }
+            else
+            {
+                if (previewRenderer.gameObject.activeSelf) previewRenderer.gameObject.SetActive(false);
+            }
+        }
+        // --- 2. 채굴 대상 프리뷰 (곡괭이) ---
+        else if (itemData.LeftAction is PickaxeProperty pickaxe)
+        {
+            if (previewRenderer?.gameObject.activeSelf == true) previewRenderer.gameObject.SetActive(false);
+
+            float diffX = Mathf.Abs(wx + 0.5f - playerPos.x);
+            float diffY = Mathf.Abs(wy + 0.5f - playerPos.y);
+
+            // 곡괭이 사거리 내에 있고, 해당 위치에 블록이 활성화되어 있는지 확인
+            bool inRange = (diffX <= pickaxe.rangeWidth && diffY <= pickaxe.rangeHeight);
+            bool hasBlock = MapManager.Instance.IsBlockActive(wx, wy);
+
+            if (inRange && hasBlock)
+            {
+                if (!selectionRenderer.gameObject.activeSelf) selectionRenderer.gameObject.SetActive(true);
+                selectionRenderer.transform.position = new Vector3(wx + 0.5f, wy + 0.5f, 0);
+            }
+            else
+            {
+                if (selectionRenderer.gameObject.activeSelf) selectionRenderer.gameObject.SetActive(false);
+            }
+        }
+        else
+        {
+            if (previewRenderer?.gameObject.activeSelf == true) previewRenderer.gameObject.SetActive(false);
+            if (selectionRenderer?.gameObject.activeSelf == true) selectionRenderer.gameObject.SetActive(false);
+        }
     }
 
     public void UseItem(int buttonIndex, int selectedHotbarIndex, Vector2 mouseWorldPos)

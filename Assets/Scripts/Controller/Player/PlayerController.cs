@@ -402,7 +402,7 @@ public class PlayerController : NetworkBehaviour
             int heldItemID = slot.IsEmpty ? -1 : slot.itemID;
             Vector2 screenPos = pointAction.ReadValue<Vector2>();
             Vector2 worldPos = Camera.main.ScreenToWorldPoint(new Vector3(screenPos.x, screenPos.y, -Camera.main.transform.position.z));
-            interaction.UpdatePlacementPreview(heldItemID, worldPos, IsPointerOverUI());
+            interaction.UpdateInteractionPreview(heldItemID, worldPos, IsPointerOverUI());
         }
 
         lastPosition = transform.position;
