@@ -30,6 +30,7 @@ public class PlayerMining : NetworkBehaviour
     // --- Client Side States (Prediction) ---
     // 좌표별 손상 데이터 저장 (데미지 + 마지막 타격 시간)
     private Dictionary<Vector2Int, BlockDamageData> localDamagedBlocks = new Dictionary<Vector2Int, BlockDamageData>();
+    private HashSet<Vector2Int> pendingBlocks = new HashSet<Vector2Int>(); // 서버 승인 대기 중인 블록들
     private List<Vector2Int> keysToRemove = new List<Vector2Int>(); // GC 방지를 위한 재사용 리스트
     
     private bool isMining = false;
@@ -39,7 +40,9 @@ public class PlayerMining : NetworkBehaviour
     private float cleanupTimer = 0f;
 
     // --- Server Side States ---
-    private double lastMiningTime = 0; // 서버측 속도 제한용
+    private double miningBudget = 0; // 서버측 채굴 가능 '시간 예산' (Token Bucket 방식)
+    private double lastBudgetTime = 0;
+    private const double MAX_BUDGET = 2.0; // 최대 2초치 채굴 능력을 비축 가능 (버스트 허용)
 
     public void Init(PlayerController ctrl)
     {
@@ -50,7 +53,7 @@ public class PlayerMining : NetworkBehaviour
     {
         if (!IsOwner) return;
 
-        // 1초마다 방치된 블록들 회복 체크 (최적화)
+        // 1초마다 방치된 블록들 회복 및 정리 체크
         cleanupTimer += Time.deltaTime;
         if (cleanupTimer >= 1.0f)
         {
@@ -72,6 +75,9 @@ public class PlayerMining : NetworkBehaviour
         isMining = true;
         currentToolStats = stats;
 
+        // 이미 서버 승인 대기 중인 블록은 중복 타격 방지
+        if (pendingBlocks.Contains(targetPos)) return;
+
         // 즉시 데미지(히트) 적용
         ApplyMiningHit(targetPos, stats);
     }
@@ -88,7 +94,12 @@ public class PlayerMining : NetworkBehaviour
     {
         // 1. 블록 데이터 확인
         var block = MapManager.Instance.GetBlock(pos.x, pos.y);
-        if (!block.isActive) return;
+        if (!block.isActive) 
+        {
+            // 이미 부서진 블록이면 대기 목록에서도 제거
+            if (pendingBlocks.Contains(pos)) pendingBlocks.Remove(pos);
+            return;
+        }
 
         var blockStats = MapManager.Instance.GetBlockStats(block.id);
         
@@ -130,23 +141,29 @@ public class PlayerMining : NetworkBehaviour
 
     private void CompleteMining(Vector2Int pos, PickaxeProperty stats)
     {
+        if (pendingBlocks.Contains(pos)) return;
+
+        pendingBlocks.Add(pos); // 서버 승인 대기 상태로 전환
+        
         // 서버에 승인 요청
         RequestCompleteMiningServerRpc(pos, stats.power, stats.hardness, stats.speed);
         
-        // 로컬 데이터 즉시 제거
-        RemoveBlockData(pos);
+        // [Surgical Fix] 여기서 RemoveBlockData(pos)를 하지 않음.
+        // 서버가 블록을 지워 isActive가 false가 되거나, 5초 타임아웃 시 정리됨.
     }
 
     private void CheckBlockRecovery()
     {
-        if (localDamagedBlocks.Count == 0) return;
-
         float currentTime = Time.time;
         keysToRemove.Clear();
 
+        // 1. 타임아웃 또는 이미 파괴된 블록 체크
         foreach (var kvp in localDamagedBlocks)
         {
-            if (currentTime - kvp.Value.lastHitTime > RESET_TIMEOUT)
+            bool isTimedOut = (currentTime - kvp.Value.lastHitTime > RESET_TIMEOUT);
+            bool isAlreadyBroken = !MapManager.Instance.IsBlockActive(kvp.Key.x, kvp.Key.y);
+
+            if (isTimedOut || isAlreadyBroken)
             {
                 keysToRemove.Add(kvp.Key);
             }
@@ -154,9 +171,15 @@ public class PlayerMining : NetworkBehaviour
 
         foreach (var pos in keysToRemove)
         {
-            UpdateMiningVisuals(pos, 0); // 균열 제거
+            if (MapManager.Instance.IsBlockActive(pos.x, pos.y))
+                UpdateMiningVisuals(pos, 0); // 회복되는 블록만 균열 제거
+            
             RemoveBlockData(pos);
+            if (pendingBlocks.Contains(pos)) pendingBlocks.Remove(pos);
         }
+
+        // 2. 대기 목록(pendingBlocks) 중 이미 파괴된 블록 정리
+        pendingBlocks.RemoveWhere(pos => !MapManager.Instance.IsBlockActive(pos.x, pos.y));
     }
 
     private void RemoveBlockData(Vector2Int pos)
@@ -168,13 +191,12 @@ public class PlayerMining : NetworkBehaviour
     {
         // 블록의 재질 정보를 가져옴 (사운드/파티클 구분용)
         var block = MapManager.Instance.GetBlock(pos.x, pos.y);
+        if (!block.isActive && ratio > 0) return; // 이미 없는 블록이면 무시
+
         var stats = MapManager.Instance.GetBlockStats(block.id);
 
-        // 이벤트를 발행하여 비주얼/사운드 시스템이 반응하게 함 (관심사 분리)
+        // 이벤트를 발행하여 비주얼/사운드 시스템이 반응하게 함
         OnBlockDamageDealt?.Invoke(pos, ratio, stats.material);
-        
-        // (참고) MapManager.Instance.SetBlockCrack(pos.x, pos.y, ratio) 등의 직접 호출도 가능하지만,
-        // 이벤트를 통하는 것이 확장성 면에서 유리함.
     }
 
     #endregion
@@ -188,20 +210,31 @@ public class PlayerMining : NetworkBehaviour
         var block = MapManager.Instance.GetBlock(pos.x, pos.y);
         if (!block.isActive) return;
 
-        // 2. 서버측 속도 제한 (Rate Limiting)
-        // 블록을 파괴하는 데 필요한 최소 타격 횟수 계산
         var blockStats = MapManager.Instance.GetBlockStats(block.id);
         int requiredHits = Mathf.CeilToInt((float)blockStats.maxHealth / toolPower);
-        
-        // 곡괭이 속도에 기반한 최소 소요 시간 (0.8은 네트워크 지연 등을 고려한 여유 계수)
-        float minTimeRequired = (requiredHits / toolSpeed) * 0.8f;
+        float timeToMine = (requiredHits / toolSpeed);
 
+        // 2. 서버측 속도 제한 개선 (Mining Budget 시스템)
         double currentTime = NetworkManager.Singleton.ServerTime.Time;
-        if (currentTime - lastMiningTime < minTimeRequired)
+        if (lastBudgetTime == 0) lastBudgetTime = currentTime;
+
+        // 지난 시간만큼 예산 충전
+        double deltaTime = currentTime - lastBudgetTime;
+        miningBudget = System.Math.Min(MAX_BUDGET, miningBudget + deltaTime);
+        lastBudgetTime = currentTime;
+
+        // 파괴에 필요한 시간만큼 예산 차감
+        // 네트워크 지연을 고려해 필요 시간의 85%만 차감 (관대한 판정)
+        double cost = timeToMine * 0.85f;
+
+        if (miningBudget < cost)
         {
-            // Debug.LogWarning($"[Security] Mining too fast! Player: {OwnerClientId}");
+            // 예산 부족 (너무 빨리 부숨)
+            // Debug.LogWarning($"[Security] Mining too fast! Budget: {miningBudget}, Cost: {cost}");
             return;
         }
+
+        miningBudget -= cost;
 
         // 3. 강도 체크
         if (toolHardness < blockStats.hardness) return;
@@ -213,7 +246,6 @@ public class PlayerMining : NetworkBehaviour
         if (diffX > 15f || diffY > 15f) return; 
 
         // 5. 파괴 승인
-        lastMiningTime = currentTime;
         MapManager.Instance.SetBlock(pos.x, pos.y, -1);
         SpawnDroppedBlock(block.id, pos.x, pos.y, controller);
     }
