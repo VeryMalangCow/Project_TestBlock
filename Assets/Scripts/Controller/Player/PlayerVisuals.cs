@@ -290,16 +290,20 @@ public class PlayerVisuals : MonoBehaviour
                 // 도구류(Stroke)는 스스로 다음 루프를 돌지 않고, 오직 StartItemUseAnimation 신호를 대기함
                 if (isStrokeAnimation)
                 {
-                    isUsingItem = false;
-                    swingPhase++; 
-                    isFirstSwing = false; 
-
-                    // [Fix] 사이클이 끝나면 즉시 아이템 트랜스폼을 갱신하여 대기 자세 피봇으로 복귀 보장
-                    UpdateHeldItemTransform();
+                    // [Surgical Fix] 애니메이션이 끝났어도 즉시 Idle로 돌아가지 않고, 
+                    // 다음 StartItemUseAnimation이나 StopItemUseAnimation(stopRequested)을 대기함.
+                    // 이를 통해 연속 휘두름 시 1프레임 Idle 스냅 현상을 방지.
+                    swingLerpTime = 1f; 
 
                     if (stopRequested)
                     {
+                        isUsingItem = false;
                         stopRequested = false;
+                        swingPhase++; 
+                        isFirstSwing = false; 
+
+                        // [Fix] 정지 시에만 아이템 트랜스폼을 Idle 피봇으로 복귀
+                        UpdateHeldItemTransform();
                     }
                 }
                 else
