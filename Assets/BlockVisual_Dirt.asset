@@ -14,9 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualData
   blockID: 0
   blockName: GlassDirt
-  hitDustPrefab: {fileID: 3340129378400715658, guid: 4471d16c3aac7704793795fa1c26f8c4, type: 3}
+  mainColor: {r: 0.1593987, g: 1, b: 0.1273585, a: 1}
+  useGlow: 1
   hitSound: {fileID: 0}
-  hitFlashColor: {r: 0.34297472, g: 1, b: 0.1745283, a: 1}
-  breakDustPrefab: {fileID: 3340129378400715658, guid: 4471d16c3aac7704793795fa1c26f8c4, type: 3}
   breakSound: {fileID: 0}
-  glowIntensity: 1

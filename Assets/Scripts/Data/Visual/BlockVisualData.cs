@@ -6,13 +6,11 @@ public class BlockVisualData : ScriptableObject
     public int blockID;
     public string blockName;
 
-    [Header("### Hit Effects")]
-    public GameObject hitDustPrefab; 
-    public AudioClip hitSound;
-    public Color hitFlashColor = Color.white; 
+    [Header("### Visual Settings")]
+    public Color mainColor = Color.white; // 파티클과 플래시에 공통 적용될 색상
+    public bool useGlow = true;           // 타격 시 번쩍이는 효과(FakeGlow) 사용 여부
 
-    [Header("### Break Effects")]
-    public GameObject breakDustPrefab; 
+    [Header("### Sounds")]
+    public AudioClip hitSound;
     public AudioClip breakSound;
-    public float glowIntensity = 1.0f; 
 }

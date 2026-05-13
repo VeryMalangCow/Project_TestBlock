@@ -9,11 +9,13 @@ public class EffectManager : MonoBehaviour
     [Header("### Data")]
     [SerializeField] private BlockVisualDatabase visualDatabase;
 
+    [Header("### Master Prefabs")]
+    [SerializeField] private GameObject masterHitDust;   // 모든 블록 공용 타격 파티클
+    [SerializeField] private GameObject masterBreakDust; // 모든 블록 공용 파괴 파티클
+    [SerializeField] private GameObject fakeGlowPrefab;  // 모든 블록 공용 발광 효과
+
     [Header("### Audio")]
     [SerializeField] private AudioSource localAudioSource;
-
-    [Header("### Fake Glow")]
-    [SerializeField] private GameObject fakeGlowPrefab;
 
     private Dictionary<string, Queue<GameObject>> poolDictionary = new Dictionary<string, Queue<GameObject>>();
 
@@ -37,22 +39,23 @@ public class EffectManager : MonoBehaviour
         var data = visualDatabase.GetData(blockID);
         if (data == null) return;
 
-        // 1. Dust Particles
-        if (data.hitDustPrefab != null)
+        // 1. 마스터 타격 파티클 소환 및 색상 주입
+        if (masterHitDust != null)
         {
-            SpawnFromPool(data.hitDustPrefab, worldPos, Quaternion.identity);
+            GameObject dust = SpawnFromPool(masterHitDust, worldPos, Quaternion.identity);
+            SetParticleColor(dust, data.mainColor);
         }
 
-        // 2. Hit Sound (Local)
+        // 2. 발광 효과 (데이터 설정에 따라)
+        if (data.useGlow && fakeGlowPrefab != null)
+        {
+            StartCoroutine(FakeGlowSequence(worldPos, data.mainColor, 0.1f, 0.8f));
+        }
+
+        // 3. 타격 사운드 (로컬)
         if (data.hitSound != null && localAudioSource != null)
         {
             localAudioSource.PlayOneShot(data.hitSound);
-        }
-
-        // 3. Fake Glow
-        if (fakeGlowPrefab != null)
-        {
-            StartCoroutine(FakeGlowSequence(worldPos, data.hitFlashColor, 0.1f, 12f));
         }
     }
 
@@ -61,22 +64,23 @@ public class EffectManager : MonoBehaviour
         var data = visualDatabase.GetData(blockID);
         if (data == null) return;
 
-        // 1. Break Particles
-        if (data.breakDustPrefab != null)
+        // 1. 마스터 파괴 파티클 소환 및 색상 주입
+        if (masterBreakDust != null)
         {
-            SpawnFromPool(data.breakDustPrefab, worldPos, Quaternion.identity);
+            GameObject dust = SpawnFromPool(masterBreakDust, worldPos, Quaternion.identity);
+            SetParticleColor(dust, data.mainColor);
         }
 
-        // 2. Break Sound (Spatial)
+        // 2. 발광 효과 (파괴 시에는 더 강하게)
+        if (data.useGlow && fakeGlowPrefab != null)
+        {
+            StartCoroutine(FakeGlowSequence(worldPos, data.mainColor, 0.2f, 1.5f));
+        }
+
+        // 3. 파괴 사운드 (공간음)
         if (data.breakSound != null)
         {
             AudioSource.PlayClipAtPoint(data.breakSound, new Vector3(worldPos.x, worldPos.y, -2f));
-        }
-
-        // 3. Fake Glow (Stronger)
-        if (fakeGlowPrefab != null)
-        {
-            StartCoroutine(FakeGlowSequence(worldPos, data.hitFlashColor, 0.2f, 20f));
         }
     }
 
@@ -106,15 +110,12 @@ public class EffectManager : MonoBehaviour
             objectToSpawn.name = key;
         }
 
-        // Return to pool after finish
         StartCoroutine(ReturnToPoolAfterDelay(objectToSpawn, key));
-
         return objectToSpawn;
     }
 
     private IEnumerator ReturnToPoolAfterDelay(GameObject obj, string key)
     {
-        // For ParticleSystems, wait for duration
         var ps = obj.GetComponent<ParticleSystem>();
         if (ps != null)
         {
@@ -122,11 +123,22 @@ public class EffectManager : MonoBehaviour
         }
         else
         {
-            yield return new WaitForSeconds(1f); // Fallback
+            yield return new WaitForSeconds(1f);
         }
 
         obj.SetActive(false);
         poolDictionary[key].Enqueue(obj);
+    }
+
+    private void SetParticleColor(GameObject obj, Color color)
+    {
+        var ps = obj.GetComponent<ParticleSystem>();
+        if (ps != null)
+        {
+            var main = ps.main;
+            // 색상을 약간 랜덤화하여 자연스럽게 표현
+            main.startColor = new ParticleSystem.MinMaxGradient(color * 0.7f, color * 1.3f);
+        }
     }
 
     #endregion
