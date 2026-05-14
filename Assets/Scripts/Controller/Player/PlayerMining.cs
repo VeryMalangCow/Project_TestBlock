@@ -22,7 +22,7 @@ public class PlayerMining : NetworkBehaviour
     }
 
     // --- Events (Decoupling Visuals) ---
-    public delegate void BlockDamageHandler(Vector2Int pos, float crackRatio, BlockMaterial material);
+    public delegate void BlockDamageHandler(Vector2Int pos, float crackRatio);
     public event BlockDamageHandler OnBlockDamageDealt;
 
     private PlayerController controller;
@@ -192,8 +192,7 @@ public class PlayerMining : NetworkBehaviour
         var block = MapManager.Instance.GetBlock(pos.x, pos.y);
         if (!block.isActive && ratio > 0) return;
 
-        var stats = MapManager.Instance.GetBlockStats(block.id);
-        OnBlockDamageDealt?.Invoke(pos, ratio, stats.material);
+        OnBlockDamageDealt?.Invoke(pos, ratio);
     }
 
     #endregion

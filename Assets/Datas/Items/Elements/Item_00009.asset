@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b3176329395b2543ae22575685d3277, type: 3}
-  m_Name: Item_00010
+  m_Name: Item_00009
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  id: 10
-  itemName: Wood Pickaxe
-  description: A wooden pickaxe that is not special at all
+  id: 9
+  itemName: Test Jetbag
+  description: Test jetbag
   maxStack: 1
   typeID: 0
-  type: 8
-  hasHeldSprite: 1
+  type: 6
+  hasHeldSprite: 0
   heldPivot: {x: 0, y: 0}
   heldRotation: 0
   iconReference:
-    m_AssetGUID: f0dae88e4d8861a44b603e09e60d7e78
+    m_AssetGUID: 
     m_SubObjectName: 
     m_SubObjectType: 
     m_SubObjectGUID: 
@@ -34,15 +34,10 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859916280889445
+  - rid: 2897859976109752450
   references:
     version: 2
     RefIds:
-    - rid: 2897859916280889445
-      type: {class: PickaxeProperty, ns: , asm: Assembly-CSharp}
-      data:
-        hardness: 1
-        power: 1
-        speed: 2
-        rangeHeight: 5.5
-        rangeWidth: 8.5
+    - rid: 2897859976109752450
+      type: {class: EquipmentProperty, ns: , asm: Assembly-CSharp}
+      data: 

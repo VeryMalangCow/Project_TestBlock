@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b3176329395b2543ae22575685d3277, type: 3}
-  m_Name: Item_00002
+  m_Name: Item_00010
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  id: 2
-  itemName: Stone
-  description: A simple block of stone
-  maxStack: 999
-  typeID: 2
-  type: 1
-  hasHeldSprite: 0
+  id: 10
+  itemName: Wood Pickaxe
+  description: A wooden pickaxe that is not special at all
+  maxStack: 1
+  typeID: 0
+  type: 8
+  hasHeldSprite: 1
   heldPivot: {x: 0, y: 0}
   heldRotation: 0
   iconReference:
-    m_AssetGUID: 050859d66e3b9f74c80554809ddb4b83
+    m_AssetGUID: 
     m_SubObjectName: 
     m_SubObjectType: 
     m_SubObjectGUID: 
@@ -34,12 +34,15 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859916280889440
+  - rid: 2897859976109752457
   references:
     version: 2
     RefIds:
-    - rid: 2897859916280889440
-      type: {class: BlockProperty, ns: , asm: Assembly-CSharp}
+    - rid: 2897859976109752457
+      type: {class: PickaxeProperty, ns: , asm: Assembly-CSharp}
       data:
-        hardness: 2
-        maxHealth: 3
+        hardness: 1
+        power: 1
+        speed: 2
+        rangeHeight: 5.5
+        rangeWidth: 8.5

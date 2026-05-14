@@ -37,15 +37,14 @@ public class ItemConverterFromCSVToSO : EditorWindow
         public int hardness;
         public int maxHealth;
         public int dropItemID;
-        public BlockMaterial material;
     }
 
-    private const string CSV_PATH = "Assets/Datas/ItemDatabase.csv";
-    private const string WEAPON_CSV_PATH = "Assets/Datas/WeaponDatabase.csv";
-    private const string PICKAXE_CSV_PATH = "Assets/Datas/PickaxeDatabase.csv";
-    private const string BLOCK_CSV_PATH = "Assets/Datas/BlockDatabase.csv";
-    private const string SO_DIR = "Assets/Datas/Items";
-    private const string DATABASE_PATH = "Assets/Datas/ItemDatabase.asset";
+    private const string CSV_PATH = "Assets/Datas/Database_Item.csv";
+    private const string WEAPON_CSV_PATH = "Assets/Datas/Database_Weapon.csv";
+    private const string PICKAXE_CSV_PATH = "Assets/Datas/Database_Pickaxe.csv";
+    private const string BLOCK_CSV_PATH = "Assets/Datas/Database_Block.csv";
+    private const string SO_DIR = "Assets/Datas/Items/Elements";
+    private const string DATABASE_PATH = "Assets/Datas/Items/ItemDatabase.asset";
     private const string SPRITE_DIR = "Assets/Sprites/Items";
     private const string SPRITE_HELD_DIR = "Assets/Sprites/Items_Held";
     private const string ADDRESSABLE_GROUP_NAME = "ItemIcons";
@@ -82,7 +81,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
         {
             foreach (var kvp in blockStatsMap)
             {
-                MapManager.Instance.RegisterBlockStats(kvp.Key, kvp.Value.hardness, kvp.Value.maxHealth, kvp.Value.material);
+                MapManager.Instance.RegisterBlockStats(kvp.Key, kvp.Value.hardness, kvp.Value.maxHealth);
             }
         }
 
@@ -161,8 +160,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
                         BlockProperty blockProp = new BlockProperty
                         {
                             hardness = bStats.hardness,
-                            maxHealth = bStats.maxHealth,
-                            material = bStats.material
+                            maxHealth = bStats.maxHealth
                         };
                         itemData.properties.Add(blockProp);
                     }
@@ -252,8 +250,7 @@ public class ItemConverterFromCSVToSO : EditorWindow
                     id = int.Parse(v[0].Trim()),
                     hardness = int.Parse(v[1].Trim()),
                     maxHealth = int.Parse(v[2].Trim()),
-                    dropItemID = int.Parse(v[3].Trim()),
-                    material = BlockMaterial.Dirt // 기본값
+                    dropItemID = int.Parse(v[3].Trim())
                 };
                 map[stats.id] = stats;
             }
@@ -264,8 +261,11 @@ public class ItemConverterFromCSVToSO : EditorWindow
     private static void EnsureFolders()
     {
         if (!AssetDatabase.IsValidFolder("Assets/Datas")) AssetDatabase.CreateFolder("Assets", "Datas");
-        if (!AssetDatabase.IsValidFolder(SO_DIR)) AssetDatabase.CreateFolder("Assets/Datas", "Items");
+        if (!AssetDatabase.IsValidFolder("Assets/Datas/Items")) AssetDatabase.CreateFolder("Assets/Datas", "Items");
+        if (!AssetDatabase.IsValidFolder("Assets/Datas/Items/Elements")) AssetDatabase.CreateFolder("Assets/Datas/Items", "Elements");
+        
         if (!AssetDatabase.IsValidFolder("Assets/Sprites")) AssetDatabase.CreateFolder("Assets", "Sprites");
+        if (!AssetDatabase.IsValidFolder(SPRITE_DIR)) AssetDatabase.CreateFolder("Assets/Sprites", "Items");
         if (!AssetDatabase.IsValidFolder(SPRITE_HELD_DIR)) AssetDatabase.CreateFolder("Assets/Sprites", "Items_Held");
     }
 

@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b3176329395b2543ae22575685d3277, type: 3}
-  m_Name: Item_00004
+  m_Name: Item_00006
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  id: 4
-  itemName: Wood Sword
-  description: A wooden sword that is not special at all
+  id: 6
+  itemName: Wood Chestplate
+  description: A wooden chestplate that is not special at all
   maxStack: 1
   typeID: 0
-  type: 7
-  hasHeldSprite: 1
+  type: 3
+  hasHeldSprite: 0
   heldPivot: {x: 0, y: 0}
   heldRotation: 0
   iconReference:
-    m_AssetGUID: 36d6b41acfdfda74c80d41c1535e7782
+    m_AssetGUID: 
     m_SubObjectName: 
     m_SubObjectType: 
     m_SubObjectGUID: 
@@ -34,14 +34,10 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859916280889446
+  - rid: 2897859976109752455
   references:
     version: 2
     RefIds:
-    - rid: 2897859916280889446
-      type: {class: WeaponProperty, ns: , asm: Assembly-CSharp}
-      data:
-        weaponType: 1
-        damage: 10
-        speed: 1
-        reach: 0.5
+    - rid: 2897859976109752455
+      type: {class: EquipmentProperty, ns: , asm: Assembly-CSharp}
+      data: 

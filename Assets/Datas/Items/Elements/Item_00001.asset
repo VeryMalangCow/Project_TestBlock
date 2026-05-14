@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b3176329395b2543ae22575685d3277, type: 3}
-  m_Name: Item_00003
+  m_Name: Item_00001
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  id: 3
-  itemName: Wood
-  description: A simple block of wood
+  id: 1
+  itemName: Dirt
+  description: A simple block of dirt
   maxStack: 999
-  typeID: 3
+  typeID: 1
   type: 1
   hasHeldSprite: 0
   heldPivot: {x: 0, y: 0}
   heldRotation: 0
   iconReference:
-    m_AssetGUID: bdbff023e520a1145a0fe4c0d94a687c
+    m_AssetGUID: 
     m_SubObjectName: 
     m_SubObjectType: 
     m_SubObjectGUID: 
@@ -34,12 +34,13 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859916280889439
+  - rid: 2897859976109752451
   references:
     version: 2
     RefIds:
-    - rid: 2897859916280889439
+    - rid: 2897859976109752451
       type: {class: BlockProperty, ns: , asm: Assembly-CSharp}
       data:
-        hardness: 1
-        maxHealth: 2
+        hardness: 0
+        maxHealth: 1
+        material: 0

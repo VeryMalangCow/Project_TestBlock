@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b3176329395b2543ae22575685d3277, type: 3}
-  m_Name: Item_00005
+  m_Name: Item_00002
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  id: 5
-  itemName: Wood Helmet
-  description: A wooden helmet that is not special at all
-  maxStack: 1
-  typeID: 0
-  type: 2
+  id: 2
+  itemName: Stone
+  description: A simple block of stone
+  maxStack: 999
+  typeID: 2
+  type: 1
   hasHeldSprite: 0
   heldPivot: {x: 0, y: 0}
   heldRotation: 0
   iconReference:
-    m_AssetGUID: acd6fa93a1bef9a4eba562aa84cc3d6d
+    m_AssetGUID: 
     m_SubObjectName: 
     m_SubObjectType: 
     m_SubObjectGUID: 
@@ -34,10 +34,13 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859916280889441
+  - rid: 2897859976109752456
   references:
     version: 2
     RefIds:
-    - rid: 2897859916280889441
-      type: {class: EquipmentProperty, ns: , asm: Assembly-CSharp}
-      data: 
+    - rid: 2897859976109752456
+      type: {class: BlockProperty, ns: , asm: Assembly-CSharp}
+      data:
+        hardness: 2
+        maxHealth: 3
+        material: 0

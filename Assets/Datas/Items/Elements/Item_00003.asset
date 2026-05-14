@@ -10,19 +10,19 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b3176329395b2543ae22575685d3277, type: 3}
-  m_Name: Item_00007
+  m_Name: Item_00003
   m_EditorClassIdentifier: Assembly-CSharp::ItemData
-  id: 7
-  itemName: Wood Leggings
-  description: A wooden leggings that is not special at all
-  maxStack: 1
-  typeID: 0
-  type: 4
+  id: 3
+  itemName: Wood
+  description: A simple block of wood
+  maxStack: 999
+  typeID: 3
+  type: 1
   hasHeldSprite: 0
   heldPivot: {x: 0, y: 0}
   heldRotation: 0
   iconReference:
-    m_AssetGUID: 33cbc13760472bf44b24e68a91198256
+    m_AssetGUID: 
     m_SubObjectName: 
     m_SubObjectType: 
     m_SubObjectGUID: 
@@ -34,10 +34,13 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859916280889448
+  - rid: 2897859976109752453
   references:
     version: 2
     RefIds:
-    - rid: 2897859916280889448
-      type: {class: EquipmentProperty, ns: , asm: Assembly-CSharp}
-      data: 
+    - rid: 2897859976109752453
+      type: {class: BlockProperty, ns: , asm: Assembly-CSharp}
+      data:
+        hardness: 1
+        maxHealth: 2
+        material: 0

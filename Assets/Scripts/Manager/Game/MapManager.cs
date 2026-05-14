@@ -98,14 +98,14 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
     private bool isMapReady = false;
     private HashSet<Vector2Int> requestedChunks = new HashSet<Vector2Int>();
 
-    private Dictionary<int, (int hardness, int maxHealth, BlockMaterial material)> blockLibrary = new Dictionary<int, (int, int, BlockMaterial)>();
+    private Dictionary<int, (int hardness, int maxHealth)> blockLibrary = new Dictionary<int, (int, int)>();
 
-    public void RegisterBlockStats(int id, int hardness, int maxHealth, BlockMaterial material)
+    public void RegisterBlockStats(int id, int hardness, int maxHealth)
     {
-        blockLibrary[id] = (hardness, maxHealth, material);
+        blockLibrary[id] = (hardness, maxHealth);
     }
 
-    public (int hardness, int maxHealth, BlockMaterial material) GetBlockStats(int id)
+    public (int hardness, int maxHealth) GetBlockStats(int id)
     {
         if (blockLibrary.TryGetValue(id, out var stats)) return stats;
 
@@ -119,7 +119,7 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
                 {
                     if (prop is BlockProperty blockProp)
                     {
-                        var result = (blockProp.hardness, blockProp.maxHealth, blockProp.material);
+                        var result = (blockProp.hardness, blockProp.maxHealth);
                         blockLibrary[id] = result;
                         return result;
                     }
@@ -127,7 +127,7 @@ public class MapManager : SingletonNetworkBehaviour<MapManager>
             }
         }
 
-        return (0, 1, BlockMaterial.Dirt); // 기본값
+        return (0, 1); // 기본값
     }
 
     #endregion

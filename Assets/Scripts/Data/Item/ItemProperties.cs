@@ -72,16 +72,6 @@ public class PickaxeProperty : IItemProperty, IUsable
     public ItemAnimationType GetAnimationType() => ItemAnimationType.Swing;
 }
 
-public enum BlockMaterial
-{
-    Dirt,
-    Stone,
-    Wood,
-    Metal,
-    Grass,
-    Glass
-}
-
 [System.Serializable]
 public class BlockProperty : IItemProperty, IUsable
 {
@@ -90,7 +80,6 @@ public class BlockProperty : IItemProperty, IUsable
     [Header("Stats")]
     public int hardness;
     public int maxHealth;
-    public BlockMaterial material; // 블록 재질 (이펙트/사운드용)
 
     public void OnUseClient(UseContext context)
     {
