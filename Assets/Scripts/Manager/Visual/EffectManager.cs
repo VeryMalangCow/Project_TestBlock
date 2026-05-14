@@ -49,7 +49,7 @@ public class EffectManager : MonoBehaviour
         // 2. 발광 효과 (데이터 설정에 따라)
         if (data.useGlow && fakeGlowPrefab != null)
         {
-            StartCoroutine(FakeGlowSequence(worldPos, data.mainColor, 0.1f, 10f));
+            StartCoroutine(FakeGlowSequence(worldPos, data.mainColor, 0.1f, 2f));
         }
 
         // 3. 타격 사운드 (로컬)
@@ -74,7 +74,7 @@ public class EffectManager : MonoBehaviour
         // 2. 발광 효과 (파괴 시에는 더 강하게)
         if (data.useGlow && fakeGlowPrefab != null)
         {
-            StartCoroutine(FakeGlowSequence(worldPos, data.mainColor, 0.2f, 20f));
+            StartCoroutine(FakeGlowSequence(worldPos, data.mainColor, 0.2f, 4f));
         }
 
         // 3. 파괴 사운드 (공간음)

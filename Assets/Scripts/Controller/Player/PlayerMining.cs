@@ -138,11 +138,6 @@ public class PlayerMining : NetworkBehaviour
         data.lastHitTime = Time.time;
         localDamagedBlocks[pos] = data;
 
-        if (EffectManager.Instance != null)
-        {
-            EffectManager.Instance.PlayHitFX((Vector2)(Vector2)pos + new Vector2(0.5f, 0.5f), block.id);
-        }
-
         float crackRatio = Mathf.Clamp01((float)data.currentDamage / blockStats.maxHealth);
         UpdateMiningVisuals(pos, crackRatio);
 
