@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualData
   blockID: 1
   blockName: Dirt
-  mainColor: {r: 0.3137255, g: 0.18431373, b: 0.07450981, a: 1}
-  useGlow: 0
+  mainColor: {r: 0.41509432, g: 0.22487937, b: 0.05678178, a: 1}
+  useGlow: 1
   blockSound: {fileID: 0}

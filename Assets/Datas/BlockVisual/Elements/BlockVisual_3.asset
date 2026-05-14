@@ -14,6 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualData
   blockID: 3
   blockName: Wood
-  mainColor: {r: 0.67058825, g: 0.48235294, b: 0.24705882, a: 1}
-  useGlow: 0
+  mainColor: {r: 0.5377358, g: 0.37427312, b: 0.1699448, a: 1}
+  useGlow: 1
   blockSound: {fileID: 0}

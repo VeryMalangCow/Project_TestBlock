@@ -1,5 +1,5 @@
 BlockID,Hardness,MaxHealth,DropItemID,MainColor,SoundType,IsGlow
-0,0,2,0,29FF20,Dirt,FALSE
-1,0,1,1,502F13,Dirt,FALSE
-2,2,3,2,848484,Stone,FALSE
-3,1,2,3,AB7B3F,Wood,FALSE
+0,0,2,0,22C01C,Dirt,FALSE
+1,0,1,1,6A390E,Dirt,FALSE
+2,2,3,2,595959,Stone,FALSE
+3,1,2,3,895F2B,Wood,FALSE
