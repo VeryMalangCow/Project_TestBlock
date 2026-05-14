@@ -53,9 +53,9 @@ public class EffectManager : MonoBehaviour
         }
 
         // 3. 타격 사운드 (로컬)
-        if (data.hitSound != null && localAudioSource != null)
+        if (data.blockSound != null && localAudioSource != null)
         {
-            localAudioSource.PlayOneShot(data.hitSound);
+            localAudioSource.PlayOneShot(data.blockSound);
         }
     }
 
@@ -78,9 +78,9 @@ public class EffectManager : MonoBehaviour
         }
 
         // 3. 파괴 사운드 (공간음)
-        if (data.breakSound != null)
+        if (data.blockSound != null)
         {
-            AudioSource.PlayClipAtPoint(data.breakSound, new Vector3(worldPos.x, worldPos.y, -2f));
+            AudioSource.PlayClipAtPoint(data.blockSound, new Vector3(worldPos.x, worldPos.y, -2f));
         }
     }
 

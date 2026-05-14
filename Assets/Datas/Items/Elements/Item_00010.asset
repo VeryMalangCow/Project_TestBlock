@@ -34,11 +34,11 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859976109752457
+  - rid: 2897859976109752506
   references:
     version: 2
     RefIds:
-    - rid: 2897859976109752457
+    - rid: 2897859976109752506
       type: {class: PickaxeProperty, ns: , asm: Assembly-CSharp}
       data:
         hardness: 1

@@ -44,12 +44,12 @@ public class ItemDataManager : PermanentSingleton<ItemDataManager>
         itemCache.Clear();
 
         // 1. [Addressable] 기반 데이터베이스 로드
-        var handle = Addressables.LoadAssetAsync<ItemDatabase>("ItemDatabase");
+        var handle = Addressables.LoadAssetAsync<ItemDatabase>("Database_Item");
         ItemDatabase database = handle.WaitForCompletion();
         
         if (database == null)
         {
-            Debug.LogError("[ItemDataManager] Failed to load ItemDatabase SO via Addressables (Address: ItemDatabase).");
+            Debug.LogError("[ItemDataManager] Failed to load ItemDatabase SO via Addressables (Address: Database_Item).");
             return;
         }
 

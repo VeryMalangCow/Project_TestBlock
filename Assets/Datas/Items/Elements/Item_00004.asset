@@ -34,11 +34,11 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859976109752449
+  - rid: 2897859976109752498
   references:
     version: 2
     RefIds:
-    - rid: 2897859976109752449
+    - rid: 2897859976109752498
       type: {class: WeaponProperty, ns: , asm: Assembly-CSharp}
       data:
         weaponType: 1

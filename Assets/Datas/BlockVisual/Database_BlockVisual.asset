@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a9fb1cae97ecb004ebbbeab2bbb92db3, type: 3}
-  m_Name: BlockVisualDatabase
+  m_Name: Database_BlockVisual
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualDatabase
   visualDataList:
   - {fileID: 11400000, guid: 401a59c1abdec3341ab79c09d9d71cd2, type: 2}

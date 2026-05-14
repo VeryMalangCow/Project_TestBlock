@@ -34,13 +34,12 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859976109752453
+  - rid: 2897859976109752502
   references:
     version: 2
     RefIds:
-    - rid: 2897859976109752453
+    - rid: 2897859976109752502
       type: {class: BlockProperty, ns: , asm: Assembly-CSharp}
       data:
         hardness: 1
         maxHealth: 2
-        material: 0

@@ -37,19 +37,28 @@ public class ItemConverterFromCSVToSO : EditorWindow
         public int hardness;
         public int maxHealth;
         public int dropItemID;
+        public Color mainColor;
+        public string soundType;
+        public bool isGlow;
     }
 
     private const string CSV_PATH = "Assets/Datas/Database_Item.csv";
     private const string WEAPON_CSV_PATH = "Assets/Datas/Database_Weapon.csv";
     private const string PICKAXE_CSV_PATH = "Assets/Datas/Database_Pickaxe.csv";
     private const string BLOCK_CSV_PATH = "Assets/Datas/Database_Block.csv";
+    
     private const string SO_DIR = "Assets/Datas/Items/Elements";
-    private const string DATABASE_PATH = "Assets/Datas/Items/ItemDatabase.asset";
+    private const string DATABASE_PATH = "Assets/Datas/Items/Database_Item.asset";
+    
+    private const string BLOCK_VISUAL_SO_DIR = "Assets/Datas/BlockVisual/Elements";
+    private const string BLOCK_VISUAL_DATABASE_PATH = "Assets/Datas/BlockVisual/Database_BlockVisual.asset";
+    private const string BLOCK_SOUND_DIR = "Assets/Sounds/SFX/Block";
+
     private const string SPRITE_DIR = "Assets/Sprites/Items";
     private const string SPRITE_HELD_DIR = "Assets/Sprites/Items_Held";
     private const string ADDRESSABLE_GROUP_NAME = "ItemIcons";
     private const string DATA_GROUP_NAME = "GlobalDatas";
-    private const string DATABASE_ADDRESS = "ItemDatabase";
+    private const string DATABASE_ADDRESS = "Database_Item";
 
     [MenuItem("Tools/Project/Converter/Item CSV to SO")]
     public static void Convert()
@@ -84,6 +93,9 @@ public class ItemConverterFromCSVToSO : EditorWindow
                 MapManager.Instance.RegisterBlockStats(kvp.Key, kvp.Value.hardness, kvp.Value.maxHealth);
             }
         }
+
+        // [New] Block Visual Data 생성 및 등록
+        UpdateBlockVisuals(blockStatsMap);
 
         string[] lines = File.ReadAllLines(CSV_PATH);
         if (lines.Length <= 1) return;
@@ -229,6 +241,65 @@ public class ItemConverterFromCSVToSO : EditorWindow
         return map;
     }
 
+    private static void UpdateBlockVisuals(Dictionary<int, BlockStats> statsMap)
+    {
+        List<BlockVisualData> visualList = new List<BlockVisualData>();
+
+        foreach (var kvp in statsMap)
+        {
+            int id = kvp.Key;
+            BlockStats stats = kvp.Value;
+
+            string assetPath = $"{BLOCK_VISUAL_SO_DIR}/BlockVisual_{id}.asset";
+            BlockVisualData visualData = AssetDatabase.LoadAssetAtPath<BlockVisualData>(assetPath);
+
+            if (visualData == null)
+            {
+                visualData = ScriptableObject.CreateInstance<BlockVisualData>();
+                AssetDatabase.CreateAsset(visualData, assetPath);
+            }
+
+            visualData.blockID = id;
+            // 아이템 이름과 연동 시도
+            ItemData item = AssetDatabase.LoadAssetAtPath<ItemData>($"{SO_DIR}/Item_{id:D5}.asset");
+            if (item != null) visualData.blockName = item.itemName;
+
+            visualData.mainColor = stats.mainColor;
+            visualData.useGlow = stats.isGlow;
+            
+            if (!string.IsNullOrEmpty(stats.soundType))
+            {
+                string soundPath = $"{BLOCK_SOUND_DIR}/SFX_Block_{stats.soundType}.wav";
+                AudioClip clip = AssetDatabase.LoadAssetAtPath<AudioClip>(soundPath);
+                visualData.blockSound = clip;
+                if (clip == null) Debug.LogWarning($"[Converter] Sound not found for {stats.soundType} at {soundPath}");
+            }
+
+            EditorUtility.SetDirty(visualData);
+            visualList.Add(visualData);
+        }
+
+        // Database 업데이트
+        BlockVisualDatabase database = AssetDatabase.LoadAssetAtPath<BlockVisualDatabase>(BLOCK_VISUAL_DATABASE_PATH);
+        if (database == null)
+        {
+            database = ScriptableObject.CreateInstance<BlockVisualDatabase>();
+            AssetDatabase.CreateAsset(database, BLOCK_VISUAL_DATABASE_PATH);
+        }
+
+        // Reflection이나 Public 필드 접근을 통해 리스트 갱신 (현재 visualDataList가 private이므로 에디터 편의상 serializedObject 사용 권장)
+        SerializedObject so = new SerializedObject(database);
+        SerializedProperty listProp = so.FindProperty("visualDataList");
+        listProp.ClearArray();
+        for (int i = 0; i < visualList.Count; i++)
+        {
+            listProp.InsertArrayElementAtIndex(i);
+            listProp.GetArrayElementAtIndex(i).objectReferenceValue = visualList[i];
+        }
+        so.ApplyModifiedProperties();
+        EditorUtility.SetDirty(database);
+    }
+
     private static Dictionary<int, BlockStats> LoadBlockStats()
     {
         Dictionary<int, BlockStats> map = new Dictionary<int, BlockStats>();
@@ -250,8 +321,26 @@ public class ItemConverterFromCSVToSO : EditorWindow
                     id = int.Parse(v[0].Trim()),
                     hardness = int.Parse(v[1].Trim()),
                     maxHealth = int.Parse(v[2].Trim()),
-                    dropItemID = int.Parse(v[3].Trim())
+                    dropItemID = int.Parse(v[3].Trim()),
+                    mainColor = Color.white,
+                    soundType = "",
+                    isGlow = true
                 };
+
+                // 확장 컬럼 파싱 (MainColor, SoundType, IsGlow)
+                if (v.Length >= 5)
+                {
+                    string hex = v[4].Trim();
+                    if (!hex.StartsWith("#")) hex = "#" + hex;
+                    ColorUtility.TryParseHtmlString(hex, out stats.mainColor);
+                }
+                if (v.Length >= 6) stats.soundType = v[5].Trim();
+                if (v.Length >= 7)
+                {
+                    string glowStr = v[6].Trim().ToUpper();
+                    stats.isGlow = (glowStr == "TRUE");
+                }
+
                 map[stats.id] = stats;
             }
         }

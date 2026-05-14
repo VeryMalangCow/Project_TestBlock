@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: e13f105a7e900f84b881c6a5b7ac1de8, type: 3}
-  m_Name: HeldItemVisualDatabase
+  m_Name: Database_HeldItemVisual
   m_EditorClassIdentifier: Assembly-CSharp::HeldItemVisualDatabase
   settingsList:
   - itemType: 1

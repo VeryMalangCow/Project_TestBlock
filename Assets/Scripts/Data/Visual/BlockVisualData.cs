@@ -11,6 +11,5 @@ public class BlockVisualData : ScriptableObject
     public bool useGlow = true;           // 타격 시 번쩍이는 효과(FakeGlow) 사용 여부
 
     [Header("### Sounds")]
-    public AudioClip hitSound;
-    public AudioClip breakSound;
+    public AudioClip blockSound; // Hit/Break 공용 사운드
 }

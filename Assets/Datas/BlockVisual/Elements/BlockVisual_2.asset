@@ -14,7 +14,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualData
   blockID: 2
   blockName: Stone
-  mainColor: {r: 0.5188679, g: 0.5188679, b: 0.5188679, a: 1}
+  mainColor: {r: 0.5176471, g: 0.5176471, b: 0.5176471, a: 1}
   useGlow: 0
-  hitSound: {fileID: 0}
-  breakSound: {fileID: 0}
+  blockSound: {fileID: 0}

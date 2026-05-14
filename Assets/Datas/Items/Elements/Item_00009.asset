@@ -34,10 +34,10 @@ MonoBehaviour:
     m_SubObjectGUID: 
     m_EditorAssetChanged: 0
   properties:
-  - rid: 2897859976109752450
+  - rid: 2897859976109752499
   references:
     version: 2
     RefIds:
-    - rid: 2897859976109752450
+    - rid: 2897859976109752499
       type: {class: EquipmentProperty, ns: , asm: Assembly-CSharp}
       data: 

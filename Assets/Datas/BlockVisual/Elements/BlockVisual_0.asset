@@ -13,8 +13,7 @@ MonoBehaviour:
   m_Name: BlockVisual_0
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualData
   blockID: 0
-  blockName: GlassDirt
-  mainColor: {r: 0.1593987, g: 1, b: 0.1273585, a: 1}
+  blockName: Grassed Dirt
+  mainColor: {r: 0.16078432, g: 1, b: 0.1254902, a: 1}
   useGlow: 0
-  hitSound: {fileID: 0}
-  breakSound: {fileID: 0}
+  blockSound: {fileID: 0}

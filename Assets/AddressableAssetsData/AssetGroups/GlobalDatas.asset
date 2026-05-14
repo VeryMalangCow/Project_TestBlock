@@ -20,8 +20,8 @@ MonoBehaviour:
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
-  - m_GUID: 9a266d8cff95b2649bad417e99cf6edd
-    m_Address: ItemDatabase
+  - m_GUID: bbf2a2a24e536ef43a5302c0ad359438
+    m_Address: Database_Item
     m_ReadOnly: 0
     m_SerializedLabels: []
     FlaggedDuringContentUpdateRestriction: 0
