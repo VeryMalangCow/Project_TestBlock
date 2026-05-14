@@ -118,6 +118,7 @@ public class PlayerInteraction : MonoBehaviour
             {
                 if (!selectionRenderer.gameObject.activeSelf) selectionRenderer.gameObject.SetActive(true);
                 selectionRenderer.transform.position = new Vector3(wx + 0.5f, wy + 0.5f, 0);
+                selectionRenderer.color = new Color(1f, 1f, 1f, 0.5f);
             }
             else
             {

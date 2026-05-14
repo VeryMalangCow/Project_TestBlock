@@ -164,7 +164,9 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [x] **Item Dropping & Pickup**: Server-authoritative item system. (2026-04-15)
   - [x] **SO & Addressable Database**: Complete transition from CSV to SO/Addressables. (2026-04-16)
   - [x] **Instant UI Feedback**: Synchronous Addressable loading with central caching. (2026-04-16)
-  - [ ] Block Looting: Dropped items when blocks are destroyed.
+  - [x] **Local-First Effect System**: High-performance hit/break visuals using Master Prefabs. (2026-05-13)
+  - [x] **Mining Selection Preview**: Distance-restricted targeting visual for pickaxes. (2026-05-13)
+  - [x] **Block Looting**: Dropped items when blocks are destroyed. (2026-05-13)
   - [ ] Basic Inventory UI (Grid system) and Hotbar interaction.
   - [ ] **Individual Player Inventory**: Separate state for each networked user.
   - [ ] **Inventory Delta Optimization**: Optimize sync by sending only changed slots.
@@ -174,6 +176,8 @@ To achieve Terraria-style block connections, an 8-direction bitmask system is im
   - [x] **Terraria-style Terrain Following**: Step-up and Slope handling. (2026-04-06)
   - [x] **Physics Stabilization**: FixedUpdate-based server physics for items. (2026-04-16)
   - [x] **Addressable Character Visuals**: High-performance body/armor loading with caching. (2026-04-16)
+  - [x] **Item Animation Fix**: Resolved 1-frame idle state glitch during continuous use. (2026-05-13)
+  - [x] **Mining Reliability**: Fixed deadlock and server budget initialization issues. (2026-05-13)
   - [ ] Coyote Time & Jump Buffering for better platforming feel.
 
 ----------

@@ -13,4 +13,7 @@ MonoBehaviour:
   m_Name: BlockVisualDatabase
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualDatabase
   visualDataList:
-  - {fileID: 11400000, guid: e57670726bce7c24ea62f937b1dd0c0f, type: 2}
+  - {fileID: 11400000, guid: 401a59c1abdec3341ab79c09d9d71cd2, type: 2}
+  - {fileID: 11400000, guid: 6f7ba0d7342611143a8f03c917171ac3, type: 2}
+  - {fileID: 11400000, guid: 5966236a05218f64dbd666e48a10fd8a, type: 2}
+  - {fileID: 11400000, guid: 7c1798e6db7618549a10e6d1f18916af, type: 2}

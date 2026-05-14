@@ -3497,7 +3497,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: f22224eb568008f4da76ff4fc88dae6f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::EffectManager
-  visualDatabase: {fileID: 11400000, guid: daf80dc46de7f3743acaa95c3c3cc7a1, type: 2}
+  visualDatabase: {fileID: 11400000, guid: b387467016c5fad41a44ddd1d626eee2, type: 2}
   masterHitDust: {fileID: 3340129378400715658, guid: 4471d16c3aac7704793795fa1c26f8c4, type: 3}
   masterBreakDust: {fileID: 3340129378400715658, guid: 7d4df45df0adfe64dac8cd461b385d79, type: 3}
   fakeGlowPrefab: {fileID: 6144484134113795685, guid: 6572c2bf7f4ba3f4b912675c6be75bfc, type: 3}

@@ -113,12 +113,21 @@ public class PlayerMining : NetworkBehaviour
         }
 
         var blockStats = MapManager.Instance.GetBlockStats(block.id);
-        if (stats.hardness < blockStats.hardness) return;
 
+        // 3. 사거리 체크
         Vector2 playerPos = transform.position;
         float diffX = Mathf.Abs(pos.x + 0.5f - playerPos.x);
         float diffY = Mathf.Abs(pos.y + 0.5f - playerPos.y);
         if (diffX > stats.rangeWidth || diffY > stats.rangeHeight) return;
+
+        // 4. 이펙트 및 사운드 재생 (데미지와 상관없이 사거리 내면 항상 재생)
+        if (EffectManager.Instance != null)
+        {
+            EffectManager.Instance.PlayHitFX((Vector2)(Vector2)pos + new Vector2(0.5f, 0.5f), block.id);
+        }
+
+        // 5. 강도 체크 (강도가 부족하면 데미지는 주지 않음)
+        if (stats.hardness < blockStats.hardness) return;
 
         if (!localDamagedBlocks.TryGetValue(pos, out BlockDamageData data))
         {

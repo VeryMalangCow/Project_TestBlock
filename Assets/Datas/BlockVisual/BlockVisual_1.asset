@@ -10,11 +10,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d0d2ac520ac3e4c478482139990c3311, type: 3}
-  m_Name: BlockVisual_Dirt
+  m_Name: BlockVisual_1
   m_EditorClassIdentifier: Assembly-CSharp::BlockVisualData
-  blockID: 0
-  blockName: GlassDirt
-  mainColor: {r: 0.1593987, g: 1, b: 0.1273585, a: 1}
-  useGlow: 1
+  blockID: 1
+  blockName: Dirt
+  mainColor: {r: 0.4339623, g: 0.2929232, b: 0.1780883, a: 1}
+  useGlow: 0
   hitSound: {fileID: 0}
   breakSound: {fileID: 0}
